@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cookie, Check, ShieldCheck, Settings2, X } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
+import { useLanguage } from '../../utils/language';
 
 const COOKIE_CONSENT_KEY = 'zeroday_cookie_consent_v1';
 
@@ -22,6 +23,7 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
   forceOpen = false,
   onCloseForce
 }) => {
+  const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [prefAnalytics, setPrefAnalytics] = useState(false);
@@ -104,13 +106,13 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <span>Informativa sui Cookie & Privacy</span>
+                <span>{t.cookieBannerTitle}</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                  Zero Profilazione
+                  {t.cookieZeroProfiling}
                 </span>
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Utilizziamo cookie tecnici essenziali per consentire l'accesso sicuro e il salvataggio dei progressi didattici. Non utilizziamo tracker di terze parti a fini pubblicitari.
+                {t.cookieBannerDesc}
               </p>
             </div>
           </div>
@@ -119,17 +121,17 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
             <button
               onClick={handleAcceptAll}
-              className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Accetta tutti</span>
+              <span>{t.cookieAcceptAll}</span>
             </button>
 
             <button
               onClick={handleAcceptNecessary}
-              className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl font-mono font-bold text-xs text-slate-200 bg-[#162138] border border-white/10 hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl font-mono font-bold text-xs text-slate-200 bg-[#162138] border border-white/10 hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
             >
-              Solo necessari
+              {t.cookieNecessaryOnly}
             </button>
 
             <button
@@ -137,9 +139,9 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
                 sound.playTap();
                 setIsCustomizeOpen(!isCustomizeOpen);
               }}
-              className="p-2 rounded-xl text-slate-400 hover:text-white bg-[#162138] border border-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-              aria-label="Personalizza preferenze cookie"
-              title="Personalizza preferenze cookie"
+              className="p-2 rounded-xl text-slate-400 hover:text-white bg-[#162138] border border-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+              aria-label={t.cookieCustomizeTitle}
+              title={t.cookieCustomizeTitle}
             >
               <Settings2 className="w-4 h-4" />
             </button>
@@ -154,18 +156,18 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
               {/* Technical Cookies */}
               <div className="p-2.5 rounded-xl bg-[#090D17] border border-white/5 space-y-1">
                 <div className="flex items-center justify-between font-mono font-bold text-emerald-300">
-                  <span>Tecnici (Necessari)</span>
-                  <span className="text-[10px] text-slate-400">Sempre Attivi</span>
+                  <span>{t.cookieTechnicalTitle}</span>
+                  <span className="text-[10px] text-slate-400">{t.cookieTechnicalAlways}</span>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-normal">
-                  Indispensabili per login 2FA, sessione protetta e crittografia.
+                  {t.cookieTechnicalDesc}
                 </p>
               </div>
 
               {/* Preference Cookies */}
               <div className="p-2.5 rounded-xl bg-[#090D17] border border-white/5 space-y-1">
                 <div className="flex items-center justify-between font-mono font-bold text-slate-200">
-                  <span>Preferenze & HUD</span>
+                  <span>{t.cookiePrefTitle}</span>
                   <input
                     type="checkbox"
                     checked={prefPreferences}
@@ -174,14 +176,14 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 leading-normal">
-                  Salva temi del terminale, preferenze audio e layout.
+                  {t.cookiePrefDesc}
                 </p>
               </div>
 
               {/* Analytics Cookies */}
               <div className="p-2.5 rounded-xl bg-[#090D17] border border-white/5 space-y-1">
                 <div className="flex items-center justify-between font-mono font-bold text-slate-200">
-                  <span>Metriche Anonime</span>
+                  <span>{t.cookieAnalyticsTitle}</span>
                   <input
                     type="checkbox"
                     checked={prefAnalytics}
@@ -190,7 +192,7 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
                   />
                 </div>
                 <p className="text-[11px] text-slate-400 leading-normal">
-                  Rilevamento anonimo di bug e tempi di risposta dei server.
+                  {t.cookieAnalyticsDesc}
                 </p>
               </div>
             </div>
@@ -198,16 +200,16 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
             <div className="flex items-center justify-between pt-1">
               <button
                 onClick={onOpenCookiePolicy}
-                className="text-[11px] text-emerald-400 hover:underline font-mono"
+                className="text-[11px] text-emerald-400 hover:underline font-mono cursor-pointer"
               >
-                Consulta l'Informativa Estesa Cookie →
+                {t.cookieReadPolicy}
               </button>
 
               <button
                 onClick={handleSaveCustom}
-                className="py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-bold text-[11px] hover:bg-emerald-500/30 transition-colors"
+                className="py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono font-bold text-[11px] hover:bg-emerald-500/30 transition-colors cursor-pointer"
               >
-                Salva Preferenze Selezionate
+                {t.cookieSaveCustom}
               </button>
             </div>
           </div>

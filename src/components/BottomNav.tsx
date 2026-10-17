@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target, Swords, Trophy, Radar, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
+import { useLanguage } from '../utils/language';
 
 export type ActiveTab = 'tree' | 'arena' | 'leagues' | 'radar' | 'certs';
 
@@ -15,43 +16,45 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onSelectTab,
   winStreak
 }) => {
+  const { t } = useLanguage();
+
   const tabs = [
     {
       id: 'tree' as ActiveTab,
-      label: 'Skill Tree',
-      sublabel: 'Campaign',
+      label: t.navSkillTree,
+      sublabel: t.navSkillTreeSub,
       icon: Target,
       badge: null,
       badgeColor: '',
     },
     {
       id: 'arena' as ActiveTab,
-      label: 'Arena 1v1',
-      sublabel: 'Blitz PvP',
+      label: t.navArena,
+      sublabel: t.navArenaSub,
       icon: Swords,
       badge: winStreak > 0 ? `🔥x${winStreak}` : 'LIVE',
       badgeColor: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
     },
     {
       id: 'leagues' as ActiveTab,
-      label: 'Leghe',
-      sublabel: 'Top 3',
+      label: t.navLeagues,
+      sublabel: t.navLeaguesSub,
       icon: Trophy,
       badge: 'PROMO',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     },
     {
       id: 'radar' as ActiveTab,
-      label: 'Readiness',
-      sublabel: 'Analytics',
+      label: t.navRadar,
+      sublabel: t.navRadarSub,
       icon: Radar,
       badge: null,
       badgeColor: '',
     },
     {
       id: 'certs' as ActiveTab,
-      label: 'Cert Prep',
-      sublabel: 'Sec+/CCNA',
+      label: t.navCerts,
+      sublabel: t.navCertsSub,
       icon: ShieldCheck,
       badge: null,
       badgeColor: '',

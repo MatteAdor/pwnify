@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { sanitizeCallsign } from '../../utils/security';
+import { useLanguage } from '../../utils/language';
 import { 
   registerAccount, 
   loginAccount, 
@@ -34,6 +35,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onOpenLegal,
   onOpenCookiePrefs
 }) => {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [callsign, setCallsign] = useState('');
   const [email, setEmail] = useState('');
@@ -51,26 +55,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const safeName = sanitizeCallsign(callsign);
     if (!safeName || safeName.length < 3) {
-      setErrorMsg('Il Callsign deve contenere almeno 3 caratteri alfanumerici.');
+      setErrorMsg(isEn ? 'Callsign must contain at least 3 alphanumeric characters.' : 'Il Callsign deve contenere almeno 3 caratteri alfanumerici.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (!email || !email.includes('@') || !email.includes('.')) {
-      setErrorMsg('Inserisci un indirizzo email valido.');
+      setErrorMsg(isEn ? 'Please enter a valid email address.' : 'Inserisci un indirizzo email valido.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (password.length < 6) {
-      setErrorMsg('La password deve contenere almeno 6 caratteri.');
+      setErrorMsg(isEn ? 'Password must be at least 6 characters.' : 'La password deve contenere almeno 6 caratteri.');
       sound.playPayloadBlocked();
       return;
     }
 
     const res = registerAccount(safeName, email, password);
     if (!res.success || !res.account) {
-      setErrorMsg(res.error || 'Errore durante la registrazione.');
+      setErrorMsg(res.error || (isEn ? 'Registration error.' : 'Errore durante la registrazione.'));
       sound.playPayloadBlocked();
       return;
     }
@@ -78,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     sound.playVictoryFanfare();
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
     onLoginSuccess(res.account);
-    setSuccessMsg(`Profilo operatore ${res.account.username} creato con successo!`);
+    setSuccessMsg(isEn ? `Operator profile ${res.account.username} created successfully!` : `Profilo operatore ${res.account.username} creato con successo!`);
     setTimeout(() => {
       onClose();
     }, 1200);
@@ -91,27 +95,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const identifier = callsign.trim();
     if (!identifier) {
-      setErrorMsg('Inserisci il tuo Callsign o la tua Email.');
+      setErrorMsg(isEn ? 'Please enter your Callsign or Email.' : 'Inserisci il tuo Callsign o la tua Email.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (!password) {
-      setErrorMsg('Inserisci la password di autenticazione.');
+      setErrorMsg(isEn ? 'Please enter your authentication password.' : 'Inserisci la password di autenticazione.');
       sound.playPayloadBlocked();
       return;
     }
 
     const res = loginAccount(identifier, password);
     if (!res.success || !res.account) {
-      setErrorMsg(res.error || 'Credenziali non valide.');
+      setErrorMsg(res.error || (isEn ? 'Invalid credentials.' : 'Credenziali non valide.'));
       sound.playPayloadBlocked();
       return;
     }
 
     sound.playExploitSuccess();
     onLoginSuccess(res.account);
-    setSuccessMsg(`Accesso autorizzato. Benvenuto, operatore ${res.account.username}.`);
+    setSuccessMsg(isEn ? `Access granted. Welcome, operator ${res.account.username}.` : `Accesso autorizzato. Benvenuto, operatore ${res.account.username}.`);
     setTimeout(() => {
       onClose();
     }, 1000);
@@ -133,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             sound.playTap();
             onClose();
           }}
-          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors z-20"
+          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors z-20 cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -147,56 +151,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             0xDAY // AUTHENTICATION_GATEWAY
           </span>
           <h2 className="text-xl font-extrabold text-white">
-            {userState.isLoggedIn ? 'Profilo Operatore Attivo' : mode === 'login' ? 'Accedi al Tuo Account' : 'Registra Nuovo Operatore'}
+            {userState.isLoggedIn 
+              ? t.activeProfileTitle 
+              : mode === 'login' 
+              ? (isEn ? 'Log in to Your Account' : 'Accedi al Tuo Account') 
+              : (isEn ? 'Register New Operator' : 'Registra Nuovo Operatore')}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             {userState.isLoggedIn 
-              ? 'Gestisci la tua sessione crittografica e sincronizza i progressi.'
+              ? t.activeProfileSubtitle
               : mode === 'login'
-              ? 'Inserisci le tue credenziali per riprendere streak, ELO e laboratori.'
-              : 'Crea il tuo profilo cyber e unisciti alla community di ZeroDay.'}
+              ? (isEn ? 'Enter your credentials to resume your streak, ELO, and labs.' : 'Inserisci le tue credenziali per riprendere streak, ELO e laboratori.')
+              : (isEn ? 'Create your cyber profile and join the ZeroDay community.' : 'Crea il tuo profilo cyber e unisciti alla community di ZeroDay.')}
           </p>
         </div>
 
-        {/* ALREADY LOGGED IN VIEW */}
+        {/* LOGGED IN OPERATOR PROFILE VIEW */}
         {userState.isLoggedIn ? (
-          <div className="space-y-4 pt-2">
-            <div className="p-4 rounded-2xl bg-[#090D16] border border-white/10 space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">CALLSIGN:</span>
-                <span className="font-bold text-emerald-400">{userState.username}</span>
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-[#090D16] border border-white/10 space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-slate-400">{t.callsign}</span>
+                <span className="font-bold text-emerald-400 text-sm">{userState.username}</span>
               </div>
               {userState.userEmail && (
-                <div className="flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2">
                   <span className="text-slate-400">EMAIL:</span>
-                  <span className="text-slate-200">{userState.userEmail}</span>
+                  <span className="font-mono text-slate-200 text-xs">{userState.userEmail}</span>
                 </div>
               )}
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">RATING:</span>
-                <span className="text-indigo-400 font-bold">{userState.elo} ELO</span>
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-slate-400">{t.rating}</span>
+                <span className="font-bold text-indigo-400">{userState.elo} ELO</span>
               </div>
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">STATUS:</span>
-                <span className={userState.isPro ? 'text-emerald-400 font-bold' : 'text-slate-300'}>
-                  {userState.isPro ? 'ZeroDay PRO Active' : 'Account Standard Free'}
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">{t.status}</span>
+                <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                  userState.isPro 
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                    : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {userState.isPro ? t.statusPro : t.statusFree}
                 </span>
               </div>
             </div>
 
+            {/* Logout Action */}
             <button
+              type="button"
               onClick={() => {
                 sound.playTap();
                 onLogout();
                 onClose();
               }}
-              className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-[#141C2E] hover:bg-white/5 text-slate-300 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98"
+              className="w-full py-3 px-4 rounded-xl border border-white/10 bg-surface hover:bg-surface-light text-slate-200 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
-              <LogOut className="w-4 h-4" />
-              <span>TERMINA SESSIONE (LOGOUT)</span>
+              <LogOut className="w-4 h-4 text-slate-400" />
+              <span>{t.logoutBtn}</span>
             </button>
 
-            {/* GDPR Art. 17 - Right to Erasure / Cancellazione Account */}
+            {/* Right to Erasure / Data Deletion (No Article citation) */}
             <div className="pt-2 border-t border-white/5 space-y-2">
               {!isConfirmingDelete ? (
                 <button
@@ -205,12 +219,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   className="w-full py-2 px-3 rounded-xl border border-red-500/20 bg-red-950/20 hover:bg-red-950/40 text-red-400 font-mono text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                  <span>Elimina Account & Dati Personali (Art. 17 GDPR)</span>
+                  <span>{t.deleteAccountBtn}</span>
                 </button>
               ) : (
                 <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 space-y-2 font-mono text-xs animate-fade-in">
                   <span className="text-red-300 font-bold block text-[11px] leading-tight">
-                    ⚠️ Confermi la cancellazione definitiva di questo account e di tutti i progressi? L'operazione è immediata e irreversibile.
+                    {t.deleteConfirmWarning}
                   </span>
                   <div className="flex gap-2 pt-1">
                     <button
@@ -225,16 +239,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setIsConfirmingDelete(false);
                         onClose();
                       }}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[10px]"
+                      className="flex-1 py-1.5 px-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] cursor-pointer"
                     >
-                      SÌ, CANCELLA TUTTO
+                      {t.deleteConfirmYes}
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsConfirmingDelete(false)}
-                      className="py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 text-[10px]"
+                      className="py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 text-[10px] cursor-pointer"
                     >
-                      Annulla
+                      {t.deleteConfirmCancel}
                     </button>
                   </div>
                 </div>
@@ -249,9 +263,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('privacy');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Privacy Policy
+                {t.privacyPolicy}
               </button>
               <span>·</span>
               <button
@@ -260,9 +274,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('terms');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Termini di Servizio
+                {t.termsOfService}
               </button>
               <span>·</span>
               <button
@@ -271,9 +285,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('refund');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Rimborso 14gg
+                {t.refund}
               </button>
               <span>·</span>
               <button
@@ -282,9 +296,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenCookiePrefs?.();
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Cookie
+                {t.cookies}
               </button>
             </div>
           </div>
@@ -301,14 +315,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === 'login'
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>ACCEDI</span>
+                <span>{t.loginTab}</span>
               </button>
               <button
                 type="button"
@@ -318,14 +332,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   mode === 'signup'
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>REGISTRATI</span>
+                <span>{t.signupTab}</span>
               </button>
             </div>
 
@@ -345,7 +359,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={mode === 'login' ? handleLogin : handleSignup} className="space-y-3.5">
               <div>
                 <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  {mode === 'login' ? 'Callsign Hacker o Email' : 'Scegli il tuo Callsign Operatore'}
+                  {mode === 'login' ? t.operatorCallsignOrEmail : t.callsignLabel}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
@@ -357,7 +371,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     maxLength={24}
                     value={callsign}
                     onChange={(e) => setCallsign(e.target.value)}
-                    placeholder={mode === 'login' ? 'es. 0x_GhostRider' : 'es. 0x_DarkKnight'}
+                    placeholder={mode === 'login' ? (isEn ? 'e.g. 0x_GhostRider' : 'es. 0x_GhostRider') : (isEn ? 'e.g. 0x_DarkKnight' : 'es. 0x_DarkKnight')}
                     className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#090D16] border border-white/10 focus:border-emerald-500/60 text-slate-100 font-mono text-xs outline-none transition-colors"
                   />
                 </div>
@@ -366,7 +380,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {mode === 'signup' && (
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Indirizzo Email
+                    {t.enterEmailLabel}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
@@ -377,7 +391,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="operatore@dominio.it"
+                      placeholder={isEn ? 'operator@redteam.org' : 'operatore@dominio.it'}
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#090D16] border border-white/10 focus:border-emerald-500/60 text-slate-100 font-mono text-xs outline-none transition-colors"
                     />
                   </div>
@@ -386,7 +400,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div>
                 <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  Password di Accesso
+                  {t.password}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
@@ -406,9 +420,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full mt-2 py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98"
+                className="w-full mt-2 py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer"
               >
-                <span>{mode === 'login' ? 'ACCEDI ALLA CYBER ACADEMY' : 'CREA PROFILO OPERATORE'}</span>
+                <span>{mode === 'login' ? t.loginButton : t.completeSignupBtn}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -421,9 +435,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('privacy');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Privacy
+                {t.privacyPolicy}
               </button>
               <span>·</span>
               <button
@@ -432,9 +446,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('terms');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Termini
+                {t.termsOfService}
               </button>
               <span>·</span>
               <button
@@ -443,9 +457,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenLegal?.('refund');
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Rimborso
+                {t.refund}
               </button>
               <span>·</span>
               <button
@@ -454,9 +468,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClose();
                   onOpenCookiePrefs?.();
                 }}
-                className="hover:text-emerald-400 underline transition-colors"
+                className="hover:text-emerald-400 underline transition-colors cursor-pointer"
               >
-                Cookie
+                {t.cookies}
               </button>
             </div>
           </div>

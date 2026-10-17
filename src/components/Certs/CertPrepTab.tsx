@@ -3,6 +3,7 @@ import { UserState, PbqLab } from '../../types';
 import { OFFICIAL_PBQ_LABS } from '../../data/bountiesAndPbq';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
+import { useLanguage } from '../../utils/language';
 import { 
   ShieldCheck, Lock, Terminal, 
   CheckCircle2, AlertTriangle, ArrowRight, X, Play 
@@ -55,6 +56,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   onOpenPaywallContext,
   onCompletePbq
 }) => {
+  const { t } = useLanguage();
   // Quick Domain Check modal state
   const [quickCheckCert, setQuickCheckCert] = useState<string | null>(null);
   const [activeQuickQuestions, setActiveQuickQuestions] = useState(() => 
@@ -204,17 +206,17 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
-            OFFICIAL CERTIFICATION ROADMAP
+            {t.certHeaderBadge}
           </span>
           <span className="text-xs font-mono text-slate-400">
-            SIMULATORE PBQ ESAME
+            {t.certHeaderSub}
           </span>
         </div>
         <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-          Simulatore Esami Ufficiali & Laboratori PBQ
+          {t.certHeaderTitle}
         </h1>
         <p className="text-xs text-slate-300 mt-1">
-          Addestramento certificato per CompTIA Security+, CCNA e CEH. Affronta le Performance-Based Questions (PBQs) e supera l'esame al primo tentativo senza rischiare il costo del voucher d'esame.
+          {t.certHeaderDesc}
         </p>
       </div>
 
@@ -241,7 +243,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
               </div>
 
               <div className="text-right font-mono">
-                <span className="text-[10px] text-slate-400 block">PROBABILITÀ SUPERAMENTO</span>
+                <span className="text-[10px] text-slate-400 block">{t.passProbability}</span>
                 <span className={`text-xl font-extrabold ${cert.readiness < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
                   {cert.readiness}%
                 </span>
@@ -255,7 +257,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             {/* PBQ Progress Bar */}
             <div className="space-y-1.5 bg-[#090D16] p-3 rounded-xl border border-white/5">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">Laboratori PBQ simulati</span>
+                <span className="text-slate-400">PBQ Labs</span>
                 <span className="text-emerald-400 font-bold">{cert.completedPBQs} / {cert.totalPBQs}</span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
@@ -292,26 +294,26 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   setQuickAnswered(false);
                   setQuickCompleted(false);
                 }}
-                className="py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 bg-surface-light border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5"
+                className="py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 bg-surface-light border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
-                <span>Quick Check (5 Domande Reali)</span>
+                <span>{t.quickCheckBtn}</span>
               </button>
 
               {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
               <button
                 onClick={() => handleStartPbq(cert.pbqRef)}
-                className="py-2.5 px-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all flex items-center justify-center gap-1.5 shadow-neon-emerald"
+                className="py-2.5 px-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all flex items-center justify-center gap-1.5 shadow-neon-emerald cursor-pointer"
               >
                 {!userState.isPro ? (
                   <>
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Laboratorio PBQ Reale (PRO)</span>
+                    <span>{t.pbqLabBtnPro}</span>
                   </>
                 ) : (
                   <>
                     <Terminal className="w-3.5 h-3.5" />
-                    <span>Avvia Laboratorio PBQ Reale</span>
+                    <span>{t.pbqLabBtnActive}</span>
                   </>
                 )}
               </button>

@@ -11,11 +11,12 @@ import {
   UserAccount 
 } from '../../utils/userDatabase';
 import { sound } from '../../utils/soundEngine';
+import { useLanguage } from '../../utils/language';
 import { 
   Lock, Mail, KeyRound, User, 
   ArrowRight, CheckCircle2, AlertTriangle, 
   Sparkles, Terminal, Check, X,
-  ShieldCheck
+  ShieldCheck, Globe
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -48,6 +49,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   onGuestAccess,
   onOpenLegal
 }) => {
+  const { lang, setLanguage, t } = useLanguage();
+  const isEn = lang === 'en';
+
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [signupStep, setSignupStep] = useState<SignupStep>('email');
 
@@ -551,17 +555,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         className="w-full max-w-md bg-[#0D1424] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl relative z-10 space-y-5"
         style={{ boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px -5px rgba(16, 185, 129, 0.12)' }}
       >
-        {/* Branding Header */}
-        <div className="text-center space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider">
-            <Terminal className="w-3.5 h-3.5" />
-            <span>0xDAY // AUTHENTICATION GATEWAY</span>
+        {/* Header with Language Switcher */}
+        <div className="flex items-center justify-between pb-2 border-b border-white/5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+            <Terminal className="w-3 h-3" />
+            <span>{t.authGateway}</span>
           </div>
+
+          <div className="flex items-center gap-1 bg-[#090D17] p-1 rounded-lg border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                setLanguage('en');
+              }}
+              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all ${
+                lang === 'en'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                setLanguage('it');
+              }}
+              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all ${
+                lang === 'it'
+                  ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              🇮🇹 IT
+            </button>
+          </div>
+        </div>
+
+        {/* Branding Header */}
+        <div className="text-center space-y-1">
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Cyber Warfare Academy
+            {t.academyTitle}
           </h1>
           <p className="text-xs text-slate-400">
-            CompTIA Security+, Cisco CCNA & CEH Exam Simulator.
+            {t.academySubtitle}
           </p>
         </div>
 
@@ -596,7 +635,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <span>ACCEDI</span>
+            <span>{t.loginTab}</span>
           </button>
           <button
             type="button"
@@ -612,7 +651,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <span>REGISTRATI (2FA)</span>
+            <span>{t.signupTab}</span>
           </button>
         </div>
 
@@ -628,7 +667,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
             <GoogleIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span>Accedi con Google</span>
+            <span>{t.loginWithGoogle}</span>
           </button>
 
           {/* GitHub Button */}
@@ -639,7 +678,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
             <GitHubIcon className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-            <span>Accedi con GitHub</span>
+            <span>{t.loginWithGithub}</span>
           </button>
         </div>
 
@@ -647,55 +686,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         <div className="relative flex items-center justify-center">
           <div className="border-t border-white/10 w-full" />
           <span className="bg-[#0D1424] px-3 font-mono text-[10px] text-slate-500 uppercase tracking-widest absolute">
-            oppure via email
+            {t.orViaEmail}
           </span>
         </div>
 
         {/* ============================================================== */}
-        {/* TAB 1: STANDARD ACCEDI (LOGIN FOR EXISTING ACCOUNTS) */}
+        {/* TAB 1: STANDARD LOGIN FOR EXISTING ACCOUNTS */}
         {/* ============================================================== */}
         {authMode === 'login' && (
           <div className="space-y-4 animate-fade-in">
-            {/* Quick 1-Click Access to Saved Accounts on this Device */}
-            {savedAccounts.length > 0 && (
-              <div className="p-3 rounded-2xl bg-[#090D17] border border-white/10 space-y-2">
-                <span className="text-[10px] font-mono text-slate-400 block font-semibold uppercase tracking-wider">
-                  ⚡ Account memorizzati su questa postazione:
-                </span>
-                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                  {savedAccounts.map((acc) => (
-                    <div 
-                      key={acc.id}
-                      onClick={() => handleSelectSavedAccount(acc)}
-                      className="p-2 rounded-xl bg-[#121B30] hover:bg-[#182542] border border-white/5 hover:border-emerald-500/40 cursor-pointer flex items-center justify-between text-xs transition-all"
-                    >
-                      <div className="flex items-center gap-2">
-                        {acc.provider === 'google' ? (
-                          <GoogleIcon className="w-3.5 h-3.5" />
-                        ) : acc.provider === 'github' ? (
-                          <GitHubIcon className="w-3.5 h-3.5" />
-                        ) : (
-                          <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                        )}
-                        <div>
-                          <strong className="text-white font-mono block text-xs">{acc.username}</strong>
-                          <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30">
-                        Entra →
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Standard Email / Callsign + Password Form */}
             <form onSubmit={handleLoginSubmit} className="space-y-3.5">
               <div>
                 <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  Callsign Operatore o Email
+                  {t.operatorCallsignOrEmail}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -704,7 +708,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="operatore@redteam.org o 0x_GhostRider"
+                    placeholder={t.operatorCallsignPlaceholder}
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-sm text-white placeholder-slate-600 font-mono transition-colors"
@@ -714,7 +718,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
               <div>
                 <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  Password
+                  {t.password}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -736,7 +740,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 disabled={isProcessing}
                 className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
               >
-                <span>ACCEDI ALLA PIATTAFORMA</span>
+                <span>{t.loginButton}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -752,7 +756,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 }}
                 className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline"
               >
-                🔑 Non ricordi la password? Accedi con Codice 2FA via Email
+                🔑 {t.forgotPassword}
               </button>
             </div>
           </div>
@@ -766,15 +770,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             {/* Step Progress Tracker */}
             <div className="flex items-center justify-between px-2 text-[11px] font-mono">
               <span className={`flex items-center gap-1 ${signupStep === 'email' ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>
-                1. Email
+                {t.stepEmail}
               </span>
               <span className="text-slate-600">→</span>
               <span className={`flex items-center gap-1 ${signupStep === '2fa' ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>
-                2. Codice 2FA
+                {t.step2FA}
               </span>
               <span className="text-slate-600">→</span>
               <span className={`flex items-center gap-1 ${signupStep === 'password' ? 'text-emerald-400 font-bold' : 'text-slate-500'}`}>
-                3. Password
+                {t.stepPassword}
               </span>
             </div>
 
@@ -783,7 +787,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <form onSubmit={handleRequest2FA} className="space-y-4">
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Indirizzo Email Operatore
+                    {t.enterEmailLabel}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -792,7 +796,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     <input
                       type="email"
                       required
-                      placeholder="operatore@redteam.org"
+                      placeholder="operator@redteam.org"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm text-white placeholder-slate-600 font-mono transition-colors"
@@ -805,7 +809,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   disabled={isProcessing}
                   className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
                 >
-                  <span>INVIA CODICE 2FA DI SICUREZZA</span>
+                  <span>{t.send2FACodeBtn}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -822,7 +826,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       <span>[CYBER RELAY 2FA TRANSMISSION]</span>
                     </div>
                     <p className="text-xs font-mono text-slate-300">
-                      Codice crittografico inviato a <strong className="text-cyan-200">{email}</strong>:
+                      Dispatched security token to <strong className="text-cyan-200">{email}</strong>:
                     </p>
                     <div className="inline-block py-1 px-3 rounded-lg bg-black/60 border border-cyan-400/50 font-mono text-lg font-black text-cyan-300 tracking-widest">
                       {simulatedRelayCode}
@@ -833,10 +837,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-mono text-slate-300">
-                      Inserisci Codice 2FA a 6 cifre
+                      {t.enter2FACodeLabel}
                     </label>
                     <span className="text-[10px] font-mono text-emerald-400">
-                      Inviato a {email}
+                      Sent to {email}
                     </span>
                   </div>
                   <div className="relative">
@@ -861,7 +865,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     onClick={() => setSignupStep('email')}
                     className="hover:text-white underline cursor-pointer"
                   >
-                    ← Modifica email
+                    ← Edit email
                   </button>
                   <button
                     type="button"
@@ -869,7 +873,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     onClick={(e) => handleRequest2FA(e as any)}
                     className="text-cyan-400 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {resendCooldown > 0 ? `Rinvio tra ${resendCooldown}s` : 'Reinvia codice'}
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
                   </button>
                 </div>
 
@@ -878,7 +882,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   disabled={isProcessing}
                   className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
                 >
-                  <span>VERIFICA CODICE 2FA</span>
+                  <span>{t.verify2FACodeBtn}</span>
                   <Check className="w-4 h-4" />
                 </button>
               </form>
@@ -889,7 +893,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <form onSubmit={handleCompleteRegistration} className="space-y-3.5 animate-fade-in">
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Callsign Operatore (Nome Pubblico)
+                    {t.callsignLabel}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -908,7 +912,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Crea Password Sicura (min 6 caratteri)
+                    {t.createPasswordLabel}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -927,7 +931,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Conferma Password
+                    {t.confirmPasswordLabel}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -944,7 +948,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </div>
                 </div>
 
-                {/* Mandatory Form Consents (GDPR Compliance & Minor Protection) */}
+                {/* Mandatory Form Consents */}
                 <div className="space-y-2 pt-2 border-t border-white/5 text-xs text-slate-300">
                   <label className="flex items-start gap-2.5 cursor-pointer">
                     <input
@@ -954,21 +958,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       className="mt-0.5 rounded border-slate-700 bg-[#090D17] text-emerald-500 focus:ring-emerald-500"
                     />
                     <span>
-                      Dichiaro di aver letto e accettare i{' '}
+                      {t.termsConsentPrefix}{' '}
                       <button
                         type="button"
                         onClick={() => onOpenLegal && onOpenLegal('terms')}
                         className="text-emerald-400 hover:underline inline font-mono"
                       >
-                        Termini di Servizio
+                        {t.termsOfService}
                       </button>{' '}
-                      e l'
+                      {t.termsConsentAnd}{' '}
                       <button
                         type="button"
                         onClick={() => onOpenLegal && onOpenLegal('privacy')}
                         className="text-emerald-400 hover:underline inline font-mono"
                       >
-                        Informativa sulla Privacy
+                        {t.privacyPolicy}
                       </button>
                       .
                     </span>
@@ -981,9 +985,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       onChange={(e) => setAgeAccepted(e.target.checked)}
                       className="mt-0.5 rounded border-slate-700 bg-[#090D17] text-emerald-500 focus:ring-emerald-500"
                     />
-                    <span>
-                      Confermo di avere almeno 16 anni compiuti (o consenso genitoriale) per l'elaborazione dei dati didattici.
-                    </span>
+                    <span>{t.ageConsentLabel}</span>
                   </label>
                 </div>
 
@@ -993,7 +995,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="w-full mt-2 py-4 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>CREA ACCOUNT & ENTRA NELLA PIATTAFORMA</span>
+                  <span>{t.completeSignupBtn}</span>
                 </button>
               </form>
             )}
@@ -1008,7 +1010,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               onClick={onGuestAccess}
               className="text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
             >
-              Esplora come Ospite Anonimo (Accesso Sandbox Limitato) →
+              {t.exploreAsGuest}
             </button>
           </div>
         )}
@@ -1020,7 +1022,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             onClick={() => onOpenLegal && onOpenLegal('privacy')}
             className="hover:text-slate-300 transition-colors"
           >
-            Privacy Policy (GDPR)
+            {t.privacyPolicy}
           </button>
           <span>·</span>
           <button
@@ -1028,7 +1030,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             onClick={() => onOpenLegal && onOpenLegal('terms')}
             className="hover:text-slate-300 transition-colors"
           >
-            Termini di Servizio
+            {t.termsOfService}
           </button>
           <span>·</span>
           <button
@@ -1036,7 +1038,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             onClick={() => onOpenLegal && onOpenLegal('refund')}
             className="hover:text-slate-300 transition-colors"
           >
-            Diritto di Recesso
+            {t.refund}
           </button>
           <span>·</span>
           <button
@@ -1044,7 +1046,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             onClick={() => onOpenLegal && onOpenLegal('cookies')}
             className="hover:text-slate-300 transition-colors"
           >
-            Cookie Policy
+            {t.cookies}
           </button>
         </div>
       </div>
@@ -1061,8 +1063,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <GoogleIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-tight">Accedi con Google</h3>
-                  <p className="text-[10px] text-slate-400 font-mono">0xDAY Cyber Academy OAuth</p>
+                  <h3 className="font-bold text-sm text-white leading-tight">{t.googleOAuthTitle}</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">{t.googleOAuthSubtitle}</p>
                 </div>
               </div>
               <button 
@@ -1074,68 +1076,38 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             <p className="text-xs text-slate-300">
-              Scegli un account o accedi con 1 click per sincronizzare il tuo profilo operatore e la progressione esami.
+              {t.googleOAuthDesc}
             </p>
 
             {/* 1-CLICK INSTANT GOOGLE LOGIN */}
             <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-blue-400" /> Accesso Rapido Istantaneo
+                  <Sparkles className="w-3 h-3 text-blue-400" /> {t.googleInstantAccess}
                 </span>
                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">1-CLICK</span>
               </div>
               <button
                 type="button"
-                onClick={() => handleGoogleInstantLogin('Google_Operatore', 'operatore.zeroday@gmail.com')}
+                onClick={() => handleGoogleInstantLogin('Google_Operator', 'operator.zeroday@gmail.com')}
                 disabled={isProcessing}
                 className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
               >
                 <GoogleIcon className="w-4 h-4" />
-                <span>Accedi come Operatore Google</span>
+                <span>{t.googleInstantBtn}</span>
               </button>
             </div>
-
-            {/* List existing Google accounts if any */}
-            {savedAccounts.filter(a => a.provider === 'google').length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-mono text-slate-400 font-bold block uppercase tracking-wider">
-                  Account Google Salvati:
-                </span>
-                {savedAccounts.filter(a => a.provider === 'google').map(acc => (
-                  <div
-                    key={acc.id}
-                    onClick={() => {
-                      setIsGoogleModalOpen(false);
-                      handleSelectSavedAccount(acc);
-                    }}
-                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 hover:border-blue-500/40 cursor-pointer flex items-center justify-between text-xs transition-all group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-mono font-bold text-xs">
-                        G
-                      </div>
-                      <div>
-                        <strong className="text-white font-mono block group-hover:text-blue-300 transition-colors">{acc.username}</strong>
-                        <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-mono text-blue-400 font-bold">Entra →</span>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Custom Google account input form */}
             <div className="border-t border-white/5 pt-3">
               <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
-                Oppure inserisci la tua Gmail:
+                {t.orEnterGmail}
               </span>
               <form onSubmit={handleGoogleSubmit} className="space-y-2.5">
                 <input
                   type="email"
                   required
-                  placeholder="tua.email@gmail.com"
+                  placeholder="your.email@gmail.com"
                   value={googleInputEmail}
                   onChange={(e) => setGoogleInputEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
@@ -1146,7 +1118,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <GoogleIcon className="w-3.5 h-3.5" />
-                  <span>Conferma e Accedi</span>
+                  <span>{t.confirmAndSignIn}</span>
                 </button>
               </form>
             </div>
@@ -1166,8 +1138,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <GitHubIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-tight">Autorizza con GitHub</h3>
-                  <p className="text-[10px] text-slate-400 font-mono">ZeroDay Developer OAuth</p>
+                  <h3 className="font-bold text-sm text-white leading-tight">{t.githubOAuthTitle}</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">{t.githubOAuthSubtitle}</p>
                 </div>
               </div>
               <button 
@@ -1179,14 +1151,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             <p className="text-xs text-slate-300">
-              Collega il tuo account GitHub per sincronizzare il tuo status hacker e i certificati di sicurezza.
+              {t.githubOAuthDesc}
             </p>
 
             {/* 1-CLICK INSTANT GITHUB LOGIN */}
             <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> Accesso Rapido Sviluppatore
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> {t.githubInstantAccess}
                 </span>
                 <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1-CLICK</span>
               </div>
@@ -1197,50 +1169,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer font-mono"
               >
                 <GitHubIcon className="w-4 h-4 text-slate-950" />
-                <span>Autorizza come GitHub Hacker</span>
+                <span>{t.githubInstantBtn}</span>
               </button>
             </div>
-
-            {/* List existing GitHub accounts if any */}
-            {savedAccounts.filter(a => a.provider === 'github').length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-mono text-slate-400 font-bold block uppercase tracking-wider">
-                  Account GitHub Salvati:
-                </span>
-                {savedAccounts.filter(a => a.provider === 'github').map(acc => (
-                  <div
-                    key={acc.id}
-                    onClick={() => {
-                      setIsGitHubModalOpen(false);
-                      handleSelectSavedAccount(acc);
-                    }}
-                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 hover:border-emerald-500/40 cursor-pointer flex items-center justify-between text-xs transition-all group"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-slate-800 text-white border border-white/20 flex items-center justify-center font-mono font-bold text-xs">
-                        GH
-                      </div>
-                      <div>
-                        <strong className="text-white font-mono block group-hover:text-emerald-400 transition-colors">{acc.username}</strong>
-                        <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Entra →</span>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Custom GitHub handle form */}
             <div className="border-t border-white/5 pt-3">
               <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
-                Oppure inserisci il tuo username GitHub:
+                {t.orEnterGithubHandle}
               </span>
               <form onSubmit={handleGitHubSubmit} className="space-y-2.5">
                 <input
                   type="text"
                   required
-                  placeholder="es. octocat o tuo-handle"
+                  placeholder="e.g. octocat or your-handle"
                   value={githubInputHandle}
                   onChange={(e) => setGithubInputHandle(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-white text-xs text-white font-mono"
@@ -1251,7 +1193,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <GitHubIcon className="w-3.5 h-3.5" />
-                  <span>Autorizza Username GitHub</span>
+                  <span>{t.authorizeGithubBtn}</span>
                 </button>
               </form>
             </div>
@@ -1268,7 +1210,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
               <div className="flex items-center gap-2">
                 <Mail className="w-5 h-5 text-cyan-400" />
-                <h3 className="font-bold text-sm text-white">Accesso Rapido via 2FA Email</h3>
+                <h3 className="font-bold text-sm text-white">{t.emailOtpTitle}</h3>
               </div>
               <button 
                 onClick={() => {
@@ -1283,7 +1225,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             <p className="text-xs text-slate-400">
-              Accedi istantaneamente al tuo profilo inserendo il codice di sicurezza a 6 cifre inviato alla tua email.
+              {t.emailOtpDesc}
             </p>
 
             {/* Simulated Terminal Toast for Relay */}
@@ -1298,12 +1240,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <form onSubmit={handleOtpLoginRequest} className="space-y-3">
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    La tua Email Operatore
+                    {t.yourOperatorEmail}
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="operatore@redteam.org"
+                    placeholder="operator@redteam.org"
                     value={otpLoginEmail}
                     onChange={(e) => setOtpLoginEmail(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-cyan-500 text-xs text-white font-mono"
@@ -1316,14 +1258,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="w-full py-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Mail className="w-4 h-4" />
-                  <span>INVIA CODICE OTP 2FA</span>
+                  <span>{t.sendOtpBtn}</span>
                 </button>
               </form>
             ) : (
               <form onSubmit={handleOtpLoginVerify} className="space-y-3">
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    Inserisci il codice a 6 cifre ricevuto
+                    {t.enterReceivedCode}
                   </label>
                   <input
                     type="text"
@@ -1342,7 +1284,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="w-full py-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
-                  <span>VERIFICA & ENTRA</span>
+                  <span>{t.verifyAndEnterBtn}</span>
                 </button>
               </form>
             )}

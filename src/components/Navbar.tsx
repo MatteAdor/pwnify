@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserState } from '../types';
 import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
+import { useLanguage } from '../utils/language';
 import { 
   Flame, Ticket, Shield, Sparkles, Terminal, 
   Volume2, VolumeX, RotateCcw, Palette,
@@ -29,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenArsenal,
   onOpenAuth
 }) => {
+  const { t } = useLanguage();
   const rank = getRankFromElo(userState.elo);
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
 
@@ -71,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div 
             onClick={() => sound.playTap()}
             className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface/80 border border-white/10 hover:border-amber-500/40 transition-colors cursor-pointer"
-            title="Streak Giornaliera"
+            title={t.dailyStreak}
           >
             <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
             <span className="font-mono font-bold text-xs text-amber-300">
@@ -99,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Arena Tickets */}
           <div 
             className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface/80 border border-white/10 hover:border-indigo-500/40 transition-colors"
-            title="Ticket Arena 1v1 giornalieri"
+            title={t.arenaTickets}
           >
             <Ticket className="w-3.5 h-3.5 text-indigo-400" />
             <span className="font-mono font-bold text-xs text-indigo-300">
@@ -120,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onOpenDailyBreach?.();
             }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-red-950/70 via-amber-950/60 to-red-950/70 border border-red-500/40 hover:border-amber-400 text-amber-300 font-mono text-[11px] font-bold transition-all shadow-sm active:scale-95 animate-pulse"
-            title="Daily 0xBreach: Risolvi l'incidente Zero-Day globale di oggi!"
+            title="Daily 0xBreach: Solve today's live incident"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
             <span className="hidden sm:inline text-red-400">DEFCON 1 ·</span>
@@ -134,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onOpenArsenal?.();
             }}
             className="flex items-center gap-1 px-2 py-1 rounded-md bg-surface/80 border border-white/10 hover:border-indigo-400/50 text-slate-300 hover:text-indigo-300 font-mono text-[11px] transition-colors"
-            title="Cyber Arsenal: Temi Terminale HUD e Titoli Callsign"
+            title="Cyber Arsenal: HUD Themes & Custom Titles"
           >
             <Palette className="w-3.5 h-3.5 text-indigo-400" />
             <span className="hidden md:inline">ARSENAL</span>
@@ -144,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={handleToggleSound}
             className="p-1.5 rounded-md bg-surface/80 border border-white/10 text-slate-400 hover:text-white hover:border-white/20 transition-colors"
-            title={isMuted ? 'Riattiva Audio Synthesizer' : 'Disattiva Audio (Mute)'}
+            title={t.soundToggle}
           >
             {isMuted ? (
               <VolumeX className="w-3.5 h-3.5 text-red-400" />
@@ -158,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-emerald-500/20 to-indigo-500/20 border border-emerald-500/50 shadow-neon-emerald">
               <Sparkles className="w-3 h-3 text-emerald-400" />
               <span className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 uppercase tracking-wide">
-                PRO ACTIVE
+                {t.proActiveBadge}
               </span>
             </div>
           ) : (
@@ -167,10 +169,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 sound.playTap();
                 onOpenPaywall();
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs transition-all shadow-neon-emerald transform active:scale-95"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs transition-all shadow-neon-emerald transform active:scale-95 cursor-pointer"
             >
               <Sparkles className="w-3 h-3" />
-              <span className="font-mono text-[11px] sm:text-xs">PROVA PRO</span>
+              <span className="font-mono text-[11px] sm:text-xs">{t.tryPro}</span>
             </button>
           )}
 
@@ -180,12 +182,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               sound.playTap();
               onOpenAuth?.();
             }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] border transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] border transition-all cursor-pointer ${
               userState.isLoggedIn
                 ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300 hover:border-emerald-400'
                 : 'bg-surface/90 border-white/10 text-slate-300 hover:text-white hover:border-emerald-500/40'
             }`}
-            title={userState.isLoggedIn ? `Profilo Operatore: ${userState.username}` : 'Accedi o Registrati'}
+            title={userState.isLoggedIn ? `Operator: ${userState.username}` : t.logInNav}
           >
             {userState.isLoggedIn ? (
               <>
@@ -195,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <>
                 <LogIn className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="font-bold">ACCEDI</span>
+                <span className="font-bold">{t.logInNav}</span>
               </>
             )}
           </button>

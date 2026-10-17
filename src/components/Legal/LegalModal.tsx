@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, FileText, RefreshCw, Cookie, Building, Mail, CheckCircle2 } from 'lucide-react';
+import { X, Shield, FileText, RefreshCw, Cookie, Building, Mail } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
+import { useLanguage } from '../../utils/language';
 
 export type LegalTabType = 'privacy' | 'terms' | 'refund' | 'cookies';
 
@@ -16,6 +17,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   initialTab = 'privacy'
 }) => {
   const [activeTab, setActiveTab] = useState<LegalTabType>(initialTab);
+  const { lang } = useLanguage();
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -34,6 +36,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isEn = lang === 'en';
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"
@@ -51,10 +55,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             </div>
             <div>
               <h2 id="legal-modal-title" className="text-base sm:text-lg font-bold text-white">
-                Informativa Legale & Conformità Normativa
+                {isEn ? 'Legal Notice & Privacy Compliance' : 'Informativa Legale & Conformità Normativa'}
               </h2>
               <span className="text-[11px] font-mono text-slate-400">
-                ZeroDay Academy · GDPR & Direttiva UE 2011/83
+                {isEn ? 'ZeroDay Academy · Legal, Privacy & Consumer Protection' : 'ZeroDay Academy · Note Legali, Privacy & Tutela Consumatori'}
               </span>
             </div>
           </div>
@@ -64,8 +68,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               sound.playTap();
               onClose();
             }}
-            className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            aria-label="Chiudi finestra note legali"
+            className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+            aria-label={isEn ? 'Close legal modal' : 'Chiudi finestra note legali'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -75,43 +79,43 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         <div className="flex items-center gap-2 pt-4 pb-3 overflow-x-auto text-xs font-mono border-b border-white/5">
           <button
             onClick={() => { sound.playTap(); setActiveTab('privacy'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               activeTab === 'privacy' 
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>Privacy Policy (GDPR)</span>
+            <span>Privacy Policy</span>
           </button>
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('terms'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               activeTab === 'terms' 
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Termini di Servizio</span>
+            <span>{isEn ? 'Terms of Service' : 'Termini di Servizio'}</span>
           </button>
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('refund'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               activeTab === 'refund' 
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Diritto di Recesso & Rimborsi</span>
+            <span>{isEn ? 'Refund' : 'Rimborso'}</span>
           </button>
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('cookies'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               activeTab === 'cookies' 
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
                 : 'text-slate-400 hover:text-white hover:bg-white/5'
@@ -128,95 +132,148 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {/* TAB 1: PRIVACY POLICY */}
           {activeTab === 'privacy' && (
             <div className="space-y-4 animate-fade-in">
-              <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-emerald-200">
-                  Questa applicazione rispetta rigorosamente il Regolamento Generale sulla Protezione dei Dati (GDPR - Regolamento UE 2016/679) e applica il principio di <strong>minimizzazione dei dati</strong> (Art. 5 GDPR).
-                </p>
-              </div>
-
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">1. Titolare del Trattamento</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '1. Data Controller' : '1. Titolare del Trattamento'}
+                </h3>
                 <p>
-                  Il Titolare del trattamento dei dati è <strong>ZeroDay Cyber Academy S.r.l.</strong>, con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a <a href="mailto:dpo@zeroday.academy" className="text-emerald-400 underline font-mono">dpo@zeroday.academy</a>.
+                  {isEn 
+                    ? 'The Data Controller is ZeroDay Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
+                    : 'Il Titolare del trattamento dei dati è ZeroDay Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
+                  <a href="mailto:dpo@zeroday.academy" className="text-emerald-400 underline font-mono">dpo@zeroday.academy</a>.
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">2. Dati Raccolti e Finalità</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '2. Collected Data and Purpose' : '2. Dati Raccolti e Finalità'}
+                </h3>
                 <p>
-                  Raccogliamo esclusivamente i dati strettamente necessari per erogare i servizi di formazione:
+                  {isEn
+                    ? 'We collect only the strictly necessary information required to deliver cybersecurity training:'
+                    : 'Raccogliamo esclusivamente i dati strettamente necessari per erogare i servizi di formazione:'}
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li><strong>Dati di autenticazione:</strong> Indirizzo email e Callsign scelto dall'utente per la gestione dell'account e l'autenticazione a due fattori (2FA).</li>
-                  <li><strong>Dati di progressione operativa:</strong> Punti XP, punteggio ELO, completamento laboratori PBQ, certificazioni simulate e cronologia round Arena.</li>
-                  <li><strong>Dati di fatturazione:</strong> Gestiti in modo tokenizzato e sicuro tramite gateway certificato PCI-DSS (Stripe). Nessun estremo di carta di credito viene mai memorizzato sui nostri server.</li>
+                  <li>
+                    <strong>{isEn ? 'Authentication Data:' : 'Dati di autenticazione:'}</strong>{' '}
+                    {isEn 
+                      ? 'Email address and user-selected Callsign for account management and two-factor authentication (2FA).'
+                      : 'Indirizzo email e Callsign scelto dall\'utente per la gestione dell\'account e l\'autenticazione a due fattori (2FA).'}
+                  </li>
+                  <li>
+                    <strong>{isEn ? 'Learning Progress Telemetry:' : 'Dati di progressione operativa:'}</strong>{' '}
+                    {isEn
+                      ? 'XP points, ELO score, PBQ lab completions, exam simulations, and Arena round history.'
+                      : 'Punti XP, punteggio ELO, completamento laboratori PBQ, certificazioni simulate e cronologia round Arena.'}
+                  </li>
+                  <li>
+                    <strong>{isEn ? 'Billing Data:' : 'Dati di fatturazione:'}</strong>{' '}
+                    {isEn
+                      ? 'Securely tokenized through PCI-DSS certified payment processors (Stripe). No credit card numbers are stored on our servers.'
+                      : 'Gestiti in modo tokenizzato e sicuro tramite gateway certificato PCI-DSS (Stripe). Nessun estremo di carta di credito viene mai memorizzato sui nostri server.'}
+                  </li>
                 </ul>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">3. Diritti dell'Interessato (Artt. 15-22 GDPR)</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '3. User Rights & Data Deletion' : '3. Diritti dell\'Utente e Cancellazione dei Dati'}
+                </h3>
                 <p>
-                  Gli utenti godono del diritto di accedere ai propri dati personali, chiederne la rettifica, la portabilità, la limitazione del trattamento e la <strong>cancellazione definitiva (Diritto all'Oblio - Art. 17 GDPR)</strong>. La cancellazione dell'account e di tutti i dati memorizzati può essere eseguita direttamente dal menu profilo utente con 1 clic.
+                  {isEn
+                    ? 'Users hold the right to access their personal data, request rectification, data portability, and permanent deletion of their account and all stored history directly from their user profile with a single click.'
+                    : 'Gli utenti godono del diritto di accedere ai propri dati personali, chiederne la rettifica, la portabilità e la cancellazione definitiva del proprio account e di tutti i progressi direttamente dal menu profilo utente con 1 clic.'}
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">4. Tutela dei Minori (Art. 8 GDPR)</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '4. Age Verification & Minors' : '4. Consenso e Tutela dei Minori'}
+                </h3>
                 <p>
-                  La piattaforma è destinata a studenti e professionisti con età pari o superiore a 16 anni. L'iscrizione per utenti di età compresa tra 14 e 16 anni richiede il consenso verificato di chi esercita la responsabilità genitoriale.
+                  {isEn
+                    ? 'The platform is intended for students and professionals aged 16 and older. Registration for users under the age of 16 requires parental or legal guardian consent.'
+                    : 'La piattaforma è destinata a studenti e professionisti con età pari o superiore a 16 anni. L\'iscrizione per utenti con età inferiore richiede il consenso verificato di chi esercita la responsabilità genitoriale.'}
                 </p>
               </section>
             </div>
           )}
 
-          {/* TAB 2: TERMINI DI SERVIZIO */}
+          {/* TAB 2: TERMS OF SERVICE */}
           {activeTab === 'terms' && (
             <div className="space-y-4 animate-fade-in">
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">1. Scopo Didattico & Simulativo</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '1. Educational & Simulation Scope' : '1. Scopo Didattico & Simulativo'}
+                </h3>
                 <p>
-                  ZeroDay è una piattaforma didattica per la preparazione agli esami di certificazione (CompTIA Security+, Cisco CCNA, EC-Council CEH) e la simulazione etica di incidenti informatici. Tutti i laboratori PBQ e le sfide si svolgono in ambienti sandbox virtualizzati o tramite PoC difensivi conformi ai programmi ufficiali di certificazione.
+                  {isEn
+                    ? 'ZeroDay is an educational platform dedicated to cybersecurity certification training (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+, and CEH). All PBQ labs, terminal challenges, and simulations operate inside virtualized sandboxes and defensive PoCs.'
+                    : 'ZeroDay è una piattaforma didattica per la preparazione agli esami di certificazione (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+ e CEH) e la simulazione etica. Tutti i laboratori PBQ e le sfide si svolgono in ambienti sandbox virtualizzati o tramite PoC difensivi.'}
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">2. Politica di Uso Accettabile (AUP)</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '2. Acceptable Use Policy' : '2. Politica di Uso Accettabile'}
+                </h3>
                 <p>
-                  È severamente vietato utilizzare le nozioni e gli script didattici appresi sulla piattaforma per compiere intrusioni non autorizzate, scansioni ostili o attacchi denial-of-service contro infrastrutture terze sprovviste di espresso consenso scritto. La violazione comporterà la cessazione immediata dell'account.
+                  {isEn
+                    ? 'It is strictly forbidden to use educational scripts or commands learned on ZeroDay to execute unauthorized attacks, hostile port scans, or denial-of-service operations against third-party systems without written authorization.'
+                    : 'È severamente vietato utilizzare le nozioni e gli script didattici appresi sulla piattaforma per compiere intrusioni non autorizzate, scansioni ostili o attacchi contro infrastrutture terze sprovviste di espresso consenso scritto.'}
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">3. Account & Licenze</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '3. Account & Cryptographic Licenses' : '3. Account & Licenze Crittografiche'}
+                </h3>
                 <p>
-                  Ogni account e licenza crittografica ZeroDay PRO (formato 0xPRO-...) è strettamente personale e non trasferibile a terzi senza previa autorizzazione scritta.
+                  {isEn
+                    ? 'Each ZeroDay PRO license key (e.g. 0xPRO-...) is strictly personal and non-transferable without prior authorization.'
+                    : 'Ogni account e licenza crittografica ZeroDay PRO (formato 0xPRO-...) è strettamente personale e non trasferibile a terzi senza previa autorizzazione scritta.'}
                 </p>
               </section>
             </div>
           )}
 
-          {/* TAB 3: DIRITTO DI RECESSO & RIMBORSI */}
+          {/* TAB 3: REFUND POLICY */}
           {activeTab === 'refund' && (
             <div className="space-y-4 animate-fade-in">
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">1. Diritto di Recesso di 14 Giorni</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '1. 14-Day Cooling-Off Period' : '1. Diritto di Recesso di 14 Giorni'}
+                </h3>
                 <p>
-                  In conformità alla Direttiva Europea sui Diritti dei Consumatori (Direttiva 2011/83/UE e Codice del Consumo D.Lgs. 206/2005), hai il diritto di recedere dall'acquisto di un abbonamento PRO o starter pass entro <strong>14 giorni di calendario</strong> dalla data di transazione senza dover fornire alcuna motivazione.
+                  {isEn
+                    ? 'In accordance with consumer protection standards, you have the right to request a full refund for any PRO pass or subscription within 14 calendar days from the purchase date without providing any justification.'
+                    : 'In conformità alle normative sui diritti dei consumatori, hai il diritto di richiedere il rimborso completo dell\'acquisto di un abbonamento PRO o pass entro 14 giorni di calendario dalla data di transazione senza dover fornire alcuna motivazione.'}
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">2. Modalità di Esercizio e Rimborso</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '2. How to Request a Refund' : '2. Modalità di Esercizio del Rimborso'}
+                </h3>
                 <p>
-                  Per esercitare il diritto di recesso, è sufficiente inviare un'email a <a href="mailto:support@zeroday.academy" className="text-emerald-400 underline font-mono">support@zeroday.academy</a> indicando il Callsign, l'indirizzo email dell'account e il codice di licenza. Il rimborso integrale dell'importo versato verrà accreditato sullo stesso metodo di pagamento utilizzato entro 5 giorni lavorativi.
+                  {isEn
+                    ? 'To request a refund, simply send an email to '
+                    : 'Per esercitare il diritto di rimborso, è sufficiente inviare un\'email a '}
+                  <a href="mailto:support@zeroday.academy" className="text-emerald-400 underline font-mono">support@zeroday.academy</a>{' '}
+                  {isEn
+                    ? 'specifying your Callsign, account email, and license key. The full refund will be processed back to your original payment method within 3 to 5 business days.'
+                    : 'indicando il Callsign, l\'indirizzo email dell\'account e il codice di licenza. Il rimborso integrale dell\'importo versato verrà accreditato sullo stesso metodo di pagamento utilizzato entro 3-5 giorni lavorativi.'}
                 </p>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">3. Trasparenza sui Prezzi (Nessun Costo Nascosto)</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '3. Pricing Transparency (No Hidden Fees)' : '3. Trasparenza sui Prezzi (Nessun Costo Nascosto)'}
+                </h3>
                 <p>
-                  Tutti i prezzi visualizzati su ZeroDay (es. €5.75/mese con fatturazione annuale a €69.00/anno, o €14.99/mese) sono <strong>comprensivi di IVA e imposte vigenti</strong>. Non vi sono commissioni nascoste di attivazione, disattivazione o gestione.
+                  {isEn
+                    ? 'All prices displayed on ZeroDay are all-inclusive with applicable taxes. There are no hidden activation, onboarding, or administrative fees.'
+                    : 'Tutti i prezzi visualizzati su ZeroDay sono comprensivi delle imposte applicabili. Non vi sono commissioni nascoste di attivazione, disattivazione o gestione.'}
                 </p>
               </section>
             </div>
@@ -226,21 +283,44 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           {activeTab === 'cookies' && (
             <div className="space-y-4 animate-fade-in">
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">1. Tipologie di Cookie Utilizzati</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '1. Types of Cookies Used' : '1. Tipologie di Cookie Utilizzati'}
+                </h3>
                 <p>
-                  ZeroDay adotta una politica rigorosa priva di tracciatori invasivi. Utilizziamo esclusivamente:
+                  {isEn
+                    ? 'ZeroDay enforces a strict privacy policy with zero intrusive ad trackers. We utilize only:'
+                    : 'ZeroDay adotta una politica rigorosa priva di tracciatori invasivi. Utilizziamo esclusivamente:'}
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-slate-400">
-                  <li><strong>Cookie Tecnici & di Sessione (Strettamente Necessari):</strong> Indispensabili per consentire l'autenticazione, la conservazione della sessione attiva e il salvataggio dei progressi didattici in locale.</li>
-                  <li><strong>Cookie di Preferenza:</strong> Memorizzano le tue scelte di personalizzazione (tema grafico HUD, volume del sintetizzatore audio Web Audio API, lingua preferita).</li>
-                  <li><strong>Nessun Cookie di Profilazione Pubblicitaria di Terze Parti:</strong> Non cediamo i tuoi dati a broker pubblicitari né impieghiamo tracker invasivi (Google Tag Manager, Facebook Pixel o simili).</li>
+                  <li>
+                    <strong>{isEn ? 'Essential Technical Cookies:' : 'Cookie Tecnici & di Sessione (Strettamente Necessari):'}</strong>{' '}
+                    {isEn
+                      ? 'Necessary for operator authentication, session maintenance, and local learning progress persistence.'
+                      : 'Indispensabili per consentire l\'autenticazione, la conservazione della sessione attiva e il salvataggio dei progressi didattici in locale.'}
+                  </li>
+                  <li>
+                    <strong>{isEn ? 'Preference Cookies:' : 'Cookie di Preferenza:'}</strong>{' '}
+                    {isEn
+                      ? 'Store customization settings (terminal HUD theme, synthesizer audio volume, chosen language).'
+                      : 'Memorizzano le tue scelte di personalizzazione (tema grafico HUD, volume audio sintetizzatore, lingua preferita).'}
+                  </li>
+                  <li>
+                    <strong>{isEn ? 'Zero Third-Party Advertising Pixels:' : 'Nessun Cookie Pubblicitario di Terze Parti:'}</strong>{' '}
+                    {isEn
+                      ? 'We do not sell personal data to data brokers nor embed third-party ad retargeting pixels.'
+                      : 'Non cediamo i tuoi dati a broker pubblicitari né impieghiamo tracker invasivi.'}
+                  </li>
                 </ul>
               </section>
 
               <section className="space-y-1.5">
-                <h3 className="text-sm font-bold text-white font-mono">2. Gestione del Consenso</h3>
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '2. Consent Management' : '2. Gestione del Consenso'}
+                </h3>
                 <p>
-                  Puoi modificare o revocare il tuo consenso in qualsiasi momento tramite il banner cookie o cliccando su "Impostazioni Cookie" nel piè di pagina dell'applicazione.
+                  {isEn
+                    ? 'You can adjust or revoke your cookie choices at any time via the cookie banner or by clicking "Cookie Preferences" in the application settings.'
+                    : 'Puoi modificare o revocare il tuo consenso in qualsiasi momento tramite il banner cookie o cliccando su "Cookie" nel piè di pagina dell\'applicazione.'}
                 </p>
               </section>
             </div>
