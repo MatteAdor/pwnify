@@ -154,30 +154,47 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                         <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1 font-semibold">
                           <Check className="w-3 h-3 text-emerald-500" /> Riscattato (+{bounty.freeXp} XP)
                         </span>
+                      ) : !bounty.isCompleted ? (
+                        <span 
+                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-medium text-slate-500 bg-slate-900/90 border border-slate-800 flex items-center gap-1 cursor-not-allowed select-none"
+                          title="Completa la missione per riscattare la taglia free"
+                        >
+                          <Lock className="w-2.5 h-2.5 text-slate-600" /> In Corso ({bounty.progress}/{bounty.target})
+                        </span>
                       ) : (
                         <button
-                          disabled={!bounty.isCompleted}
                           onClick={() => onClaimFreeBounty(bounty.id)}
-                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:pointer-events-none transition-all"
+                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-neon-emerald transition-all active:scale-95 animate-pulse cursor-pointer"
                         >
                           RISCATTA +{bounty.freeXp} XP
                         </button>
                       )}
                     </div>
 
-                    {/* The Trap: Encrypted PRO Bounty Crate */}
+                    {/* Encrypted PRO Bounty Crate: SBLOCCABILE SOLO DOPO AVER FATTO LA MISSIONE */}
                     <div className="flex items-center justify-between sm:justify-end gap-2">
-                      <div className="flex items-center gap-1 text-[10px] font-mono text-amber-300 font-bold">
-                        <Box className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
-                        <span>CRATE PRO:</span>
-                        <span className="text-emerald-400">+{bounty.proXp} XP + {bounty.proTickets} Tickets</span>
+                      <div className="flex items-center gap-1 text-[10px] font-mono font-bold">
+                        <Box className={`w-3.5 h-3.5 ${bounty.isCompleted ? 'text-amber-400 animate-bounce' : 'text-slate-600'}`} />
+                        <span className={bounty.isCompleted ? "text-amber-300" : "text-slate-500"}>CRATE PRO:</span>
+                        <span className={bounty.isCompleted ? "text-emerald-400" : "text-slate-600"}>+{bounty.proXp} XP + {bounty.proTickets} Tickets</span>
                       </div>
 
-                      {bounty.proClaimed ? (
+                      {!bounty.isCompleted ? (
+                        /* Caso 1: Missione NON completata -> CASSA TOTALMENTE BLOCCATA */
+                        <span 
+                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold text-slate-500 bg-slate-900/90 border border-slate-800/80 flex items-center gap-1.5 cursor-not-allowed select-none"
+                          title="Questa cassa PRO si sblocca solo dopo aver completato l'obiettivo della missione!"
+                        >
+                          <Lock className="w-3 h-3 text-amber-500/50" />
+                          <span>BLOCCATA (Fai la missione)</span>
+                        </span>
+                      ) : bounty.proClaimed ? (
+                        /* Caso 2: Missione completata E cassa già riscattata */
                         <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
                           <Check className="w-3 h-3" /> Cassa Decrittata
                         </span>
                       ) : (
+                        /* Caso 3: Missione completata! Cassa pronta per essere aperta o decrittata */
                         <button
                           onClick={() => {
                             if (!userState.isPro) {
@@ -187,13 +204,13 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                               onClaimProBounty(bounty.id);
                             }
                           }}
-                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold border transition-all flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-emerald-500/20 border-amber-500/50 text-amber-300 hover:border-amber-400 shadow-sm active:scale-95"
-                          title="Decritta la cassa PRO riservata"
+                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold border transition-all flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-emerald-500/20 border-amber-500/50 text-amber-300 hover:border-amber-400 shadow-neon-amber active:scale-95 animate-pulse cursor-pointer"
+                          title="Missione completata! Sblocca la cassa PRO"
                         >
                           {!userState.isPro ? (
                             <>
                               <Lock className="w-3 h-3 text-amber-400" />
-                              <span>DECRITTA (PRO)</span>
+                              <span>DECRITTA CON PRO</span>
                             </>
                           ) : (
                             <>

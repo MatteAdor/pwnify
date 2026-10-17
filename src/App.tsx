@@ -24,6 +24,7 @@ import {
   getCurrentSession, 
   setCurrentSession, 
   persistActiveAccountState, 
+  sanitizeUserState,
   UserAccount 
 } from './utils/userDatabase';
 import { sound } from './utils/soundEngine';
@@ -51,7 +52,7 @@ export const App: React.FC = () => {
       purgeLegacyStorage();
       const session = getCurrentSession();
       if (session && session.userState) {
-        return session.userState;
+        return sanitizeUserState(session.userState);
       }
     } catch (e) {
       console.error('Failed to parse active user session', e);
@@ -439,10 +440,10 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
     }));
   };
 
-  // Daily Bug Bounty Claim Handlers
+  // Daily Bug Bounty Claim Handlers (Strictly requires mission completion)
   const handleClaimFreeBounty = (bountyId: string) => {
     const bounty = userState.dailyBounties.find(b => b.id === bountyId);
-    if (!bounty || bounty.freeClaimed) return;
+    if (!bounty || !bounty.isCompleted || bounty.freeClaimed) return;
 
     sound.playExploitSuccess();
     setUserState(prev => {
@@ -458,14 +459,15 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   };
 
   const handleClaimProBounty = (bountyId: string) => {
+    const bounty = userState.dailyBounties.find(b => b.id === bountyId);
+    // Casse del pro sbloccate SOLO se ho fatto la missione!
+    if (!bounty || !bounty.isCompleted || bounty.proClaimed) return;
+
     if (!userState.isPro) {
       sound.playPayloadBlocked();
       triggerPaywall('bounty_crate_lock');
       return;
     }
-
-    const bounty = userState.dailyBounties.find(b => b.id === bountyId);
-    if (!bounty || bounty.proClaimed) return;
 
     sound.playVictoryFanfare();
     setUserState(prev => {

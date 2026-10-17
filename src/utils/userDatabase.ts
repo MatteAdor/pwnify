@@ -28,6 +28,32 @@ interface Pending2FA {
 }
 
 /**
+ * Ensures that any bounty where progress < target can NEVER have
+ * freeClaimed or proClaimed set to true.
+ * Casse del pro e taglie free sbloccate SOLO se la missione e' stata completata!
+ */
+export function sanitizeBounties(bounties?: UserState['dailyBounties']): UserState['dailyBounties'] {
+  const base = bounties && Array.isArray(bounties) && bounties.length > 0 ? bounties : INITIAL_DAILY_BOUNTIES;
+  return base.map(b => {
+    const isCompleted = (b.progress ?? 0) >= (b.target ?? 1);
+    return {
+      ...b,
+      progress: Math.max(0, b.progress ?? 0),
+      isCompleted,
+      freeClaimed: isCompleted ? Boolean(b.freeClaimed) : false,
+      proClaimed: isCompleted ? Boolean(b.proClaimed) : false
+    };
+  });
+}
+
+export function sanitizeUserState(state: UserState): UserState {
+  return {
+    ...state,
+    dailyBounties: sanitizeBounties(state.dailyBounties)
+  };
+}
+
+/**
  * Creates a clean, pristine UserState for a brand new operator account.
  * Guarantees zero leftover progress, zero mock values, fresh 0 XP,
  * 0 completed quests, 0 streak, and onboardingCompleted false.
@@ -38,7 +64,7 @@ export function createCleanAccountState(
   isLoggedIn: boolean = true
 ): UserState {
   const dynamic = calculateDynamicTelemetry([], [], false);
-  return {
+  return sanitizeUserState({
     username: sanitizeCallsign(username, 'Operatore'),
     userEmail: email ? email.trim().toLowerCase() : undefined,
     isLoggedIn,
@@ -67,7 +93,7 @@ export function createCleanAccountState(
     onboardingCompleted: false,
     hasSeenTrial: false,
     radarScores: dynamic.radarScores
-  };
+  });
 }
 
 /**
@@ -115,7 +141,12 @@ export function getRegisteredAccounts(): UserAccount[] {
   try {
     if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(ACCOUNTS_DB_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const accounts: UserAccount[] = JSON.parse(raw);
+    return accounts.map(a => ({
+      ...a,
+      userState: sanitizeUserState(a.userState)
+    }));
   } catch {
     return [];
   }
@@ -273,6 +304,7 @@ export const loginAccount = loginEmailAccount;
 /**
  * Authenticates or creates an account using OAuth (Google or GitHub).
  * If new account, creates fresh clean state ("nulla di nulla").
+ * If existing account, logs in and restores user progress seamlessly!
  */
 export function loginWithOAuth(
   provider: 'google' | 'github',
@@ -282,10 +314,14 @@ export function loginWithOAuth(
   const baseName = sanitizeCallsign(profile.name.replace(/\s+/g, '_'), provider === 'google' ? 'Google_Op' : 'GitHub_Op');
   const accounts = getRegisteredAccounts();
 
-  let existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
+  let existing = accounts.find(a => 
+    (cleanEmail && a.email && a.email.toLowerCase() === cleanEmail) ||
+    a.username.toLowerCase() === baseName.toLowerCase()
+  );
 
   if (existing) {
     existing.lastLoginAt = new Date().toISOString();
+    existing.userState = sanitizeUserState(existing.userState);
     saveAccounts(accounts);
     setCurrentSession(existing);
     return { success: true, account: existing };
@@ -319,13 +355,39 @@ export function loginWithOAuth(
 }
 
 /**
+ * Fast passwordless 2FA login via email code.
+ */
+export function loginWithEmailOtp(
+  email: string
+): { success: boolean; account?: UserAccount; error?: string } {
+  const cleanEmail = email.trim().toLowerCase();
+  const accounts = getRegisteredAccounts();
+  const existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
+
+  if (!existing) {
+    return { success: false, error: `Nessun operatore registrato con l'email ${cleanEmail}. Registrati prima!` };
+  }
+
+  existing.lastLoginAt = new Date().toISOString();
+  existing.userState = sanitizeUserState(existing.userState);
+  saveAccounts(accounts);
+  setCurrentSession(existing);
+  return { success: true, account: existing };
+}
+
+/**
  * Gets currently active session account.
  */
 export function getCurrentSession(): UserAccount | null {
   try {
     if (typeof window === 'undefined') return null;
     const raw = localStorage.getItem(SESSION_DB_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const session: UserAccount = JSON.parse(raw);
+    if (session && session.userState) {
+      session.userState = sanitizeUserState(session.userState);
+    }
+    return session;
   } catch {
     return null;
   }
@@ -338,7 +400,11 @@ export function setCurrentSession(account: UserAccount | null): void {
   try {
     if (typeof window === 'undefined') return;
     if (account) {
-      localStorage.setItem(SESSION_DB_KEY, JSON.stringify(account));
+      const cleanAccount: UserAccount = {
+        ...account,
+        userState: sanitizeUserState(account.userState)
+      };
+      localStorage.setItem(SESSION_DB_KEY, JSON.stringify(cleanAccount));
     } else {
       localStorage.removeItem(SESSION_DB_KEY);
     }
@@ -355,12 +421,13 @@ export function persistActiveAccountState(state: UserState): void {
     const session = getCurrentSession();
     if (!session) return;
 
+    const cleanState = sanitizeUserState(state);
     const accounts = getRegisteredAccounts();
     const idx = accounts.findIndex(a => a.id === session.id);
     if (idx !== -1) {
-      accounts[idx].userState = state;
+      accounts[idx].userState = cleanState;
       saveAccounts(accounts);
-      session.userState = state;
+      session.userState = cleanState;
       setCurrentSession(session);
     }
   } catch (e) {
