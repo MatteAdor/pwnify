@@ -8,8 +8,8 @@ import {
 import { shuffleArray } from '../../utils/shuffle';
 import { sound } from '../../utils/soundEngine';
 import { 
-  X, AlertTriangle, ShieldCheck, Flame, Share2, 
-  Copy, CheckCircle2, Lock, Sparkles, Terminal, Code, Clock 
+  X, AlertTriangle, ShieldCheck, Share2, 
+  CheckCircle2, Lock, Terminal, Code, Clock 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 

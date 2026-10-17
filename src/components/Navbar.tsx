@@ -4,7 +4,8 @@ import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { 
   Flame, Ticket, Shield, Sparkles, Terminal, 
-  Volume2, VolumeX, RotateCcw, Edit3, Palette, AlertTriangle 
+  Volume2, VolumeX, RotateCcw, Edit3, Palette,
+  LogIn, UserCheck
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -16,6 +17,7 @@ interface NavbarProps {
   onUpdateUsername?: (name: string) => void;
   onOpenDailyBreach?: () => void;
   onOpenArsenal?: () => void;
+  onOpenAuth?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,7 +28,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   isGodMode = true,
   onUpdateUsername,
   onOpenDailyBreach,
-  onOpenArsenal
+  onOpenArsenal,
+  onOpenAuth
 }) => {
   const rank = getRankFromElo(userState.elo);
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
@@ -190,6 +193,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-mono text-xs text-emerald-400 font-bold truncate max-w-[110px]">{userState.username}</span>
             <Edit3 className="w-2.5 h-2.5 text-slate-500 hover:text-emerald-300 shrink-0" />
           </div>
+
+          {/* Operator Auth / Account Profile Button */}
+          <button
+            onClick={() => {
+              sound.playTap();
+              onOpenAuth?.();
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] border transition-all ${
+              userState.isLoggedIn
+                ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300 hover:border-emerald-400'
+                : 'bg-surface/90 border-white/10 text-slate-300 hover:text-white hover:border-emerald-500/40'
+            }`}
+            title={userState.isLoggedIn ? `Operatore Autenticato: ${userState.username}` : 'Accedi o Registrati'}
+          >
+            {userState.isLoggedIn ? (
+              <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            ) : (
+              <LogIn className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            )}
+            <span className="font-bold">
+              {userState.isLoggedIn ? 'ACCOUNT' : 'ACCEDI'}
+            </span>
+          </button>
 
           {/* Developer Quick Toggle & Reset (Protected by God Mode) */}
           {isGodMode && (

@@ -77,7 +77,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'CompTIA',
       readiness: userState.readinessScore,
       totalPBQs: 45,
-      completedPBQs: userState.completedPbqIds.includes('pbq_secplus_firewall') ? 13 : 12,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('secplus') || id.includes('firewall')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
       description: 'Standard globale per la sicurezza informatica e Zero Trust. Focus su architetture difensive, PBQs firewall ACL e incident response.'
@@ -87,9 +87,9 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       name: 'Cisco CCNA',
       code: '200-301',
       issuer: 'Cisco Systems',
-      readiness: Math.min(100, userState.readinessScore + 5),
+      readiness: Math.round(userState.readinessScore * 0.7),
       totalPBQs: 52,
-      completedPBQs: 8,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ccna') || id.includes('router') || id.includes('vlan')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
       description: 'Routing OSPF, subnetting VLSM, switching VLAN, sicurezza 802.1X e automazione API con controller Cisco DNA Spaces.'
@@ -99,9 +99,9 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       name: 'Certified Ethical Hacker',
       code: 'CEH v13 AI',
       issuer: 'EC-Council',
-      readiness: Math.max(20, userState.readinessScore - 8),
+      readiness: Math.round(userState.readinessScore * 0.5),
       totalPBQs: 60,
-      completedPBQs: userState.completedPbqIds.includes('pbq_ceh_killchain') ? 7 : 6,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ceh') || id.includes('killchain')).length,
       pbqRef: 'pbq_ceh_killchain',
       color: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
       description: 'Penetration testing avanzato, enumerazione Nmap, Active Directory Kerberoasting, malware memory analysis e reverse engineering.'

@@ -182,7 +182,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           badge: '🎯 WEAKNESS DRILL & FORENSIC RADAR',
           badgeColor: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
           title: 'Colma le falle nei tuoi domini critici',
-          subtitle: 'Ottieni drill mirati generati con AI sulle tue risposte errate per portare il tuo Exam Readiness Score dal 38% al 92% garantito.'
+          subtitle: 'Isola e correggi le tue lacune con drill mirati sui root-cause exploit non superati, allineando la tua preparazione ai benchmark ufficiali d\'esame.'
         };
       case 'xp_boost_shield':
         return {

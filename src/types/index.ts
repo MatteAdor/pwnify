@@ -136,6 +136,9 @@ export interface UserState {
   activeTheme?: string;
   customTitle?: string;
   lastDailyBreachDate?: string;
+  hasSeenTrial?: boolean;
+  userEmail?: string;
+  isLoggedIn?: boolean;
 }
 
 export type PaywallContext = 

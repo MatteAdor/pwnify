@@ -143,16 +143,23 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            sound.playTap();
-            onOpenPaywall('xp_boost_shield');
-          }}
-          className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-mono font-extrabold text-xs text-slate-950 bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 shadow-neon-emerald shrink-0 flex items-center justify-center gap-1.5 transition-all active:scale-95"
-        >
-          <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-          <span>ATTIVA 2x XP CON PRO</span>
-        </button>
+        {userState.isPro ? (
+          <div className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-mono font-bold text-xs text-emerald-300 bg-emerald-500/15 border border-emerald-500/40 shrink-0 flex items-center justify-center gap-2 shadow-sm">
+            <Zap className="w-4 h-4 fill-emerald-400 text-emerald-400" />
+            <span>2X XP ATTIVO (PRO PERMANENTE)</span>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              sound.playTap();
+              onOpenPaywall('xp_boost_shield');
+            }}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-mono font-extrabold text-xs text-slate-950 bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 shadow-neon-emerald shrink-0 flex items-center justify-center gap-1.5 transition-all active:scale-95"
+          >
+            <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+            <span>ATTIVA 2x XP CON PRO</span>
+          </button>
+        )}
       </div>
 
       {/* Leaderboard Table */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserState, SkillDomain } from '../../types';
+import { calculateDynamicTelemetry } from '../../utils/readinessEngine';
 import { 
   Radar as RadarIcon, Lock, Sparkles, AlertTriangle, 
   Zap, BarChart2 
@@ -16,10 +17,19 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
   onOpenPaywall,
   onOpenHackerCard
 }) => {
-  const domains: { name: SkillDomain; key: keyof UserState['radarScores']; weak?: boolean }[] = [
+  const telemetry = calculateDynamicTelemetry(
+    userState.completedNodeIds, 
+    userState.completedPbqIds, 
+    userState.isPro
+  );
+
+  const radarScores = telemetry.radarScores;
+  const readinessScore = telemetry.readinessScore;
+
+  const domains: { name: SkillDomain; key: SkillDomain }[] = [
     { name: 'Web Sec', key: 'Web Sec' },
-    { name: 'Networking', key: 'Networking', weak: true },
-    { name: 'Linux & Bash', key: 'Linux & Bash', weak: true },
+    { name: 'Networking', key: 'Networking' },
+    { name: 'Linux & Bash', key: 'Linux & Bash' },
     { name: 'Cryptography', key: 'Cryptography' },
     { name: 'Code Analysis', key: 'Code Analysis' },
     { name: 'Defense & SOC', key: 'Defense & SOC' }
@@ -42,7 +52,7 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
 
   // User polygon coordinates
   const userPoints = domains.map((d, i) => {
-    const score = userState.radarScores[d.key];
+    const score = radarScores[d.key] || 0;
     const { x, y } = getCoordinates(score, i);
     return `${x},${y}`;
   }).join(' ');
@@ -107,15 +117,15 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
                 stroke="currentColor"
                 strokeWidth="10"
                 strokeDasharray={364}
-                strokeDashoffset={364 - (364 * userState.readinessScore) / 100}
-                className={userState.readinessScore < 50 ? 'text-red-500' : 'text-emerald-400'}
+                strokeDashoffset={364 - (364 * readinessScore) / 100}
+                className={readinessScore < 50 ? 'text-red-500' : 'text-emerald-400'}
                 strokeLinecap="round"
                 fill="transparent"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-3xl font-mono font-black ${userState.readinessScore < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {userState.readinessScore}%
+              <span className={`text-3xl font-mono font-black ${readinessScore < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
+                {readinessScore}%
               </span>
               <span className="text-[9px] font-mono text-slate-400 uppercase">
                 READINESS
@@ -286,37 +296,50 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
           /* Pro User: Full Domain Drilldown and Weakness Drill Action */
           <div className="space-y-3 animate-fade-in">
             {domains.map((d) => {
-              const score = userState.radarScores[d.key];
-              const isWeak = score < 60;
+              const score = radarScores[d.key] || 0;
+              const completedCount = telemetry.domainCounts[d.key]?.completed || 0;
+              const totalCount = telemetry.domainCounts[d.key]?.total || 0;
+              const isUntouched = score === 0;
+              const isWeak = score > 0 && score < 60;
 
               return (
                 <div 
                   key={d.key}
                   className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
-                    isWeak 
-                      ? 'bg-red-950/20 border-red-500/30 text-red-200' 
-                      : 'bg-[#090D16] border-white/5 text-slate-200'
+                    isUntouched
+                      ? 'bg-[#090D16]/60 border-white/5 text-slate-400'
+                      : isWeak 
+                      ? 'bg-amber-950/20 border-amber-500/30 text-amber-200' 
+                      : 'bg-[#090D16] border-emerald-500/30 text-slate-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${isWeak ? 'bg-red-400 animate-pulse' : 'bg-emerald-400'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      isUntouched ? 'bg-slate-600' : isWeak ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                    }`} />
                     <div>
                       <span className="font-mono font-bold text-xs text-white block">
                         {d.name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {isWeak ? 'Vulnerabilità Critica Rilevata' : 'Competenza Operativa Consolidata'}
+                        {isUntouched 
+                          ? `Non ancora avviato (0/${totalCount} quest)` 
+                          : isWeak 
+                          ? `In addestramento (${completedCount}/${totalCount} quest)` 
+                          : `Competenza consolidata (${completedCount}/${totalCount} quest)`}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className={`font-mono font-bold text-sm ${isWeak ? 'text-red-400' : 'text-emerald-400'}`}>
+                    <span className={`font-mono font-bold text-sm ${
+                      isUntouched ? 'text-slate-500' : isWeak ? 'text-amber-400' : 'text-emerald-400'
+                    }`}>
                       {score}%
                     </span>
                     {isWeak && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30">
-                        WEAK POINT
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        ATTENZIONE
                       </span>
                     )}
                   </div>
@@ -325,7 +348,7 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
             })}
 
             <button
-              onClick={() => alert('Avvio Weakness Drill AI sui domini critici Linux & Networking... Caricamento 5 lab PoC!')}
+              onClick={() => alert('Avvio sessione Weakness Drill tattica sui domini critici... Caricamento 5 scenari PoC!')}
               className="w-full mt-4 py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2"
             >
               <Zap className="w-4 h-4 fill-slate-950" />

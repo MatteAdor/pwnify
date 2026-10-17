@@ -186,7 +186,11 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                   onClick={() => {
                     if (isLocked) {
                       sound.playTap();
-                      onOpenPaywallContext('manual_upgrade');
+                      if (!userState.isPro && theme.isProOnly) {
+                        onOpenPaywallContext('manual_upgrade');
+                      } else {
+                        sound.playPayloadBlocked();
+                      }
                       return;
                     }
                     sound.playTap();
@@ -266,7 +270,11 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                   onClick={() => {
                     if (isLocked) {
                       sound.playTap();
-                      onOpenPaywallContext('manual_upgrade');
+                      if (!userState.isPro && t.proOnly) {
+                        onOpenPaywallContext('manual_upgrade');
+                      } else {
+                        sound.playPayloadBlocked();
+                      }
                       return;
                     }
                     sound.playTap();

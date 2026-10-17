@@ -14,7 +14,9 @@ import { PaywallModal } from './components/Paywall/PaywallModal';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
 import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
+import { AuthModal } from './components/Auth/AuthModal';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
+import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { sound } from './utils/soundEngine';
 import { 
   sanitizeCallsign, 
@@ -36,33 +38,30 @@ const THEME_BG_MAP: Record<TerminalThemeId, string> = {
   stealth_oled: 'bg-[#000000]'
 };
 
+const initialTelemetry = calculateDynamicTelemetry(['node_basics_1', 'node_basics_2'], [], false);
+
 const DEFAULT_USER_STATE: UserState = {
   username: '0x_GhostRider',
   isPro: false,
-  streakDays: 4,
+  streakDays: 3,
   streakShieldActive: false,
   elo: 1240, // Red Teamer
   arenaTickets: 3,
   maxTickets: 3,
   winStreak: 3,
   xp: 940,
-  readinessScore: 38,
-  completedNodeIds: [],
+  readinessScore: initialTelemetry.readinessScore,
+  completedNodeIds: ['node_basics_1', 'node_basics_2'],
   completedPbqIds: [],
   survivalHighScore: 0,
   dailyBounties: INITIAL_DAILY_BOUNTIES,
   goal: 'Passare CompTIA Security+ / CCNA',
   experienceLevel: 'Intermediate',
   dailyCommitment: 15,
-  onboardingCompleted: true, // Default true for demo, can reset anytime
-  radarScores: {
-    'Web Sec': 74,
-    'Networking': 34,
-    'Linux & Bash': 32,
-    'Cryptography': 65,
-    'Code Analysis': 58,
-    'Defense & SOC': 42
-  }
+  onboardingCompleted: true, // Bypass questionnaire directly into app
+  hasSeenTrial: false,
+  isLoggedIn: false,
+  radarScores: initialTelemetry.radarScores
 };
 
 export const App: React.FC = () => {
@@ -72,19 +71,36 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = safeJsonParse<Partial<UserState>>(saved, {});
+        // Always ensure at least the 2 initial nodes are completed
+        const completedNodes = Array.isArray(parsed.completedNodeIds) && parsed.completedNodeIds.length >= 2
+          ? parsed.completedNodeIds
+          : ['node_basics_1', 'node_basics_2'];
+
+        const dynamic = calculateDynamicTelemetry(
+          completedNodes,
+          Array.isArray(parsed.completedPbqIds) ? parsed.completedPbqIds : [],
+          Boolean(parsed.isPro)
+        );
+
         return {
           ...DEFAULT_USER_STATE,
           ...parsed,
           username: sanitizeCallsign(parsed.username, DEFAULT_USER_STATE.username),
+          streakDays: parsed.streakDays !== undefined ? (parsed.streakDays === 4 ? 3 : parsed.streakDays) : 3,
+          winStreak: parsed.winStreak !== undefined ? parsed.winStreak : 3,
+          completedNodeIds: completedNodes,
+          onboardingCompleted: true,
+          hasSeenTrial: Boolean(parsed.hasSeenTrial),
+          isLoggedIn: Boolean(parsed.isLoggedIn),
           elo: clampNumber(parsed.elo, 100, 3500, DEFAULT_USER_STATE.elo),
           xp: clampNumber(parsed.xp, 0, 1000000, DEFAULT_USER_STATE.xp),
-          readinessScore: clampNumber(parsed.readinessScore, 0, 100, DEFAULT_USER_STATE.readinessScore),
+          readinessScore: dynamic.readinessScore,
           survivalHighScore: clampNumber(parsed.survivalHighScore, 0, 99999, 0),
           dailyBounties: (parsed.dailyBounties && Array.isArray(parsed.dailyBounties) && parsed.dailyBounties.length > 0)
             ? parsed.dailyBounties
             : INITIAL_DAILY_BOUNTIES,
           completedPbqIds: Array.isArray(parsed.completedPbqIds) ? parsed.completedPbqIds : [],
-          completedNodeIds: Array.isArray(parsed.completedNodeIds) ? parsed.completedNodeIds : []
+          radarScores: dynamic.radarScores
         };
       }
     } catch (e) {
@@ -326,8 +342,41 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
     });
   };
 
+  // Operator Authentication Modal State
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+
+  const handleLoginSuccess = (username: string, email: string) => {
+    setUserState(prev => ({
+      ...prev,
+      username,
+      userEmail: email,
+      isLoggedIn: true
+    }));
+  };
+
+  const handleLogout = () => {
+    setUserState(prev => ({
+      ...prev,
+      isLoggedIn: false,
+      userEmail: undefined
+    }));
+  };
+
   // Trigger Paywall Helper
   const triggerPaywall = (context: PaywallContext) => {
+    // 1. If PRO is already active, NEVER prompt paywall!
+    if (userState.isPro) return;
+
+    // 2. If user already saw the trial, don't show it again unless it's an explicit manual upgrade click
+    if (userState.hasSeenTrial && context !== 'manual_upgrade') {
+      return;
+    }
+
+    // Mark trial as seen so it only appears once in total
+    if (!userState.hasSeenTrial) {
+      setUserState(prev => ({ ...prev, hasSeenTrial: true }));
+    }
+
     setPaywallContext(context);
     setIsPaywallOpen(true);
   };
@@ -336,11 +385,12 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   const handleTogglePro = () => {
     setUserState(prev => {
       const nextPro = !prev.isPro;
+      const tele = calculateDynamicTelemetry(prev.completedNodeIds, prev.completedPbqIds, nextPro);
       return {
         ...prev,
         isPro: nextPro,
         streakShieldActive: nextPro,
-        readinessScore: nextPro ? 92 : 38
+        readinessScore: nextPro ? Math.max(92, tele.readinessScore) : tele.readinessScore
       };
     });
   };
@@ -348,14 +398,20 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   // Reset Demo Data
   const handleResetData = () => {
     localStorage.removeItem(STORAGE_KEY);
+    const freshTelemetry = calculateDynamicTelemetry(['node_basics_1', 'node_basics_2'], [], false);
     setUserState({
       ...DEFAULT_USER_STATE,
-      onboardingCompleted: false,
+      onboardingCompleted: true,
       isPro: false,
+      hasSeenTrial: false,
+      isLoggedIn: false,
+      streakDays: 3,
+      winStreak: 3,
       streakShieldActive: false,
-      readinessScore: 38,
-      completedNodeIds: [],
+      readinessScore: freshTelemetry.readinessScore,
+      completedNodeIds: ['node_basics_1', 'node_basics_2'],
       completedPbqIds: [],
+      radarScores: freshTelemetry.radarScores,
       dailyBounties: INITIAL_DAILY_BOUNTIES,
       arenaTickets: 3
     });
@@ -548,6 +604,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onUpdateUsername={handleUpdateUsername}
             onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
             onOpenArsenal={() => setIsArsenalOpen(true)}
+            onOpenAuth={() => setIsAuthOpen(true)}
           />
 
           {/* Subheader Interactive Demo Toolbar (Protected by God Mode) */}
@@ -687,9 +744,18 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             />
           )}
 
+          {/* Operator Authentication Modal (Login / Sign Up) */}
+          <AuthModal
+            isOpen={isAuthOpen}
+            onClose={() => setIsAuthOpen(false)}
+            userState={userState}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+          />
+
           {/* ZeroDay PRO Paywall Modal (with Exit-Intent Downsell, Stripe Bridge & License Restore) */}
           <PaywallModal
-            isOpen={isPaywallOpen}
+            isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}
             context={paywallContext}
             winStreak={userState.winStreak}
