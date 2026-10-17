@@ -35,7 +35,7 @@ interface Pending2FA {
 export function sanitizeBounties(bounties?: UserState['dailyBounties']): UserState['dailyBounties'] {
   const base = bounties && Array.isArray(bounties) && bounties.length > 0 ? bounties : INITIAL_DAILY_BOUNTIES;
   return base.map(b => {
-    const isCompleted = (b.progress ?? 0) >= (b.target ?? 1);
+    const isCompleted = (b.progress ?? 0) >= (b.target ?? 1) && (b.progress ?? 0) > 0;
     return {
       ...b,
       progress: Math.max(0, b.progress ?? 0),
@@ -153,15 +153,61 @@ export function getRegisteredAccounts(): UserAccount[] {
 }
 
 /**
- * Saves all accounts to the database.
+ * Saves all accounts to the database and syncs to physical disk file database/logins.json.
  */
 export function saveAccounts(accounts: UserAccount[]): void {
   try {
     if (typeof window === 'undefined') return;
     localStorage.setItem(ACCOUNTS_DB_KEY, JSON.stringify(accounts));
+    // Asynchronously write to physical database/logins.json via local Vite API
+    fetch('/api/database', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(accounts, null, 2)
+    }).catch(err => {
+      console.debug('Physical database/logins.json sync notice:', err);
+    });
   } catch (e) {
     console.error('Failed to save accounts database', e);
   }
+}
+
+/**
+ * Synchronizes accounts between physical database/logins.json and browser localStorage.
+ */
+export async function syncDatabaseWithBackend(): Promise<UserAccount[]> {
+  try {
+    if (typeof window === 'undefined') return [];
+    const res = await fetch('/api/database');
+    if (res.ok) {
+      const diskAccounts = await res.json();
+      const localAccounts = getRegisteredAccounts();
+
+      if (Array.isArray(diskAccounts) && diskAccounts.length > 0) {
+        // Merge disk accounts with local accounts
+        const map = new Map<string, UserAccount>();
+        localAccounts.forEach(a => map.set(a.id, a));
+        diskAccounts.forEach((a: UserAccount) => map.set(a.id, a));
+        const merged = Array.from(map.values()).map(a => ({
+          ...a,
+          userState: sanitizeUserState(a.userState)
+        }));
+        localStorage.setItem(ACCOUNTS_DB_KEY, JSON.stringify(merged));
+        return merged;
+      } else if (localAccounts.length > 0) {
+        // Disk is empty but local has data: write local to disk
+        await fetch('/api/database', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localAccounts, null, 2)
+        });
+        return localAccounts;
+      }
+    }
+  } catch (e) {
+    console.debug('Database backend sync notice:', e);
+  }
+  return getRegisteredAccounts();
 }
 
 /**

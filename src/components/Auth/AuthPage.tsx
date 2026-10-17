@@ -7,13 +7,15 @@ import {
   loginWithOAuth, 
   loginWithEmailOtp,
   getRegisteredAccounts,
+  syncDatabaseWithBackend,
   UserAccount 
 } from '../../utils/userDatabase';
 import { sound } from '../../utils/soundEngine';
 import { 
   Lock, Mail, KeyRound, User, 
   ArrowRight, CheckCircle2, AlertTriangle, 
-  Sparkles, Terminal, Check, X
+  Sparkles, Terminal, Check, X,
+  Database, RefreshCw, Copy, ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -61,7 +63,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   // OAuth Modals
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [googleInputEmail, setGoogleInputEmail] = useState('');
-  const [googleInputName, setGoogleInputName] = useState('');
 
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [githubInputHandle, setGithubInputHandle] = useState('');
@@ -71,6 +72,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [otpLoginEmail, setOtpLoginEmail] = useState('');
   const [otpLoginCode, setOtpLoginCode] = useState('');
   const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
+
+  // Database Inspector State
+  const [isDbInspectorOpen, setIsDbInspectorOpen] = useState(false);
+  const [rawDbContent, setRawDbContent] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Registered Accounts in Database
   const [savedAccounts, setSavedAccounts] = useState<UserAccount[]>([]);
@@ -82,14 +88,54 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // Load registered accounts on mount
+  // Load registered accounts on mount, sync with disk database/logins.json, and parse OAuth redirects
   useEffect(() => {
     try {
+      // 1. Initial cached accounts
       setSavedAccounts(getRegisteredAccounts());
+
+      // 2. Synchronize with physical file database/logins.json
+      syncDatabaseWithBackend().then(accs => {
+        if (accs && accs.length > 0) {
+          setSavedAccounts(accs);
+        }
+      }).catch(() => {});
+
+      // 3. Check for Google OAuth Token in URL hash (#access_token=...)
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const token = hashParams.get('access_token');
+        if (token) {
+          setIsProcessing(true);
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (data && (data.email || data.sub)) {
+                const mail = data.email || 'operatore.google@gmail.com';
+                const name = data.name || mail.split('@')[0];
+                const res = loginWithOAuth('google', { name, email: mail });
+                sound.playVictoryFanfare();
+                confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+                if (window.history) {
+                  window.history.replaceState({}, '', window.location.pathname);
+                }
+                onLoginSuccess(res.account);
+              }
+            })
+            .catch(err => {
+              console.error('Google OAuth token fetch error:', err);
+              setErrorMsg('Errore durante la convalida del token Google.');
+            })
+            .finally(() => setIsProcessing(false));
+          return;
+        }
+      }
     } catch {
       setSavedAccounts([]);
     }
-  }, []);
+  }, [onLoginSuccess]);
 
   // Timer for 2FA resend cooldown
   useEffect(() => {
@@ -249,8 +295,42 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // GOOGLE LOGIN HANDLER
+  // GOOGLE OAUTH TRIGGERS & HANDLERS
   // ---------------------------------------------------------------------------
+  const handleGoogleClick = () => {
+    sound.playTap();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (googleClientId && googleClientId.trim()) {
+      const redirectUri = window.location.origin;
+      const scope = encodeURIComponent('email profile openid');
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId.trim())}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scope}&prompt=select_account`;
+      window.location.href = authUrl;
+      return;
+    }
+
+    setIsGoogleModalOpen(true);
+  };
+
+  const handleGoogleInstantLogin = (name?: string, email?: string) => {
+    setIsProcessing(true);
+    sound.playTap();
+    setErrorMsg(null);
+
+    setTimeout(() => {
+      const mail = email || 'operatore.zeroday@gmail.com';
+      const defaultName = name || 'Google_Operatore';
+      const res = loginWithOAuth('google', { name: defaultName, email: mail });
+      setIsProcessing(false);
+      setIsGoogleModalOpen(false);
+      sound.playVictoryFanfare();
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      onLoginSuccess(res.account);
+    }, 400);
+  };
+
   const handleGoogleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanMail = googleInputEmail.trim().toLowerCase();
@@ -266,19 +346,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setTimeout(() => {
       const defaultName = cleanMail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-      const finalName = googleInputName.trim() || `Google_${defaultName}`;
+      const finalName = `Google_${defaultName}`;
       const res = loginWithOAuth('google', { name: finalName, email: cleanMail });
       setIsProcessing(false);
       setIsGoogleModalOpen(false);
       sound.playVictoryFanfare();
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 500);
+    }, 400);
   };
 
   // ---------------------------------------------------------------------------
-  // GITHUB LOGIN HANDLER
+  // GITHUB OAUTH TRIGGERS & HANDLERS
   // ---------------------------------------------------------------------------
+  const handleGitHubClick = () => {
+    sound.playTap();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    if (githubClientId && githubClientId.trim()) {
+      const redirectUri = window.location.origin;
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(githubClientId.trim())}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
+      window.location.href = authUrl;
+      return;
+    }
+
+    setIsGitHubModalOpen(true);
+  };
+
+  const handleGitHubInstantLogin = (handle?: string) => {
+    setIsProcessing(true);
+    sound.playTap();
+    setErrorMsg(null);
+
+    setTimeout(() => {
+      const name = handle || 'GitHub_Hacker';
+      const mail = `${name.toLowerCase()}@users.noreply.github.com`;
+      const res = loginWithOAuth('github', { name, email: mail });
+      setIsProcessing(false);
+      setIsGitHubModalOpen(false);
+      sound.playVictoryFanfare();
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      onLoginSuccess(res.account);
+    }, 400);
+  };
+
   const handleGitHubSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanHandle = githubInputHandle.trim().replace(/^@/, '');
@@ -300,7 +413,42 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       sound.playVictoryFanfare();
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 500);
+    }, 400);
+  };
+
+  // ---------------------------------------------------------------------------
+  // DATABASE INSPECTOR HANDLERS (database/logins.json)
+  // ---------------------------------------------------------------------------
+  const handleOpenDbInspector = async () => {
+    sound.playTap();
+    try {
+      const res = await fetch('/api/database');
+      if (res.ok) {
+        const data = await res.json();
+        setRawDbContent(JSON.stringify(data, null, 2));
+      } else {
+        setRawDbContent(JSON.stringify(getRegisteredAccounts(), null, 2));
+      }
+    } catch {
+      setRawDbContent(JSON.stringify(getRegisteredAccounts(), null, 2));
+    }
+    setIsDbInspectorOpen(true);
+  };
+
+  const handleCopyDatabaseJson = () => {
+    if (!rawDbContent) return;
+    sound.playTap();
+    navigator.clipboard.writeText(rawDbContent);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleReloadDatabase = async () => {
+    sound.playTap();
+    const updated = await syncDatabaseWithBackend();
+    setSavedAccounts(updated);
+    setRawDbContent(JSON.stringify(updated, null, 2));
+    setSuccessMsg('Database sincronizzato e ricaricato dal file su disco (database/logins.json).');
   };
 
   // ---------------------------------------------------------------------------
@@ -463,12 +611,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           {/* Google Button */}
           <button
             type="button"
-            onClick={() => {
-              sound.playTap();
-              setIsGoogleModalOpen(true);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onClick={handleGoogleClick}
             disabled={isProcessing}
             className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
@@ -479,17 +622,30 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           {/* GitHub Button */}
           <button
             type="button"
-            onClick={() => {
-              sound.playTap();
-              setIsGitHubModalOpen(true);
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
+            onClick={handleGitHubClick}
             disabled={isProcessing}
             className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
             <GitHubIcon className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             <span>Accedi con GitHub</span>
+          </button>
+        </div>
+
+        {/* Database Explorer Trigger Badge */}
+        <div>
+          <button
+            type="button"
+            onClick={handleOpenDbInspector}
+            className="w-full py-2 px-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-mono text-[11px] flex items-center justify-between transition-all cursor-pointer group shadow-sm"
+            title="Visualizza e ispeziona il database dei login salvati su disco (database/logins.json)"
+          >
+            <div className="flex items-center gap-2">
+              <Database className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-12 transition-transform" />
+              <span className="font-bold">Database Logins: <span className="underline decoration-emerald-500/40">database/logins.json</span></span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[10px] font-bold">
+              {savedAccounts.length} {savedAccounts.length === 1 ? 'account' : 'account'}
+            </span>
           </button>
         </div>
 
@@ -827,28 +983,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {isGoogleModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
           <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <GoogleIcon className="w-5 h-5" />
-                <h3 className="font-bold text-sm text-white">Accedi con Google</h3>
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                  <GoogleIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white leading-tight">Accedi con Google</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">0xDAY Cyber Academy OAuth</p>
+                </div>
               </div>
               <button 
                 onClick={() => setIsGoogleModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Connettiti con il tuo account Google per salvare la tua progressione crittografica.
+            <p className="text-xs text-slate-300">
+              Scegli un account o accedi con 1 click per sincronizzare il tuo profilo operatore e la progressione esami.
             </p>
+
+            {/* 1-CLICK INSTANT GOOGLE LOGIN */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-blue-400" /> Accesso Rapido Istantaneo
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">1-CLICK</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleGoogleInstantLogin('Google_Operatore', 'operatore.zeroday@gmail.com')}
+                disabled={isProcessing}
+                className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
+              >
+                <GoogleIcon className="w-4 h-4" />
+                <span>Accedi come Operatore Google</span>
+              </button>
+            </div>
 
             {/* List existing Google accounts if any */}
             {savedAccounts.filter(a => a.provider === 'google').length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 pt-1">
                 <span className="text-[10px] font-mono text-slate-400 font-bold block uppercase tracking-wider">
-                  Account Google Trovati:
+                  Account Google Salvati:
                 </span>
                 {savedAccounts.filter(a => a.provider === 'google').map(acc => (
                   <div
@@ -857,55 +1037,47 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       setIsGoogleModalOpen(false);
                       handleSelectSavedAccount(acc);
                     }}
-                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 cursor-pointer flex items-center justify-between text-xs transition-all"
+                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 hover:border-blue-500/40 cursor-pointer flex items-center justify-between text-xs transition-all group"
                   >
-                    <div>
-                      <strong className="text-white font-mono block">{acc.username}</strong>
-                      <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-mono font-bold text-xs">
+                        G
+                      </div>
+                      <div>
+                        <strong className="text-white font-mono block group-hover:text-blue-300 transition-colors">{acc.username}</strong>
+                        <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
+                      </div>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Seleziona →</span>
+                    <span className="text-[10px] font-mono text-blue-400 font-bold">Entra →</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <form onSubmit={handleGoogleSubmit} className="space-y-3 pt-1">
-              <div>
-                <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  Il tuo indirizzo Gmail
-                </label>
+            {/* Custom Google account input form */}
+            <div className="border-t border-white/5 pt-3">
+              <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
+                Oppure inserisci la tua Gmail:
+              </span>
+              <form onSubmit={handleGoogleSubmit} className="space-y-2.5">
                 <input
                   type="email"
                   required
-                  placeholder="nome.cognome@gmail.com"
+                  placeholder="tua.email@gmail.com"
                   value={googleInputEmail}
                   onChange={(e) => setGoogleInputEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
+                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
                 />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  Callsign Desiderato (opzionale)
-                </label>
-                <input
-                  type="text"
-                  placeholder="0x_Alpha"
-                  value={googleInputName}
-                  onChange={(e) => setGoogleInputName(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full py-3 rounded-xl font-mono font-bold text-xs text-white bg-blue-600 hover:bg-blue-500 shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <GoogleIcon className="w-4 h-4" />
-                <span>CONFERMA E ACCEDI CON GOOGLE</span>
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <GoogleIcon className="w-3.5 h-3.5" />
+                  <span>Conferma e Accedi</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -916,28 +1088,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {isGitHubModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
           <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <GitHubIcon className="w-5 h-5 text-white" />
-                <h3 className="font-bold text-sm text-white">Accedi con GitHub</h3>
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center">
+                  <GitHubIcon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white leading-tight">Autorizza con GitHub</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">ZeroDay Developer OAuth</p>
+                </div>
               </div>
               <button 
                 onClick={() => setIsGitHubModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Autorizza l'accesso con il tuo account sviluppatore GitHub.
+            <p className="text-xs text-slate-300">
+              Collega il tuo account GitHub per sincronizzare il tuo status hacker e i certificati di sicurezza.
             </p>
+
+            {/* 1-CLICK INSTANT GITHUB LOGIN */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> Accesso Rapido Sviluppatore
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1-CLICK</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleGitHubInstantLogin('GitHub_Hacker')}
+                disabled={isProcessing}
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer font-mono"
+              >
+                <GitHubIcon className="w-4 h-4 text-slate-950" />
+                <span>Autorizza come GitHub Hacker</span>
+              </button>
+            </div>
 
             {/* List existing GitHub accounts if any */}
             {savedAccounts.filter(a => a.provider === 'github').length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 pt-1">
                 <span className="text-[10px] font-mono text-slate-400 font-bold block uppercase tracking-wider">
-                  Account GitHub Trovati:
+                  Account GitHub Salvati:
                 </span>
                 {savedAccounts.filter(a => a.provider === 'github').map(acc => (
                   <div
@@ -946,42 +1142,47 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       setIsGitHubModalOpen(false);
                       handleSelectSavedAccount(acc);
                     }}
-                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 cursor-pointer flex items-center justify-between text-xs transition-all"
+                    className="p-2.5 rounded-xl bg-[#131D33] hover:bg-[#1a2847] border border-white/10 hover:border-emerald-500/40 cursor-pointer flex items-center justify-between text-xs transition-all group"
                   >
-                    <div>
-                      <strong className="text-white font-mono block">{acc.username}</strong>
-                      <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-slate-800 text-white border border-white/20 flex items-center justify-center font-mono font-bold text-xs">
+                        GH
+                      </div>
+                      <div>
+                        <strong className="text-white font-mono block group-hover:text-emerald-400 transition-colors">{acc.username}</strong>
+                        <span className="text-[10px] text-slate-400 font-mono">{acc.email}</span>
+                      </div>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Seleziona →</span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">Entra →</span>
                   </div>
                 ))}
               </div>
             )}
 
-            <form onSubmit={handleGitHubSubmit} className="space-y-3 pt-1">
-              <div>
-                <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  GitHub Username o Email
-                </label>
+            {/* Custom GitHub handle form */}
+            <div className="border-t border-white/5 pt-3">
+              <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
+                Oppure inserisci il tuo username GitHub:
+              </span>
+              <form onSubmit={handleGitHubSubmit} className="space-y-2.5">
                 <input
                   type="text"
                   required
                   placeholder="es. octocat o tuo-handle"
                   value={githubInputHandle}
                   onChange={(e) => setGithubInputHandle(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-slate-400 text-xs text-white font-mono"
+                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-white text-xs text-white font-mono"
                 />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full py-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-white hover:bg-slate-200 shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <GitHubIcon className="w-4 h-4" />
-                <span>AUTORIZZA & ACCEDI CON GITHUB</span>
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <GitHubIcon className="w-3.5 h-3.5" />
+                  <span>Autorizza Username GitHub</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -1073,6 +1274,162 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </button>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 4: DATABASE INSPECTOR MODAL (database/logins.json) */}
+      {/* ============================================================== */}
+      {isDbInspectorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-2xl bg-[#0D1424] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100 max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white flex items-center gap-2">
+                    Database Logins Operatori
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[10px]">
+                      database/logins.json
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Posizione e sincronizzazione in tempo reale degli account registrati.
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsDbInspectorOpen(false)} 
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Storage Path Info Card */}
+            <div className="p-3.5 rounded-2xl bg-[#080C15] border border-white/10 space-y-2 shrink-0 text-xs font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                <span className="text-slate-400 font-bold uppercase tracking-wider">📁 File su Disco:</span>
+                <span className="text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 select-all break-all">
+                  c:\Users\Admin\Documents\ProgettiVari\zeroday_app\database\logins.json
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                <span className="text-slate-400 font-bold uppercase tracking-wider">💾 Storage Browser:</span>
+                <span className="text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30 select-all">
+                  localStorage.getItem('zeroday_database_accounts_v1')
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[11px]">
+                <span className="text-slate-400 font-bold">Account Registrati:</span>
+                <span className="text-white font-bold px-2 py-0.5 rounded bg-white/10">
+                  {savedAccounts.length} Operatori
+                </span>
+              </div>
+            </div>
+
+            {/* Scrollable Database Accounts & JSON View */}
+            <div className="overflow-y-auto space-y-4 pr-1 flex-1 font-mono text-xs">
+              {/* Accounts Cards */}
+              <div className="space-y-2">
+                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
+                  Account Trovati nel Database:
+                </span>
+                {savedAccounts.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-slate-900/50 border border-white/5 text-center text-slate-400 text-xs">
+                    Nessun account attualmente memorizzato. Crea un account o accedi per vederlo qui!
+                  </div>
+                ) : (
+                  savedAccounts.map((acc, index) => (
+                    <div 
+                      key={acc.id} 
+                      className="p-3 rounded-xl bg-[#121B30] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 text-[10px]">#{index + 1}</span>
+                          <strong className="text-white text-xs">{acc.username}</strong>
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
+                            acc.provider === 'google' 
+                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+                              : acc.provider === 'github'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          }`}>
+                            {acc.provider}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          Email: <span className="text-slate-300">{acc.email || 'N/A'}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          Creato: {new Date(acc.createdAt).toLocaleString()} | Ultimo Login: {new Date(acc.lastLoginAt).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[10px] shrink-0">
+                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300">
+                          XP: {acc.userState.xp} | Streak: {acc.userState.streakDays}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsDbInspectorOpen(false);
+                            handleSelectSavedAccount(acc);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold cursor-pointer transition-colors"
+                        >
+                          Accedi →
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Raw JSON Preview */}
+              <div className="space-y-1 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                    Contenuto JSON Raw (database/logins.json):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyDatabaseJson}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    {copySuccess ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copySuccess ? 'Copiato!' : 'Copia JSON'}</span>
+                  </button>
+                </div>
+                <pre className="p-3 rounded-xl bg-[#060911] border border-white/10 text-emerald-400/90 overflow-x-auto text-[10px] max-h-48 leading-relaxed">
+                  {rawDbContent || '[]'}
+                </pre>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between shrink-0 font-mono text-xs">
+              <button
+                type="button"
+                onClick={handleReloadDatabase}
+                className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Ricarica dal Disco</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDbInspectorOpen(false)}
+                className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold cursor-pointer transition-colors"
+              >
+                Chiudi Inspector
+              </button>
+            </div>
           </div>
         </div>
       )}

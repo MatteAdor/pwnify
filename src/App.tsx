@@ -25,6 +25,7 @@ import {
   setCurrentSession, 
   persistActiveAccountState, 
   sanitizeUserState,
+  syncDatabaseWithBackend,
   UserAccount 
 } from './utils/userDatabase';
 import { sound } from './utils/soundEngine';
@@ -68,6 +69,13 @@ export const App: React.FC = () => {
       console.error('Failed to persist user state to database', e);
     }
   }, [userState]);
+
+  // Sync local accounts with physical disk file database/logins.json
+  useEffect(() => {
+    syncDatabaseWithBackend().catch(err => {
+      console.debug('Disk database background sync:', err);
+    });
+  }, []);
 
   // God Mode Protected Dev Toolbar State (Strictly restricted to local development)
   const [isGodMode] = useState<boolean>(() => {
@@ -460,8 +468,14 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
   const handleClaimProBounty = (bountyId: string) => {
     const bounty = userState.dailyBounties.find(b => b.id === bountyId);
+    if (!bounty) return;
+
     // Casse del pro sbloccate SOLO se ho fatto la missione!
-    if (!bounty || !bounty.isCompleted || bounty.proClaimed) return;
+    const isMissionDone = Boolean(bounty.isCompleted && bounty.progress >= bounty.target && bounty.progress > 0);
+    if (!isMissionDone || bounty.proClaimed) {
+      sound.playPayloadBlocked();
+      return;
+    }
 
     if (!userState.isPro) {
       sound.playPayloadBlocked();

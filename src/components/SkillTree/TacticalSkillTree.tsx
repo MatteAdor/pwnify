@@ -106,11 +106,13 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
         {bountiesExpanded && (
           <div className="space-y-3 pt-1 animate-fade-in">
             {userState.dailyBounties.map((bounty) => {
+              const isMissionDone = Boolean(bounty.isCompleted) && (bounty.progress >= bounty.target) && (bounty.progress > 0);
+
               return (
                 <div 
                   key={bounty.id}
                   className={`p-3.5 rounded-xl border transition-all ${
-                    bounty.isCompleted 
+                    isMissionDone 
                       ? 'bg-[#090D16] border-emerald-500/40' 
                       : 'bg-[#090D16]/60 border-white/5'
                   }`}
@@ -121,9 +123,9 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                         <span className="font-mono font-bold text-xs text-white">
                           {bounty.title}
                         </span>
-                        {bounty.isCompleted && (
+                        {isMissionDone && (
                           <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-0.5">
-                            <Check className="w-2.5 h-2.5" /> SBLOCCATO
+                            <Check className="w-2.5 h-2.5" /> OBIETTIVO RAGGIUNTO
                           </span>
                         )}
                       </div>
@@ -140,7 +142,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   {/* Progress Bar */}
                   <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden mb-3">
                     <div 
-                      className={`h-full transition-all duration-300 ${bounty.isCompleted ? 'bg-emerald-400' : 'bg-indigo-500'}`}
+                      className={`h-full transition-all duration-300 ${isMissionDone ? 'bg-emerald-400' : 'bg-indigo-500'}`}
                       style={{ width: `${Math.min(100, (bounty.progress / bounty.target) * 100)}%` }}
                     />
                   </div>
@@ -154,7 +156,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                         <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1 font-semibold">
                           <Check className="w-3 h-3 text-emerald-500" /> Riscattato (+{bounty.freeXp} XP)
                         </span>
-                      ) : !bounty.isCompleted ? (
+                      ) : !isMissionDone ? (
                         <span 
                           className="px-2.5 py-1 rounded-md text-[10px] font-mono font-medium text-slate-500 bg-slate-900/90 border border-slate-800 flex items-center gap-1 cursor-not-allowed select-none"
                           title="Completa la missione per riscattare la taglia free"
@@ -174,19 +176,19 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                     {/* Encrypted PRO Bounty Crate: SBLOCCABILE SOLO DOPO AVER FATTO LA MISSIONE */}
                     <div className="flex items-center justify-between sm:justify-end gap-2">
                       <div className="flex items-center gap-1 text-[10px] font-mono font-bold">
-                        <Box className={`w-3.5 h-3.5 ${bounty.isCompleted ? 'text-amber-400 animate-bounce' : 'text-slate-600'}`} />
-                        <span className={bounty.isCompleted ? "text-amber-300" : "text-slate-500"}>CRATE PRO:</span>
-                        <span className={bounty.isCompleted ? "text-emerald-400" : "text-slate-600"}>+{bounty.proXp} XP + {bounty.proTickets} Tickets</span>
+                        <Box className={`w-3.5 h-3.5 ${isMissionDone ? 'text-amber-400 animate-bounce' : 'text-slate-600'}`} />
+                        <span className={isMissionDone ? "text-amber-300" : "text-slate-500"}>CRATE PRO:</span>
+                        <span className={isMissionDone ? "text-emerald-400" : "text-slate-600"}>+{bounty.proXp} XP + {bounty.proTickets} Tickets</span>
                       </div>
 
-                      {!bounty.isCompleted ? (
+                      {!isMissionDone ? (
                         /* Caso 1: Missione NON completata -> CASSA TOTALMENTE BLOCCATA */
                         <span 
-                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold text-slate-500 bg-slate-900/90 border border-slate-800/80 flex items-center gap-1.5 cursor-not-allowed select-none"
+                          className="px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold text-slate-500 bg-slate-900/90 border border-slate-800/80 flex items-center gap-1.5 cursor-not-allowed select-none opacity-80"
                           title="Questa cassa PRO si sblocca solo dopo aver completato l'obiettivo della missione!"
                         >
                           <Lock className="w-3 h-3 text-amber-500/50" />
-                          <span>BLOCCATA (Fai la missione)</span>
+                          <span>BLOCCATA (Fai la missione: {bounty.progress}/{bounty.target})</span>
                         </span>
                       ) : bounty.proClaimed ? (
                         /* Caso 2: Missione completata E cassa già riscattata */
