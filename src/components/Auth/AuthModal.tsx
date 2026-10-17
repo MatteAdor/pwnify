@@ -3,6 +3,11 @@ import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { sanitizeCallsign } from '../../utils/security';
 import { 
+  registerAccount, 
+  loginAccount, 
+  UserAccount 
+} from '../../utils/userDatabase';
+import { 
   X, Lock, Mail, User, ShieldCheck, 
   ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2 
 } from 'lucide-react';
@@ -12,17 +17,8 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   userState: UserState;
-  onLoginSuccess: (username: string, email: string) => void;
+  onLoginSuccess: (account: UserAccount) => void;
   onLogout: () => void;
-}
-
-const USERS_STORAGE_KEY = 'zeroday_registered_users';
-
-interface StoredUser {
-  username: string;
-  email: string;
-  passwordHash: string; // Base64 simple hash for demo/client-side storage
-  createdAt: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -41,23 +37,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const getStoredUsers = (): StoredUser[] => {
-    try {
-      const raw = localStorage.getItem(USERS_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const saveStoredUsers = (users: StoredUser[]) => {
-    try {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-    } catch (e) {
-      console.error('Failed to save user registry', e);
-    }
-  };
-
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -71,7 +50,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     if (!email || !email.includes('@') || !email.includes('.')) {
-      setErrorMsg('Inserisci un indirizzo email valido per la sessione crittografica.');
+      setErrorMsg('Inserisci un indirizzo email valido.');
       sound.playPayloadBlocked();
       return;
     }
@@ -82,31 +61,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const users = getStoredUsers();
-    const existing = users.find(
-      u => u.username.toLowerCase() === safeName.toLowerCase() || u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (existing) {
-      setErrorMsg('Un operatore con questo Callsign o Email è già registrato.');
+    const res = registerAccount(safeName, email, password);
+    if (!res.success || !res.account) {
+      setErrorMsg(res.error || 'Errore durante la registrazione.');
       sound.playPayloadBlocked();
       return;
     }
 
-    const newUser: StoredUser = {
-      username: safeName,
-      email: email.trim().toLowerCase(),
-      passwordHash: btoa(password),
-      createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    saveStoredUsers(users);
-
     sound.playVictoryFanfare();
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-    onLoginSuccess(safeName, email.trim().toLowerCase());
-    setSuccessMsg(`Profilo operatore ${safeName} creato con successo!`);
+    onLoginSuccess(res.account);
+    setSuccessMsg(`Profilo operatore ${res.account.username} creato con successo!`);
     setTimeout(() => {
       onClose();
     }, 1200);
@@ -117,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const identifier = callsign.trim().toLowerCase();
+    const identifier = callsign.trim();
     if (!identifier) {
       setErrorMsg('Inserisci il tuo Callsign o la tua Email.');
       sound.playPayloadBlocked();
@@ -130,31 +95,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const users = getStoredUsers();
-    const found = users.find(
-      u => u.username.toLowerCase() === identifier || u.email.toLowerCase() === identifier
-    );
-
-    // Support demo/local fallback authentication
-    const isDemoAdmin = identifier === '0x_ghostrider' || identifier === 'ghostrider@zeroday.gg';
-    if (!found && !isDemoAdmin) {
-      setErrorMsg('Nessun operatore registrato con queste credenziali.');
-      sound.playPayloadBlocked();
-      return;
-    }
-
-    if (found && found.passwordHash !== btoa(password)) {
-      setErrorMsg('Password di sicurezza non corretta.');
+    const res = loginAccount(identifier, password);
+    if (!res.success || !res.account) {
+      setErrorMsg(res.error || 'Credenziali non valide.');
       sound.playPayloadBlocked();
       return;
     }
 
     sound.playExploitSuccess();
-    const activeName = found ? found.username : '0x_GhostRider';
-    const activeEmail = found ? found.email : 'ghostrider@zeroday.gg';
-
-    onLoginSuccess(activeName, activeEmail);
-    setSuccessMsg(`Accesso autorizzato. Benvenuto, operatore ${activeName}.`);
+    onLoginSuccess(res.account);
+    setSuccessMsg(`Accesso autorizzato. Benvenuto, operatore ${res.account.username}.`);
     setTimeout(() => {
       onClose();
     }, 1000);

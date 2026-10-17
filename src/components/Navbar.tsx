@@ -4,7 +4,7 @@ import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { 
   Flame, Ticket, Shield, Sparkles, Terminal, 
-  Volume2, VolumeX, RotateCcw, Edit3, Palette,
+  Volume2, VolumeX, RotateCcw, Palette,
   LogIn, UserCheck
 } from 'lucide-react';
 
@@ -14,7 +14,6 @@ interface NavbarProps {
   onOpenPaywall: () => void;
   onResetData: () => void;
   isGodMode?: boolean;
-  onUpdateUsername?: (name: string) => void;
   onOpenDailyBreach?: () => void;
   onOpenArsenal?: () => void;
   onOpenAuth?: () => void;
@@ -26,7 +25,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPaywall,
   onResetData,
   isGodMode = true,
-  onUpdateUsername,
   onOpenDailyBreach,
   onOpenArsenal,
   onOpenAuth
@@ -176,24 +174,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Custom Hacker Callsign Badge with edit trigger */}
-          <div 
-            onClick={() => {
-              sound.playTap();
-              const current = userState.username;
-              const next = window.prompt('Inserisci il tuo Callsign Hacker:', current);
-              if (next && next.trim() && next.trim() !== current) {
-                onUpdateUsername?.(next.trim());
-              }
-            }}
-            className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface/80 border border-white/10 hover:border-emerald-500/40 cursor-pointer transition-colors"
-            title="Clicca per modificare il tuo Callsign Hacker"
-          >
-            <span className="text-[10px] text-slate-400 font-mono">OP:</span>
-            <span className="font-mono text-xs text-emerald-400 font-bold truncate max-w-[110px]">{userState.username}</span>
-            <Edit3 className="w-2.5 h-2.5 text-slate-500 hover:text-emerald-300 shrink-0" />
-          </div>
-
           {/* Operator Auth / Account Profile Button */}
           <button
             onClick={() => {
@@ -205,16 +185,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300 hover:border-emerald-400'
                 : 'bg-surface/90 border-white/10 text-slate-300 hover:text-white hover:border-emerald-500/40'
             }`}
-            title={userState.isLoggedIn ? `Operatore Autenticato: ${userState.username}` : 'Accedi o Registrati'}
+            title={userState.isLoggedIn ? `Profilo Operatore: ${userState.username}` : 'Accedi o Registrati'}
           >
             {userState.isLoggedIn ? (
-              <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <>
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="font-bold truncate max-w-[120px]">{userState.username}</span>
+              </>
             ) : (
-              <LogIn className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <>
+                <LogIn className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="font-bold">ACCEDI</span>
+              </>
             )}
-            <span className="font-bold">
-              {userState.isLoggedIn ? 'ACCOUNT' : 'ACCEDI'}
-            </span>
           </button>
 
           {/* Developer Quick Toggle & Reset (Protected by God Mode) */}

@@ -17,18 +17,23 @@ import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberAr
 import { AuthModal } from './components/Auth/AuthModal';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
+import { 
+  createDefaultGuestState, 
+  purgeLegacyStorage, 
+  getCurrentSession, 
+  setCurrentSession, 
+  persistActiveAccountState, 
+  UserAccount 
+} from './utils/userDatabase';
 import { sound } from './utils/soundEngine';
 import { 
   sanitizeCallsign, 
   sanitizeAlphanumeric, 
   clampNumber, 
-  safeJsonParse, 
   verifyCheckoutToken 
 } from './utils/security';
 import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck, Edit3 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
-const STORAGE_KEY = '0xday_user_state_v5';
 
 const THEME_BG_MAP: Record<TerminalThemeId, string> = {
   cyber_emerald: 'bg-[#090D16]',
@@ -38,83 +43,27 @@ const THEME_BG_MAP: Record<TerminalThemeId, string> = {
   stealth_oled: 'bg-[#000000]'
 };
 
-const initialTelemetry = calculateDynamicTelemetry(['node_basics_1', 'node_basics_2'], [], false);
-
-const DEFAULT_USER_STATE: UserState = {
-  username: '0x_GhostRider',
-  isPro: false,
-  streakDays: 3,
-  streakShieldActive: false,
-  elo: 1240, // Red Teamer
-  arenaTickets: 3,
-  maxTickets: 3,
-  winStreak: 3,
-  xp: 940,
-  readinessScore: initialTelemetry.readinessScore,
-  completedNodeIds: ['node_basics_1', 'node_basics_2'],
-  completedPbqIds: [],
-  survivalHighScore: 0,
-  dailyBounties: INITIAL_DAILY_BOUNTIES,
-  goal: 'Passare CompTIA Security+ / CCNA',
-  experienceLevel: 'Intermediate',
-  dailyCommitment: 15,
-  onboardingCompleted: true, // Bypass questionnaire directly into app
-  hasSeenTrial: false,
-  isLoggedIn: false,
-  radarScores: initialTelemetry.radarScores
-};
-
 export const App: React.FC = () => {
-  // Load initial state from localStorage or fallback with prototype pollution guard
+  // Load initial state from active user database session or fallback to clean guest state
   const [userState, setUserState] = useState<UserState>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = safeJsonParse<Partial<UserState>>(saved, {});
-        // Always ensure at least the 2 initial nodes are completed
-        const completedNodes = Array.isArray(parsed.completedNodeIds) && parsed.completedNodeIds.length >= 2
-          ? parsed.completedNodeIds
-          : ['node_basics_1', 'node_basics_2'];
-
-        const dynamic = calculateDynamicTelemetry(
-          completedNodes,
-          Array.isArray(parsed.completedPbqIds) ? parsed.completedPbqIds : [],
-          Boolean(parsed.isPro)
-        );
-
-        return {
-          ...DEFAULT_USER_STATE,
-          ...parsed,
-          username: sanitizeCallsign(parsed.username, DEFAULT_USER_STATE.username),
-          streakDays: parsed.streakDays !== undefined ? (parsed.streakDays === 4 ? 3 : parsed.streakDays) : 3,
-          winStreak: parsed.winStreak !== undefined ? parsed.winStreak : 3,
-          completedNodeIds: completedNodes,
-          onboardingCompleted: true,
-          hasSeenTrial: Boolean(parsed.hasSeenTrial),
-          isLoggedIn: Boolean(parsed.isLoggedIn),
-          elo: clampNumber(parsed.elo, 100, 3500, DEFAULT_USER_STATE.elo),
-          xp: clampNumber(parsed.xp, 0, 1000000, DEFAULT_USER_STATE.xp),
-          readinessScore: dynamic.readinessScore,
-          survivalHighScore: clampNumber(parsed.survivalHighScore, 0, 99999, 0),
-          dailyBounties: (parsed.dailyBounties && Array.isArray(parsed.dailyBounties) && parsed.dailyBounties.length > 0)
-            ? parsed.dailyBounties
-            : INITIAL_DAILY_BOUNTIES,
-          completedPbqIds: Array.isArray(parsed.completedPbqIds) ? parsed.completedPbqIds : [],
-          radarScores: dynamic.radarScores
-        };
+      purgeLegacyStorage();
+      const session = getCurrentSession();
+      if (session && session.userState) {
+        return session.userState;
       }
     } catch (e) {
-      console.error('Failed to parse saved user state', e);
+      console.error('Failed to parse active user session', e);
     }
-    return DEFAULT_USER_STATE;
+    return createDefaultGuestState();
   });
 
-  // Persist userState on every mutation
+  // Persist userState to database on every state mutation
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
+      persistActiveAccountState(userState);
     } catch (e) {
-      console.error('Failed to persist user state', e);
+      console.error('Failed to persist user state to database', e);
     }
   }, [userState]);
 
@@ -345,21 +294,13 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   // Operator Authentication Modal State
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
 
-  const handleLoginSuccess = (username: string, email: string) => {
-    setUserState(prev => ({
-      ...prev,
-      username,
-      userEmail: email,
-      isLoggedIn: true
-    }));
+  const handleLoginSuccess = (account: UserAccount) => {
+    setUserState(account.userState);
   };
 
   const handleLogout = () => {
-    setUserState(prev => ({
-      ...prev,
-      isLoggedIn: false,
-      userEmail: undefined
-    }));
+    setCurrentSession(null);
+    setUserState(createDefaultGuestState());
   };
 
   // Trigger Paywall Helper
@@ -397,24 +338,8 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
   // Reset Demo Data
   const handleResetData = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    const freshTelemetry = calculateDynamicTelemetry(['node_basics_1', 'node_basics_2'], [], false);
-    setUserState({
-      ...DEFAULT_USER_STATE,
-      onboardingCompleted: true,
-      isPro: false,
-      hasSeenTrial: false,
-      isLoggedIn: false,
-      streakDays: 3,
-      winStreak: 3,
-      streakShieldActive: false,
-      readinessScore: freshTelemetry.readinessScore,
-      completedNodeIds: ['node_basics_1', 'node_basics_2'],
-      completedPbqIds: [],
-      radarScores: freshTelemetry.radarScores,
-      dailyBounties: INITIAL_DAILY_BOUNTIES,
-      arenaTickets: 3
-    });
+    setCurrentSession(null);
+    setUserState(createDefaultGuestState());
     setActiveTab('tree');
   };
 
@@ -601,7 +526,6 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onOpenPaywall={() => triggerPaywall('manual_upgrade')}
             onResetData={handleResetData}
             isGodMode={isGodMode}
-            onUpdateUsername={handleUpdateUsername}
             onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
             onOpenArsenal={() => setIsArsenalOpen(true)}
             onOpenAuth={() => setIsAuthOpen(true)}
