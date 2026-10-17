@@ -15,6 +15,7 @@ import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
 import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { AuthModal } from './components/Auth/AuthModal';
+import { AuthPage } from './components/Auth/AuthPage';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { 
@@ -32,7 +33,7 @@ import {
   clampNumber, 
   verifyCheckoutToken 
 } from './utils/security';
-import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck, Edit3 } from 'lucide-react';
+import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const THEME_BG_MAP: Record<TerminalThemeId, string> = {
@@ -511,8 +512,13 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
   return (
     <div className={`min-h-screen ${THEME_BG_MAP[currentTheme] || 'bg-[#090D16]'} text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300`}>
-      {/* Onboarding Mode vs App Mode */}
-      {!userState.onboardingCompleted ? (
+      {/* Auth Screen vs Onboarding vs Tactical Platform */}
+      {!userState.isLoggedIn ? (
+        <AuthPage
+          onLoginSuccess={handleLoginSuccess}
+          onGuestAccess={() => setUserState(prev => ({ ...prev, isLoggedIn: true, onboardingCompleted: false }))}
+        />
+      ) : !userState.onboardingCompleted ? (
         <OnboardingFunnel
           onComplete={handleOnboardingComplete}
           onOpenPaywall={() => triggerPaywall('diagnostic_funnel')}
@@ -762,21 +768,10 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                   </div>
                 </div>
 
-                {/* Callsign Editor for Challenged User */}
+                {/* Operator Callsign Badge */}
                 <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                  <span>Il tuo Callsign:</span>
-                  <strong className="text-white font-mono">{userState.username}</strong>
-                  <button
-                    onClick={() => {
-                      sound.playTap();
-                      const next = window.prompt('Modifica il tuo Callsign per questo duello:', userState.username);
-                      if (next && next.trim()) handleUpdateUsername(next.trim());
-                    }}
-                    className="text-emerald-400 hover:underline font-mono text-[11px] flex items-center gap-0.5"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>Modifica</span>
-                  </button>
+                  <span>Operatore in Difesa:</span>
+                  <strong className="text-white font-mono bg-[#090D16] px-2 py-0.5 rounded border border-white/10">{userState.username}</strong>
                 </div>
 
                 <div className="space-y-2 pt-2">

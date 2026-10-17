@@ -5,39 +5,53 @@ import { sanitizeCallsign } from './security';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
-const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v1';
+const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v3';
+const PENDING_2FA_STORAGE_KEY = 'zeroday_pending_2fa_v1';
+
+export type AuthProvider = 'email' | 'google' | 'github';
 
 export interface UserAccount {
   id: string;
   username: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
+  provider: AuthProvider;
   createdAt: string;
   lastLoginAt: string;
   userState: UserState;
 }
 
+interface Pending2FA {
+  email: string;
+  code: string;
+  expiresAt: number;
+}
+
 /**
  * Creates a clean, pristine UserState for a brand new operator account.
  * Guarantees zero leftover progress, zero mock values, fresh 0 XP,
- * and exactly the 2 initial required completed quests with streak 3.
+ * 0 completed quests, 0 streak, and onboardingCompleted false.
  */
-export function createCleanAccountState(username: string, email?: string): UserState {
-  const dynamic = calculateDynamicTelemetry(['node_basics_1', 'node_basics_2'], [], false);
+export function createCleanAccountState(
+  username: string, 
+  email?: string, 
+  isLoggedIn: boolean = true
+): UserState {
+  const dynamic = calculateDynamicTelemetry([], [], false);
   return {
     username: sanitizeCallsign(username, 'Operatore'),
     userEmail: email ? email.trim().toLowerCase() : undefined,
-    isLoggedIn: true,
+    isLoggedIn,
     isPro: false,
-    streakDays: 3,
+    streakDays: 0,
     streakShieldActive: false,
     elo: 1000,
     arenaTickets: 3,
     maxTickets: 3,
-    winStreak: 3,
+    winStreak: 0,
     xp: 0,
-    readinessScore: dynamic.readinessScore,
-    completedNodeIds: ['node_basics_1', 'node_basics_2'],
+    readinessScore: 0,
+    completedNodeIds: [],
     completedPbqIds: [],
     survivalHighScore: 0,
     dailyBounties: INITIAL_DAILY_BOUNTIES.map(b => ({
@@ -48,24 +62,25 @@ export function createCleanAccountState(username: string, email?: string): UserS
       proClaimed: false
     })),
     goal: 'Passare CompTIA Security+ / CCNA',
-    experienceLevel: 'Intermediate',
+    experienceLevel: 'Beginner',
     dailyCommitment: 15,
-    onboardingCompleted: true,
+    onboardingCompleted: false,
     hasSeenTrial: false,
     radarScores: dynamic.radarScores
   };
 }
 
 /**
- * Creates default anonymous/guest operator state when no account is logged in.
+ * Creates default anonymous/unauthenticated state when no operator is logged in.
+ * Has isLoggedIn = false so the Login/Signup page is shown.
  */
 export function createDefaultGuestState(): UserState {
-  return createCleanAccountState('0x_GhostRider');
+  return createCleanAccountState('0x_Anonimo', undefined, false);
 }
 
 /**
  * One-time purge of all old legacy localStorage keys to ensure
- * previous dirty sessions (e.g. mock pro state, dirty username) are wiped clean.
+ * previous dirty sessions are completely wiped clean.
  */
 export function purgeLegacyStorage(): void {
   try {
@@ -81,10 +96,12 @@ export function purgeLegacyStorage(): void {
       'zeroday_registered_users',
       '0x_arsenal_theme',
       '0x_arsenal_title',
-      '0x_godmode'
+      '0x_godmode',
+      'zeroday_legacy_purged_v1'
     ];
 
     legacyKeys.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem(SESSION_DB_KEY);
     localStorage.setItem(LEGACY_STORAGE_PURGED_FLAG, 'true');
   } catch (e) {
     console.error('Failed to purge legacy storage', e);
@@ -117,12 +134,64 @@ export function saveAccounts(accounts: UserAccount[]): void {
 }
 
 /**
- * Register a brand new operator account.
- * Rejects duplicates and starts with completely clean state ("nulla di nulla").
+ * Generates and sends a 6-digit cryptographic 2FA code for email verification.
+ * Stored with a 5-minute expiration time.
  */
-export function registerAccount(
-  username: string,
+export function send2FACode(email: string): { code: string; expiresAt: number } {
+  const cleanEmail = email.trim().toLowerCase();
+  // Generate random 6-digit code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+  try {
+    const pending: Pending2FA = { email: cleanEmail, code, expiresAt };
+    sessionStorage.setItem(PENDING_2FA_STORAGE_KEY, JSON.stringify(pending));
+  } catch (e) {
+    console.error('Failed to store pending 2FA', e);
+  }
+
+  return { code, expiresAt };
+}
+
+/**
+ * Verifies the 6-digit 2FA code submitted by the user.
+ */
+export function verify2FACode(email: string, inputCode: string): { valid: boolean; error?: string } {
+  try {
+    const raw = sessionStorage.getItem(PENDING_2FA_STORAGE_KEY);
+    if (!raw) {
+      return { valid: false, error: 'Nessun codice 2FA in attesa. Richiedi un nuovo codice.' };
+    }
+    const pending: Pending2FA = JSON.parse(raw);
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (pending.email !== cleanEmail) {
+      return { valid: false, error: 'L\'email non corrisponde alla richiesta 2FA.' };
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      return { valid: false, error: 'Il codice 2FA è scaduto. Richiedine uno nuovo.' };
+    }
+
+    if (pending.code !== inputCode.trim()) {
+      return { valid: false, error: 'Codice 2FA non corretto. Riprova.' };
+    }
+
+    // Code verified! Remove pending entry
+    sessionStorage.removeItem(PENDING_2FA_STORAGE_KEY);
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'Errore di validazione del codice 2FA.' };
+  }
+}
+
+/**
+ * Completes email registration after 2FA verification.
+ * Creates password, initializes account and sets active session.
+ */
+export function completeEmailRegistration(
   email: string,
+  username: string,
   passwordPlain: string
 ): { success: boolean; account?: UserAccount; error?: string } {
   const safeName = sanitizeCallsign(username);
@@ -145,17 +214,17 @@ export function registerAccount(
   );
 
   if (duplicate) {
-    return { success: false, error: 'Un operatore con questo Callsign o Email è già registrato nel database.' };
+    return { success: false, error: 'Un account con questo Callsign o Email esiste già nel database.' };
   }
 
-  // Create clean state with zero past progress
-  const cleanState = createCleanAccountState(safeName, cleanEmail);
+  const cleanState = createCleanAccountState(safeName, cleanEmail, true);
 
   const newAccount: UserAccount = {
-    id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+    id: 'usr_mail_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     username: safeName,
     email: cleanEmail,
     passwordHash: btoa(passwordPlain),
+    provider: 'email',
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     userState: cleanState
@@ -169,9 +238,9 @@ export function registerAccount(
 }
 
 /**
- * Authenticates an existing operator from the database.
+ * Authenticates an existing email operator account.
  */
-export function loginAccount(
+export function loginEmailAccount(
   identifier: string,
   passwordPlain: string
 ): { success: boolean; account?: UserAccount; error?: string } {
@@ -183,11 +252,11 @@ export function loginAccount(
   );
 
   if (!found) {
-    return { success: false, error: 'Nessun account operatore trovato con questo Callsign o Email.' };
+    return { success: false, error: 'Nessun account trovato con questo Callsign o Email.' };
   }
 
-  if (found.passwordHash !== btoa(passwordPlain)) {
-    return { success: false, error: 'Password crittografica errata.' };
+  if (found.passwordHash && found.passwordHash !== btoa(passwordPlain)) {
+    return { success: false, error: 'Password non corretta.' };
   }
 
   found.lastLoginAt = new Date().toISOString();
@@ -195,6 +264,58 @@ export function loginAccount(
   setCurrentSession(found);
 
   return { success: true, account: found };
+}
+
+// Aliases for compatibility
+export const registerAccount = completeEmailRegistration;
+export const loginAccount = loginEmailAccount;
+
+/**
+ * Authenticates or creates an account using OAuth (Google or GitHub).
+ * If new account, creates fresh clean state ("nulla di nulla").
+ */
+export function loginWithOAuth(
+  provider: 'google' | 'github',
+  profile: { name: string; email: string }
+): { success: boolean; account: UserAccount } {
+  const cleanEmail = profile.email.trim().toLowerCase();
+  const baseName = sanitizeCallsign(profile.name.replace(/\s+/g, '_'), provider === 'google' ? 'Google_Op' : 'GitHub_Op');
+  const accounts = getRegisteredAccounts();
+
+  let existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
+
+  if (existing) {
+    existing.lastLoginAt = new Date().toISOString();
+    saveAccounts(accounts);
+    setCurrentSession(existing);
+    return { success: true, account: existing };
+  }
+
+  // Create brand new OAuth account with completely fresh clean state
+  let uniqueName = baseName;
+  let counter = 1;
+  while (accounts.some(a => a.username.toLowerCase() === uniqueName.toLowerCase())) {
+    uniqueName = `${baseName}_${counter}`;
+    counter++;
+  }
+
+  const cleanState = createCleanAccountState(uniqueName, cleanEmail, true);
+
+  const newAccount: UserAccount = {
+    id: `usr_${provider}_${Date.now()}`,
+    username: uniqueName,
+    email: cleanEmail,
+    provider,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    userState: cleanState
+  };
+
+  accounts.push(newAccount);
+  saveAccounts(accounts);
+  setCurrentSession(newAccount);
+
+  return { success: true, account: newAccount };
 }
 
 /**

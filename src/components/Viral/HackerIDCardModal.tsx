@@ -127,24 +127,6 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
               <h2 className="text-xl font-mono font-extrabold text-white tracking-wide">
                 {userState.username}
               </h2>
-              {onUpdateUsername && (
-                <button
-                  onClick={() => {
-                    sound.playTap();
-                    const next = window.prompt('Modifica il tuo Callsign Hacker:', userState.username);
-                    if (next) {
-                      const sanitized = sanitizeCallsign(next, userState.username);
-                      if (sanitized !== userState.username) {
-                        onUpdateUsername(sanitized);
-                      }
-                    }
-                  }}
-                  className="p-1 rounded text-slate-400 hover:text-emerald-300 transition-colors"
-                  title="Modifica Callsign"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold border mt-1"
               style={{ 
