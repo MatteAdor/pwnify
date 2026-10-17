@@ -16,6 +16,8 @@ import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AuthPage } from './components/Auth/AuthPage';
+import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
+import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { 
@@ -80,8 +82,9 @@ export const App: React.FC = () => {
   // God Mode Protected Dev Toolbar State (Strictly restricted to local development)
   const [isGodMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
+    // Defense against production bypass: Never enable dev toolbar in production builds or outside localhost
+    if (!import.meta.env.DEV) return false;
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    // Defense against production bypass: Never enable dev toolbar outside localhost
     if (!isLocal) return false;
     const hasSession = sessionStorage.getItem('0x_godmode') === 'true';
     const params = new URLSearchParams(window.location.search);
@@ -92,6 +95,11 @@ export const App: React.FC = () => {
     }
     return hasSession;
   });
+
+  // Legal & Privacy Modal State
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
+  const [legalTab, setLegalTab] = useState<LegalTabType>('privacy');
+  const [forceCookieBanner, setForceCookieBanner] = useState<boolean>(false);
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
@@ -533,6 +541,10 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
         <AuthPage
           onLoginSuccess={handleLoginSuccess}
           onGuestAccess={() => setUserState(prev => ({ ...prev, isLoggedIn: true, onboardingCompleted: false }))}
+          onOpenLegal={(tab) => {
+            setLegalTab(tab);
+            setIsLegalModalOpen(true);
+          }}
         />
       ) : !userState.onboardingCompleted ? (
         <OnboardingFunnel
@@ -553,8 +565,8 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onOpenAuth={() => setIsAuthOpen(true)}
           />
 
-          {/* Subheader Interactive Demo Toolbar (Protected by God Mode) */}
-          {isGodMode && (
+          {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}
+          {isGodMode && import.meta.env.DEV && (
             <div className="bg-[#0c1220] border-b border-white/5 py-1 px-4 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] font-mono text-slate-400 animate-fade-in">
               <span className="text-emerald-400 font-bold">🎯 SHORTCUT TEST:</span>
               <button
@@ -697,6 +709,11 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             userState={userState}
             onLoginSuccess={handleLoginSuccess}
             onLogout={handleLogout}
+            onOpenLegal={(tab) => {
+              setLegalTab(tab);
+              setIsLegalModalOpen(true);
+            }}
+            onOpenCookiePrefs={() => setForceCookieBanner(true)}
           />
 
           {/* ZeroDay PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
@@ -880,6 +897,23 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
           )}
         </>
       )}
+
+      {/* GDPR, Terms, Privacy & Refund Legal Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+        initialTab={legalTab}
+      />
+
+      {/* ePrivacy & GDPR Cookie Consent Management Banner */}
+      <CookieConsentBanner
+        onOpenCookiePolicy={() => {
+          setLegalTab('cookies');
+          setIsLegalModalOpen(true);
+        }}
+        forceOpen={forceCookieBanner}
+        onCloseForce={() => setForceCookieBanner(false)}
+      />
     </div>
   );
 };

@@ -15,13 +15,14 @@ import {
   Lock, Mail, KeyRound, User, 
   ArrowRight, CheckCircle2, AlertTriangle, 
   Sparkles, Terminal, Check, X,
-  Database, RefreshCw, Copy, ShieldCheck
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface AuthPageProps {
   onLoginSuccess: (account: UserAccount) => void;
   onGuestAccess?: () => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
 }
 
 type AuthMode = 'login' | 'signup';
@@ -44,7 +45,8 @@ const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' })
 
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess,
-  onGuestAccess
+  onGuestAccess,
+  onOpenLegal
 }) => {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [signupStep, setSignupStep] = useState<SignupStep>('email');
@@ -56,9 +58,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Mandatory Form Consents (GDPR & Minor Protection)
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [ageAccepted, setAgeAccepted] = useState(false);
+
   // Form Fields for Standard Login
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+
+  // Rate Limiting on Login (Security Defense against Brute Force)
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    let interval: any;
+    if (lockoutTimer > 0) {
+      interval = setInterval(() => {
+        setLockoutTimer(prev => Math.max(0, prev - 1));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTimer]);
 
   // OAuth Modals
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -73,12 +94,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [otpLoginCode, setOtpLoginCode] = useState('');
   const [otpStep, setOtpStep] = useState<'request' | 'verify'>('request');
 
-  // Database Inspector State
-  const [isDbInspectorOpen, setIsDbInspectorOpen] = useState(false);
-  const [rawDbContent, setRawDbContent] = useState('');
-  const [copySuccess, setCopySuccess] = useState(false);
-
-  // Registered Accounts in Database
+  // Registered Accounts in Database (for this device only)
   const [savedAccounts, setSavedAccounts] = useState<UserAccount[]>([]);
 
   // Feedback State
@@ -212,6 +228,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    if (!termsAccepted) {
+      setErrorMsg('Devi accettare i Termini di Servizio e la Privacy Policy per continuare.');
+      sound.playPayloadBlocked();
+      return;
+    }
+
+    if (!ageAccepted) {
+      setErrorMsg('Devi confermare di avere almeno 16 anni per l\'elaborazione dei dati.');
+      sound.playPayloadBlocked();
+      return;
+    }
+
     if (callsign.trim().length < 3) {
       setErrorMsg('Il Callsign deve contenere almeno 3 caratteri.');
       sound.playPayloadBlocked();
@@ -261,6 +289,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    // Rate Limiting Defense
+    if (lockoutTimer > 0) {
+      setErrorMsg(`Accesso temporaneamente bloccato per sicurezza. Riprova tra ${lockoutTimer} secondi.`);
+      sound.playPayloadBlocked();
+      return;
+    }
+
     if (!loginIdentifier.trim()) {
       setErrorMsg('Inserisci la tua email o il tuo callsign.');
       sound.playPayloadBlocked();
@@ -281,11 +316,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setIsProcessing(false);
 
       if (!res.success || !res.account) {
-        setErrorMsg(res.error || 'Credenziali non valide.');
+        const nextAttempts = failedAttempts + 1;
+        setFailedAttempts(nextAttempts);
+
+        if (nextAttempts >= 5) {
+          setLockoutTimer(60);
+          setErrorMsg('Troppi tentativi falliti consecutivi. Accesso bloccato per 60 secondi.');
+        } else {
+          setErrorMsg(`Credenziali non valide (${nextAttempts}/5 tentativi rimasti).`);
+        }
         sound.playPayloadBlocked();
         return;
       }
 
+      // Successful login resets rate limiter
+      setFailedAttempts(0);
+      setLockoutTimer(0);
       sound.playExploitSuccess();
       setSuccessMsg(`Bentornato, operatore ${res.account.username}. Accesso eseguito.`);
       setTimeout(() => {
@@ -416,40 +462,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }, 400);
   };
 
-  // ---------------------------------------------------------------------------
-  // DATABASE INSPECTOR HANDLERS (database/logins.json)
-  // ---------------------------------------------------------------------------
-  const handleOpenDbInspector = async () => {
-    sound.playTap();
-    try {
-      const res = await fetch('/api/database');
-      if (res.ok) {
-        const data = await res.json();
-        setRawDbContent(JSON.stringify(data, null, 2));
-      } else {
-        setRawDbContent(JSON.stringify(getRegisteredAccounts(), null, 2));
-      }
-    } catch {
-      setRawDbContent(JSON.stringify(getRegisteredAccounts(), null, 2));
-    }
-    setIsDbInspectorOpen(true);
-  };
-
-  const handleCopyDatabaseJson = () => {
-    if (!rawDbContent) return;
-    sound.playTap();
-    navigator.clipboard.writeText(rawDbContent);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
-  };
-
-  const handleReloadDatabase = async () => {
-    sound.playTap();
-    const updated = await syncDatabaseWithBackend();
-    setSavedAccounts(updated);
-    setRawDbContent(JSON.stringify(updated, null, 2));
-    setSuccessMsg('Database sincronizzato e ricaricato dal file su disco (database/logins.json).');
-  };
 
   // ---------------------------------------------------------------------------
   // EMAIL PASSWORDLESS OTP LOGIN HANDLER
@@ -628,24 +640,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           >
             <GitHubIcon className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
             <span>Accedi con GitHub</span>
-          </button>
-        </div>
-
-        {/* Database Explorer Trigger Badge */}
-        <div>
-          <button
-            type="button"
-            onClick={handleOpenDbInspector}
-            className="w-full py-2 px-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-mono text-[11px] flex items-center justify-between transition-all cursor-pointer group shadow-sm"
-            title="Visualizza e ispeziona il database dei login salvati su disco (database/logins.json)"
-          >
-            <div className="flex items-center gap-2">
-              <Database className="w-3.5 h-3.5 text-emerald-400 group-hover:rotate-12 transition-transform" />
-              <span className="font-bold">Database Logins: <span className="underline decoration-emerald-500/40">database/logins.json</span></span>
-            </div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-[10px] font-bold">
-              {savedAccounts.length} {savedAccounts.length === 1 ? 'account' : 'account'}
-            </span>
           </button>
         </div>
 
@@ -950,6 +944,49 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </div>
                 </div>
 
+                {/* Mandatory Form Consents (GDPR Compliance & Minor Protection) */}
+                <div className="space-y-2 pt-2 border-t border-white/5 text-xs text-slate-300">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-700 bg-[#090D17] text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span>
+                      Dichiaro di aver letto e accettare i{' '}
+                      <button
+                        type="button"
+                        onClick={() => onOpenLegal && onOpenLegal('terms')}
+                        className="text-emerald-400 hover:underline inline font-mono"
+                      >
+                        Termini di Servizio
+                      </button>{' '}
+                      e l'
+                      <button
+                        type="button"
+                        onClick={() => onOpenLegal && onOpenLegal('privacy')}
+                        className="text-emerald-400 hover:underline inline font-mono"
+                      >
+                        Informativa sulla Privacy
+                      </button>
+                      .
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={ageAccepted}
+                      onChange={(e) => setAgeAccepted(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-700 bg-[#090D17] text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span>
+                      Confermo di avere almeno 16 anni compiuti (o consenso genitoriale) per l'elaborazione dei dati didattici.
+                    </span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isProcessing}
@@ -975,6 +1012,41 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </button>
           </div>
         )}
+
+        {/* Footer Legal Links */}
+        <div className="pt-2 text-center border-t border-white/5 flex flex-wrap items-center justify-center gap-2.5 text-[10px] font-mono text-slate-500">
+          <button
+            type="button"
+            onClick={() => onOpenLegal && onOpenLegal('privacy')}
+            className="hover:text-slate-300 transition-colors"
+          >
+            Privacy Policy (GDPR)
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => onOpenLegal && onOpenLegal('terms')}
+            className="hover:text-slate-300 transition-colors"
+          >
+            Termini di Servizio
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => onOpenLegal && onOpenLegal('refund')}
+            className="hover:text-slate-300 transition-colors"
+          >
+            Diritto di Recesso
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => onOpenLegal && onOpenLegal('cookies')}
+            className="hover:text-slate-300 transition-colors"
+          >
+            Cookie Policy
+          </button>
+        </div>
       </div>
 
       {/* ============================================================== */}
@@ -1278,161 +1350,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         </div>
       )}
 
-      {/* ============================================================== */}
-      {/* MODAL 4: DATABASE INSPECTOR MODAL (database/logins.json) */}
-      {/* ============================================================== */}
-      {isDbInspectorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-sans">
-          <div className="relative w-full max-w-2xl bg-[#0D1424] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100 max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-                  <Database className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-white flex items-center gap-2">
-                    Database Logins Operatori
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[10px]">
-                      database/logins.json
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Posizione e sincronizzazione in tempo reale degli account registrati.
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setIsDbInspectorOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Storage Path Info Card */}
-            <div className="p-3.5 rounded-2xl bg-[#080C15] border border-white/10 space-y-2 shrink-0 text-xs font-mono">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                <span className="text-slate-400 font-bold uppercase tracking-wider">📁 File su Disco:</span>
-                <span className="text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 select-all break-all">
-                  c:\Users\Admin\Documents\ProgettiVari\zeroday_app\database\logins.json
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                <span className="text-slate-400 font-bold uppercase tracking-wider">💾 Storage Browser:</span>
-                <span className="text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30 select-all">
-                  localStorage.getItem('zeroday_database_accounts_v1')
-                </span>
-              </div>
-              <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[11px]">
-                <span className="text-slate-400 font-bold">Account Registrati:</span>
-                <span className="text-white font-bold px-2 py-0.5 rounded bg-white/10">
-                  {savedAccounts.length} Operatori
-                </span>
-              </div>
-            </div>
-
-            {/* Scrollable Database Accounts & JSON View */}
-            <div className="overflow-y-auto space-y-4 pr-1 flex-1 font-mono text-xs">
-              {/* Accounts Cards */}
-              <div className="space-y-2">
-                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
-                  Account Trovati nel Database:
-                </span>
-                {savedAccounts.length === 0 ? (
-                  <div className="p-4 rounded-xl bg-slate-900/50 border border-white/5 text-center text-slate-400 text-xs">
-                    Nessun account attualmente memorizzato. Crea un account o accedi per vederlo qui!
-                  </div>
-                ) : (
-                  savedAccounts.map((acc, index) => (
-                    <div 
-                      key={acc.id} 
-                      className="p-3 rounded-xl bg-[#121B30] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500 text-[10px]">#{index + 1}</span>
-                          <strong className="text-white text-xs">{acc.username}</strong>
-                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider ${
-                            acc.provider === 'google' 
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-                              : acc.provider === 'github'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                          }`}>
-                            {acc.provider}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          Email: <span className="text-slate-300">{acc.email || 'N/A'}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          Creato: {new Date(acc.createdAt).toLocaleString()} | Ultimo Login: {new Date(acc.lastLoginAt).toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[10px] shrink-0">
-                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-slate-300">
-                          XP: {acc.userState.xp} | Streak: {acc.userState.streakDays}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsDbInspectorOpen(false);
-                            handleSelectSavedAccount(acc);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold cursor-pointer transition-colors"
-                        >
-                          Accedi →
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Raw JSON Preview */}
-              <div className="space-y-1 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                    Contenuto JSON Raw (database/logins.json):
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyDatabaseJson}
-                    className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    {copySuccess ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copySuccess ? 'Copiato!' : 'Copia JSON'}</span>
-                  </button>
-                </div>
-                <pre className="p-3 rounded-xl bg-[#060911] border border-white/10 text-emerald-400/90 overflow-x-auto text-[10px] max-h-48 leading-relaxed">
-                  {rawDbContent || '[]'}
-                </pre>
-              </div>
-            </div>
-
-            {/* Modal Actions Footer */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between shrink-0 font-mono text-xs">
-              <button
-                type="button"
-                onClick={handleReloadDatabase}
-                className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Ricarica dal Disco</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsDbInspectorOpen(false)}
-                className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold cursor-pointer transition-colors"
-              >
-                Chiudi Inspector
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

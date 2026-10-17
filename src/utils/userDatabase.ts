@@ -5,7 +5,7 @@ import { sanitizeCallsign } from './security';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
-const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v3';
+const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v4';
 const PENDING_2FA_STORAGE_KEY = 'zeroday_pending_2fa_v1';
 
 export type AuthProvider = 'email' | 'google' | 'github';
@@ -105,8 +105,8 @@ export function createDefaultGuestState(): UserState {
 }
 
 /**
- * One-time purge of all old legacy localStorage keys to ensure
- * previous dirty sessions are completely wiped clean.
+ * One-time purge of all old legacy localStorage keys and stored mock accounts
+ * to prevent data leakage and hacker attacks.
  */
 export function purgeLegacyStorage(): void {
   try {
@@ -123,11 +123,14 @@ export function purgeLegacyStorage(): void {
       '0x_arsenal_theme',
       '0x_arsenal_title',
       '0x_godmode',
-      'zeroday_legacy_purged_v1'
+      'zeroday_legacy_purged_v1',
+      'zeroday_legacy_purged_v2',
+      'zeroday_legacy_purged_v3',
+      ACCOUNTS_DB_KEY,
+      SESSION_DB_KEY
     ];
 
     legacyKeys.forEach(k => localStorage.removeItem(k));
-    localStorage.removeItem(SESSION_DB_KEY);
     localStorage.setItem(LEGACY_STORAGE_PURGED_FLAG, 'true');
   } catch (e) {
     console.error('Failed to purge legacy storage', e);
@@ -194,14 +197,10 @@ export async function syncDatabaseWithBackend(): Promise<UserAccount[]> {
         }));
         localStorage.setItem(ACCOUNTS_DB_KEY, JSON.stringify(merged));
         return merged;
-      } else if (localAccounts.length > 0) {
-        // Disk is empty but local has data: write local to disk
-        await fetch('/api/database', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(localAccounts, null, 2)
-        });
-        return localAccounts;
+      } else if (Array.isArray(diskAccounts) && diskAccounts.length === 0) {
+        // Disk accounts were purged to protect against hackers: sync purge to localStorage
+        localStorage.setItem(ACCOUNTS_DB_KEY, JSON.stringify([]));
+        return [];
       }
     }
   } catch (e) {
@@ -480,3 +479,36 @@ export function persistActiveAccountState(state: UserState): void {
     console.error('Failed to persist active account state to database', e);
   }
 }
+
+/**
+ * Permanently deletes a user account and wipes all their associated data (GDPR Art. 17 - Right to Erasure)
+ */
+export function deleteUserAccount(accountId: string): boolean {
+  try {
+    const accounts = getRegisteredAccounts();
+    const remaining = accounts.filter(a => a.id !== accountId);
+    saveAccounts(remaining);
+
+    const session = getCurrentSession();
+    if (session && session.id === accountId) {
+      setCurrentSession(null);
+    }
+    return true;
+  } catch (e) {
+    console.error('Failed to delete user account', e);
+    return false;
+  }
+}
+
+/**
+ * Purges all accounts from local storage and backend (Security reset)
+ */
+export function purgeAllUserAccounts(): void {
+  try {
+    saveAccounts([]);
+    setCurrentSession(null);
+  } catch (e) {
+    console.error('Failed to purge accounts', e);
+  }
+}
+

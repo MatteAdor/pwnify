@@ -5,11 +5,13 @@ import { sanitizeCallsign } from '../../utils/security';
 import { 
   registerAccount, 
   loginAccount, 
-  UserAccount 
+  UserAccount,
+  deleteUserAccount,
+  getCurrentSession
 } from '../../utils/userDatabase';
 import { 
   X, Lock, Mail, User, ShieldCheck, 
-  ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2 
+  ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2, Trash2 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -19,6 +21,8 @@ interface AuthModalProps {
   userState: UserState;
   onLoginSuccess: (account: UserAccount) => void;
   onLogout: () => void;
+  onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
+  onOpenCookiePrefs?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -26,7 +30,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   userState,
   onLoginSuccess,
-  onLogout
+  onLogout,
+  onOpenLegal,
+  onOpenCookiePrefs
 }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [callsign, setCallsign] = useState('');
@@ -34,6 +40,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   if (!isOpen) return null;
 
@@ -183,11 +190,103 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onLogout();
                 onClose();
               }}
-              className="w-full py-3 px-4 rounded-xl border border-red-500/30 bg-red-950/30 hover:bg-red-900/40 text-red-300 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98"
+              className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-[#141C2E] hover:bg-white/5 text-slate-300 font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-98"
             >
               <LogOut className="w-4 h-4" />
               <span>TERMINA SESSIONE (LOGOUT)</span>
             </button>
+
+            {/* GDPR Art. 17 - Right to Erasure / Cancellazione Account */}
+            <div className="pt-2 border-t border-white/5 space-y-2">
+              {!isConfirmingDelete ? (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="w-full py-2 px-3 rounded-xl border border-red-500/20 bg-red-950/20 hover:bg-red-950/40 text-red-400 font-mono text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  <span>Elimina Account & Dati Personali (Art. 17 GDPR)</span>
+                </button>
+              ) : (
+                <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 space-y-2 font-mono text-xs animate-fade-in">
+                  <span className="text-red-300 font-bold block text-[11px] leading-tight">
+                    ⚠️ Confermi la cancellazione definitiva di questo account e di tutti i progressi? L'operazione è immediata e irreversibile.
+                  </span>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const session = getCurrentSession();
+                        if (session) {
+                          deleteUserAccount(session.id);
+                        }
+                        sound.playExploitSuccess();
+                        onLogout();
+                        setIsConfirmingDelete(false);
+                        onClose();
+                      }}
+                      className="flex-1 py-1.5 px-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-[10px]"
+                    >
+                      SÌ, CANCELLA TUTTO
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDelete(false)}
+                      className="py-1.5 px-3 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 text-[10px]"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Legal & Compliance Quick Links */}
+            <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono text-slate-400">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('privacy');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('terms');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Termini di Servizio
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('refund');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Rimborso 14gg
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenCookiePrefs?.();
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Cookie
+              </button>
+            </div>
           </div>
         ) : (
           /* LOGIN / SIGNUP FORM */
@@ -313,6 +412,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+
+            {/* Legal footer links */}
+            <div className="pt-3 mt-3 border-t border-white/5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] font-mono text-slate-400">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('privacy');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Privacy
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('terms');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Termini
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenLegal?.('refund');
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Rimborso
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenCookiePrefs?.();
+                }}
+                className="hover:text-emerald-400 underline transition-colors"
+              >
+                Cookie
+              </button>
+            </div>
           </div>
         )}
       </div>

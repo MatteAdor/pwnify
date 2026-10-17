@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+import { getRandomQuestionsForCert } from '../../data/officialCertQuestions';
+
 interface CertPrepTabProps {
   userState: UserState;
   onOpenPaywallContext: (context: 'exam_simulator_lock') => void;
@@ -75,30 +77,72 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       name: 'CompTIA Security+',
       code: 'SY0-701',
       issuer: 'CompTIA',
+      questionCount: 314,
       readiness: userState.readinessScore,
       totalPBQs: 45,
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('secplus') || id.includes('firewall')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
-      description: 'Standard globale per la sicurezza informatica e Zero Trust. Focus su architetture difensive, PBQs firewall ACL e incident response.'
+      description: 'Standard globale per la sicurezza informatica e Zero Trust. Pool di 314 domande autentiche su architetture difensive, PBQs firewall ACL e incident response.'
     },
     {
       id: 'ccna',
       name: 'Cisco CCNA',
       code: '200-301',
       issuer: 'Cisco Systems',
+      questionCount: 402,
       readiness: Math.round(userState.readinessScore * 0.7),
       totalPBQs: 52,
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ccna') || id.includes('router') || id.includes('vlan')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
-      description: 'Routing OSPF, subnetting VLSM, switching VLAN, sicurezza 802.1X e automazione API con controller Cisco DNA Spaces.'
+      description: 'Routing OSPF, subnetting VLSM, switching VLAN, sicurezza 802.1X e automazione API. Pool completo di 402 quesiti ufficiali.'
+    },
+    {
+      id: 'netplus',
+      name: 'CompTIA Network+',
+      code: 'N10-008/009',
+      issuer: 'CompTIA',
+      questionCount: 300,
+      readiness: Math.round(userState.readinessScore * 0.75),
+      totalPBQs: 40,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('net') || id.includes('packet')).length,
+      pbqRef: 'pbq_secplus_firewall',
+      color: 'border-blue-500/40 text-blue-400 bg-blue-500/10',
+      description: 'Topologie di rete, stack OSI, routing distance-vector e link-state, Wi-Fi 6E e cavi in fibra. 300 domande ufficiali d\'esame.'
+    },
+    {
+      id: 'aplus_core1',
+      name: 'CompTIA A+ Core 1',
+      code: '220-1101',
+      issuer: 'CompTIA',
+      questionCount: 303,
+      readiness: Math.round(userState.readinessScore * 0.8),
+      totalPBQs: 35,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap1')).length,
+      pbqRef: 'pbq_secplus_firewall',
+      color: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
+      description: 'Hardware, connettività mobile, networking, virtualizzazione e cloud. 303 domande d\'esame certificate.'
+    },
+    {
+      id: 'aplus_core2',
+      name: 'CompTIA A+ Core 2',
+      code: '220-1102',
+      issuer: 'CompTIA',
+      questionCount: 305,
+      readiness: Math.round(userState.readinessScore * 0.8),
+      totalPBQs: 35,
+      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap2')).length,
+      pbqRef: 'pbq_secplus_firewall',
+      color: 'border-orange-500/40 text-orange-400 bg-orange-500/10',
+      description: 'Sistemi operativi Windows/Linux/macOS, rimozione malware in 7 step, script bash/powershell e sicurezza. 305 domande ufficiali.'
     },
     {
       id: 'ceh',
       name: 'Certified Ethical Hacker',
       code: 'CEH v13 AI',
       issuer: 'EC-Council',
+      questionCount: 120,
       readiness: Math.round(userState.readinessScore * 0.5),
       totalPBQs: 60,
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ceh') || id.includes('killchain')).length,
@@ -228,7 +272,20 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
               <button
                 onClick={() => {
                   sound.playTap();
-                  setActiveQuickQuestions(QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) })));
+                  const pool = getRandomQuestionsForCert(cert.id, 5);
+                  const formatted = pool.length > 0 
+                    ? pool.map(q => ({
+                        q: q.question,
+                        options: shuffleArray(q.options.map((opt, oIdx) => ({
+                          id: `${q.id}_${oIdx}`,
+                          text: opt,
+                          isCorrect: oIdx === q.correctIndex
+                        }))),
+                        expl: q.explanation || `Risposta corretta: ${q.correctAnswer}`
+                      }))
+                    : QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
+
+                  setActiveQuickQuestions(formatted);
                   setQuickCheckCert(cert.name);
                   setQuickQuestionIndex(0);
                   setQuickScore(0);
@@ -238,7 +295,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                 className="py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 bg-surface-light border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5"
               >
                 <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
-                <span>Quick Domain Check (Free)</span>
+                <span>Quick Check (5 Domande Reali)</span>
               </button>
 
               {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
