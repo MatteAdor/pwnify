@@ -522,41 +522,41 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
               </div>
             ) : (
               <div className="space-y-5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-mono font-bold">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  STATO: VULNERABILITÀ CRITICA / RISCHIO BOCCIATURA
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold">
+                  <Check className="w-3.5 h-3.5" />
+                  VALUTAZIONE TECNICA INIZIALE COMPLETATA
                 </div>
 
                 <div>
                   <div className="flex items-center justify-center gap-4 my-2">
-                    <div className="p-4 rounded-2xl bg-[#06090F] border border-red-500/30 text-center min-w-[120px]">
-                      <span className="text-[10px] text-slate-400 font-mono block">READINESS ATTUALE</span>
-                      <span className="text-3xl sm:text-4xl font-mono font-extrabold text-red-400">
+                    <div className="p-4 rounded-2xl bg-[#06090F] border border-white/10 text-center min-w-[130px]">
+                      <span className="text-[10px] text-slate-400 font-mono block">READINESS BASE</span>
+                      <span className="text-3xl sm:text-4xl font-mono font-extrabold text-amber-400">
                         {calculatedReadiness}%
                       </span>
                     </div>
 
                     <ArrowRight className="w-6 h-6 text-slate-500 shrink-0" />
 
-                    <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 text-center min-w-[120px] shadow-neon-emerald">
-                      <span className="text-[10px] text-emerald-400 font-mono block">CON ZERODAY PRO</span>
+                    <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-center min-w-[130px] shadow-neon-emerald">
+                      <span className="text-[10px] text-emerald-300 font-mono block">BENCHMARK CERT</span>
                       <span className="text-3xl sm:text-4xl font-mono font-extrabold text-emerald-400">
-                        92%
+                        85%+
                       </span>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-300 max-w-md mx-auto mt-3">
-                    Il tuo punteggio diagnostico mostra lacune strutturali nella privilege escalation e nella dissezione pacchetti. Con il percorso personalizzato di <span className="text-emerald-400 font-bold">ZeroDay PRO</span> raggiungerai il <span className="text-emerald-400 font-bold">92% di Exam Readiness in 21 giorni</span>.
+                  <p className="text-xs text-slate-300 max-w-md mx-auto mt-3 leading-relaxed">
+                    Il test diagnostico ha mappato le tue competenze attuali. I percorsi pratici su <span className="text-emerald-400 font-bold">CompTIA Security+</span>, <span className="text-emerald-400 font-bold">CCNA</span> e <span className="text-emerald-400 font-bold">CEH</span> ti guideranno passo dopo passo nel consolidamento di exploit, networking e contromisure difensive.
                   </p>
                 </div>
 
-                {/* Primary CTA: Launch Paywall 1 */}
+                {/* Primary CTA: Launch Paywall */}
                 <button
                   onClick={handleFinishOnboarding}
                   className="w-full py-4 px-4 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-400 transition-all shadow-neon-emerald flex items-center justify-center gap-2 transform active:scale-98"
                 >
                   <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>SBLOCCA IL PIANO 92% (PROVA 7 GIORNI GRATIS)</span>
+                  <span>ESPLORA IL PERCORSO & PIANI PRO</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -571,7 +571,7 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                   }}
                   className="text-xs text-slate-400 hover:text-slate-200 underline font-mono"
                 >
-                  Salta e continua con la versione Free
+                  Continua con l'account Free
                 </button>
               </div>
             )}

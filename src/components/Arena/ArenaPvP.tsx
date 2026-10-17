@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-import { SocialProofBanner } from '../Paywall/SocialProofBanner';
 import { SurvivalModeModal } from './SurvivalModeModal';
 
 export interface DuelChallengeData {
@@ -305,8 +304,22 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
           </div>
 
-          {/* Live Arena Social Proof Banner */}
-          <SocialProofBanner variant="full" />
+          {/* Authentic Arena Training Banner */}
+          <div className="w-full p-3.5 rounded-2xl bg-[#090D16] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-bold text-white block">Simulazione Tattica ELO & Duelli Diretti</span>
+                <span className="text-[10px] text-slate-400">Addestramento 1v1 su scenari CompTIA Security+, CCNA & CEH</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-slate-300">
+              <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">60s per match</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Calibrazione ELO</span>
+            </div>
+          </div>
 
           {/* Quick Match Action */}
           <div className="bg-surface border border-white/10 rounded-2xl p-6 text-center space-y-4">
@@ -317,7 +330,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             <div>
               <h3 className="text-lg font-bold text-white">Pronto per il Blitz 1v1?</h3>
               <p className="text-xs text-slate-400 mt-1">
-                Matchmaking rapido basato sul tuo ELO ({userState.elo} - {userRank.tier})
+                Sfida un agente di addestramento calibrato sul tuo ELO ({userState.elo} - {userRank.tier}) o invia un link duello.
               </p>
             </div>
 
@@ -359,16 +372,16 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
           <div>
             <h3 className="text-lg font-extrabold text-white font-mono">
-              RICERCA AVVERSARIO IN CORSO...
+              CALIBRAZIONE AGENTE DI SIMULAZIONE...
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-1">
-              Scansione nodi ELO {userState.elo - 50} - {userState.elo + 50} ({searchTimer.toFixed(1)}s)
+              Selezione pool d'esame calibrato su ELO {userState.elo} ({searchTimer.toFixed(1)}s)
             </p>
           </div>
 
           <div className="p-3 rounded-xl bg-[#090D16] border border-white/5 inline-flex items-center gap-2 text-xs font-mono text-slate-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Smart Matchmaking Protocol v3.8 attivo</span>
+            <span>Pool domande CompTIA, CCNA & CEH attivo</span>
           </div>
         </div>
       )}
@@ -378,7 +391,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         <div className="space-y-6 animate-fade-in my-6">
           <div className="text-center">
             <span className="text-xs font-mono px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold">
-              AVVERSARIO TROVATO · INIZIO MATCH IN 2s
+              SCENARIO CALIBRATO · INIZIO ROUND IN 2s
             </span>
           </div>
 
@@ -414,9 +427,8 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">
                 {opponent.rank}
               </span>
-              <div className="text-[11px] font-mono text-amber-400 flex items-center justify-center gap-1">
-                <Flame className="w-3 h-3 fill-amber-500" />
-                Streak: x{opponent.winStreak}
+              <div className="text-[10px] font-mono text-indigo-300 font-bold flex items-center justify-center gap-1">
+                {opponent.isBot ? '🤖 Training Bot' : '⚡ Duellante Live'}
               </div>
             </div>
           </div>

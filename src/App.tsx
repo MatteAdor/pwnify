@@ -605,7 +605,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                 }}
                 className="text-amber-400 hover:text-amber-300 underline"
               >
-                Test Exit-Intent Downsell (-50%)
+                Apri Paywall PRO
               </button>
               <span className="text-slate-600">|</span>
               <button
@@ -699,7 +699,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onLogout={handleLogout}
           />
 
-          {/* ZeroDay PRO Paywall Modal (with Exit-Intent Downsell, Stripe Bridge & License Restore) */}
+          {/* ZeroDay PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
           <PaywallModal
             isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}

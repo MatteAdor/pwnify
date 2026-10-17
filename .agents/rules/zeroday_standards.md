@@ -12,8 +12,8 @@ This ruleset binds all development, architecture, content creation, and refactor
   - First-time user experience (FTUE) must be calibrated to the user's declared knowledge level (`Script Kiddie` vs `Red Teamer`).
 - **Paywall Architecture**:
   - Use contextual triggers (`blurred_breakdown`, `win_streak_trap`, `exam_simulator_lock`, `loss_aversion_bounty`).
-  - Never block core learning loops without transparent value demonstration.
-  - Implement exit-intent downsell offers with authentic scarcity countdowns and cryptographic license key portability.
+  - Never use artificial scarcity timers, fake countdowns, fake reviews, or exit-intent downsell traps.
+  - Support authentic Stripe checkout and offline cryptographic license key validation.
 
 ---
 
