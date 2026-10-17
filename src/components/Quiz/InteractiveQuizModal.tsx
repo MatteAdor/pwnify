@@ -37,14 +37,14 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
 
   const currentQ = node?.questions?.[currentQuestionIndex];
 
-  // Fisher-Yates shuffle options and command chips on every question change
+  // Fisher-Yates shuffle options and command chips only when question changes (Vercel React best practice)
   const shuffledOptions = useMemo(() => {
     return currentQ?.options ? shuffleArray(currentQ.options) : [];
-  }, [currentQ]);
+  }, [currentQ?.id]);
 
   const shuffledChips = useMemo(() => {
     return currentQ?.commandChips ? shuffleArray(currentQ.commandChips) : [];
-  }, [currentQ]);
+  }, [currentQ?.id]);
 
   if (!isOpen || !node?.questions || node.questions.length === 0 || !currentQ) return null;
 
@@ -221,12 +221,12 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                   <div
                     key={line.lineNum}
                     onClick={() => handleLineClick(line.lineNum)}
-                    className={`px-3 py-1.5 flex items-start gap-3 cursor-pointer transition-colors ${lineBg}`}
+                    className={`px-3 py-2.5 sm:py-2 min-h-[44px] flex items-center gap-3 cursor-pointer transition-colors select-none ${lineBg}`}
                   >
-                    <span className="text-slate-600 select-none w-5 text-right font-mono text-xs pt-0.5">
+                    <span className="text-slate-500 select-none w-6 text-right font-mono text-xs font-bold shrink-0">
                       {line.lineNum}
                     </span>
-                    <pre className="font-mono overflow-x-auto whitespace-pre-wrap flex-1">{line.code}</pre>
+                    <pre className="font-mono overflow-x-auto whitespace-pre-wrap flex-1 text-xs sm:text-[13px]">{line.code}</pre>
                   </div>
                 );
               })}
@@ -293,10 +293,10 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                     <button
                       key={i}
                       onClick={() => handleChipClick(chip)}
-                      className="px-2.5 py-1 rounded-lg bg-surface border border-white/10 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 font-mono text-xs transition-all active:scale-95 flex items-center gap-1"
+                      className="min-h-[40px] px-3.5 py-2 rounded-xl bg-surface border border-white/10 hover:border-cyan-400 text-slate-200 hover:text-cyan-300 font-mono text-xs font-semibold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm"
                     >
                       <span>{chip}</span>
-                      <CornerDownLeft className="w-3 h-3 opacity-60" />
+                      <CornerDownLeft className="w-3.5 h-3.5 opacity-60 text-cyan-400" />
                     </button>
                   ))}
                   <button
@@ -304,7 +304,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                       sound.playTap();
                       setTerminalInputText('');
                     }}
-                    className="px-2 py-1 rounded-lg bg-red-950/40 border border-red-500/30 text-red-400 text-[11px] font-mono"
+                    className="min-h-[40px] px-3 py-2 rounded-xl bg-red-950/40 border border-red-500/30 hover:border-red-500/60 text-red-400 text-xs font-mono font-bold transition-all active:scale-95"
                   >
                     Cancella
                   </button>
