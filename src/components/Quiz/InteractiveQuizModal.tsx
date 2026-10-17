@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { HardcoreQuestion, SkillNode } from '../../types';
+import { SkillNode } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
 import { 
@@ -33,18 +33,18 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [shouldShake, setShouldShake] = useState<boolean>(false);
 
-  if (!isOpen || !node.questions || node.questions.length === 0) return null;
-
-  const currentQ: HardcoreQuestion = node.questions[currentQuestionIndex];
+  const currentQ = node?.questions?.[currentQuestionIndex];
 
   // Fisher-Yates shuffle options and command chips on every question change
   const shuffledOptions = useMemo(() => {
     return currentQ?.options ? shuffleArray(currentQ.options) : [];
-  }, [currentQ?.id, node.id]);
+  }, [currentQ]);
 
   const shuffledChips = useMemo(() => {
     return currentQ?.commandChips ? shuffleArray(currentQ.commandChips) : [];
-  }, [currentQ?.id, node.id]);
+  }, [currentQ]);
+
+  if (!isOpen || !node?.questions || node.questions.length === 0 || !currentQ) return null;
 
   const handleChipClick = (chip: string) => {
     sound.playTap();

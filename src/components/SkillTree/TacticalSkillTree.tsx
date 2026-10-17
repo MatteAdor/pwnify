@@ -3,9 +3,9 @@ import { SKILL_MODULES } from '../../data/curriculum';
 import { SkillNode, UserState, DailyBounty } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { 
-  Lock, CheckCircle2, Play, Award, 
-  Terminal, Sparkles, ChevronDown, ChevronUp, Zap, 
-  Shield, Gift, Flame, Box, Check, ArrowRight 
+  Lock, CheckCircle2, Play, 
+  Sparkles, ChevronDown, ChevronUp, 
+  Shield, Gift, Box, Check 
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {

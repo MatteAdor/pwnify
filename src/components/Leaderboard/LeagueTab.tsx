@@ -3,8 +3,8 @@ import { UserState, LeagueHacker } from '../../types';
 import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 import { 
-  Trophy, Flame, ShieldAlert, Sparkles, ArrowUp, ArrowDown, 
-  Minus, Zap, Shield, Crown, Clock, Users 
+  Trophy, Flame, Sparkles, ArrowUp, ArrowDown, 
+  Zap, Crown, Clock, Users 
 } from 'lucide-react';
 
 interface LeagueTabProps {

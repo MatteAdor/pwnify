@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getDiagnosticQuestionsForLevel } from '../../data/diagnosticQuestions';
-import { HardcoreQuestion, CodeLine } from '../../types';
+import { HardcoreQuestion } from '../../types';
 import { 
   Shield, CheckCircle2, AlertTriangle, ArrowRight, Terminal, 
-  Cpu, Flame, Target, Sparkles, Check, ChevronRight, HelpCircle 
+  Cpu, Target, Sparkles, Check 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 

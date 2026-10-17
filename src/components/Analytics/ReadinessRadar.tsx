@@ -1,8 +1,8 @@
 import React from 'react';
 import { UserState, SkillDomain } from '../../types';
 import { 
-  Radar as RadarIcon, Shield, Lock, Sparkles, AlertTriangle, 
-  CheckCircle2, ArrowRight, Zap, Target, BarChart2 
+  Radar as RadarIcon, Lock, Sparkles, AlertTriangle, 
+  Zap, BarChart2 
 } from 'lucide-react';
 
 interface ReadinessRadarProps {

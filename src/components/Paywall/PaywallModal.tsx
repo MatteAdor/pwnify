@@ -4,12 +4,12 @@ import { MONETIZATION_CONFIG } from '../../config/monetization';
 import { SocialProofBanner } from './SocialProofBanner';
 import { sound } from '../../utils/soundEngine';
 import { 
-  X, Check, Sparkles, Shield, Flame, Lock, Bell, Star, 
-  Terminal, ArrowRight, Zap, Target, Award, AlertTriangle, 
-  Clock, ShieldAlert, Cpu, ExternalLink, KeyRound 
+  X, Check, Sparkles, ArrowRight, Zap, AlertTriangle, 
+  Clock, ShieldAlert, KeyRound 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { verifyLicenseKey } from '../../utils/licenseEngine';
+import { isSafeRedirectUrl } from '../../utils/security';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -130,8 +130,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
     const isRealUrl = checkoutUrl.startsWith('https://') && !checkoutUrl.includes('test_');
     if (MONETIZATION_CONFIG.enableRealRedirect || isRealUrl) {
-      window.location.href = checkoutUrl;
-      return;
+      if (isSafeRedirectUrl(checkoutUrl)) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+      console.warn('[Security] Blocked unauthorized redirect target:', checkoutUrl);
     }
 
     // Cryptographic terminal simulation

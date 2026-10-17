@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { UserState, PvPPlayer, PvPChallenge } from '../../types';
 import { SMART_BOTS, generatePvPMatchChallenges } from '../../data/pvpChallenges';
 import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 import { 
-  Swords, Shield, Flame, Zap, Trophy, Timer, 
-  RotateCcw, Sparkles, AlertCircle, CheckCircle2, XCircle, ArrowRight,
-  Share2, Copy
+  Swords, Flame, Zap, Trophy, Timer, 
+  RotateCcw, Sparkles, CheckCircle2, Copy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -57,14 +56,40 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   const [opponentScore, setOpponentScore] = useState<number>(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [battleTimer, setBattleTimer] = useState<number>(60);
-  const [userAnswersStats, setUserAnswersStats] = useState<{ isCorrect: boolean; timeSec: number }[]>([]);
-  const questionStartTimeRef = useRef<number>(Date.now());
+  const questionStartTimeRef = useRef<number>(0);
   const radarPingCounterRef = useRef<number>(0);
 
   // Post match stats
   const [matchResult, setMatchResult] = useState<'win' | 'loss'>('win');
   const [eloDelta, setEloDelta] = useState<number>(26);
   const [copiedDuelLink, setCopiedDuelLink] = useState<boolean>(false);
+
+  const endMatch = useCallback(() => {
+    const isWin = userScore >= opponentScore;
+    setMatchResult(isWin ? 'win' : 'loss');
+    const gained = isWin ? 26 + Math.floor(Math.random() * 8) : -18;
+    setEloDelta(gained);
+
+    if (isWin) {
+      sound.playVictoryFanfare();
+      setTimeout(() => sound.playEloTick(), 400);
+      setTimeout(() => sound.playEloTick(), 550);
+      setTimeout(() => sound.playEloTick(), 700);
+      setTimeout(() => sound.playEloTick(), 850);
+      
+      onWinMatch(gained);
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } else {
+      sound.playPayloadBlocked();
+      onLossMatch(Math.abs(gained));
+    }
+
+    setPhase('post_match');
+  }, [userScore, opponentScore, onWinMatch, onLossMatch]);
 
   // Handle Incoming URL Duel Challenge
   useEffect(() => {
@@ -87,7 +112,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       setOpponentScore(0);
       setCurrentChallengeIndex(0);
       setSelectedOptionId(null);
-      setUserAnswersStats([]);
       setPhase('vs_screen');
       sound.playExploitSuccess();
 
@@ -99,7 +123,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
       return () => clearTimeout(vsTimer);
     }
-  }, [initialDuelChallenge]);
+  }, [initialDuelChallenge, onClearInitialDuel]);
 
   // Matchmaking radar timer with periodic sonar ping
   useEffect(() => {
@@ -155,7 +179,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [phase, userScore, opponentScore]);
+  }, [phase, endMatch]);
 
   // Bot response simulator
   useEffect(() => {
@@ -195,7 +219,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     setOpponentScore(0);
     setCurrentChallengeIndex(0);
     setSelectedOptionId(null);
-    setUserAnswersStats([]);
     setPhase('searching');
   };
 
@@ -204,7 +227,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     sound.playTap();
     setSelectedOptionId(optionId);
 
-    const timeSpent = (Date.now() - questionStartTimeRef.current) / 1000;
     const challenge = matchChallenges[currentChallengeIndex] || matchChallenges[0];
     const isRight = challenge.options.find(o => o.id === optionId)?.isCorrect || false;
 
@@ -215,8 +237,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       sound.playPayloadBlocked();
     }
 
-    setUserAnswersStats(prev => [...prev, { isCorrect: isRight, timeSec: timeSpent }]);
-
     setTimeout(() => {
       setSelectedOptionId(null);
       if (currentChallengeIndex < matchChallenges.length - 1) {
@@ -226,34 +246,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         endMatch();
       }
     }, 800);
-  };
-
-  const endMatch = () => {
-    const isWin = userScore >= opponentScore;
-    setMatchResult(isWin ? 'win' : 'loss');
-    const gained = isWin ? 26 + Math.floor(Math.random() * 8) : -18;
-    setEloDelta(gained);
-
-    if (isWin) {
-      sound.playVictoryFanfare();
-      // Tick sound sequence simulating ELO increment
-      setTimeout(() => sound.playEloTick(), 400);
-      setTimeout(() => sound.playEloTick(), 550);
-      setTimeout(() => sound.playEloTick(), 700);
-      setTimeout(() => sound.playEloTick(), 850);
-      
-      onWinMatch(gained);
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-    } else {
-      sound.playPayloadBlocked();
-      onLossMatch(Math.abs(gained));
-    }
-
-    setPhase('post_match');
   };
 
   const userRank = getRankFromElo(userState.elo);

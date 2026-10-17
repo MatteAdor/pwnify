@@ -3,10 +3,11 @@ import { UserState } from '../../types';
 import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 import { 
-  X, Shield, Flame, Copy, Check, Sparkles, QrCode, 
-  Share2, Award, Terminal, Cpu, Zap, Edit3 
+  X, Shield, Flame, Check, 
+  Share2, Cpu, Zap, Edit3 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { sanitizeCallsign } from '../../utils/security';
 
 interface HackerIDCardModalProps {
   userState: UserState;
@@ -123,8 +124,11 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
                   onClick={() => {
                     sound.playTap();
                     const next = window.prompt('Modifica il tuo Callsign Hacker:', userState.username);
-                    if (next && next.trim() && next.trim() !== userState.username) {
-                      onUpdateUsername(next.trim());
+                    if (next) {
+                      const sanitized = sanitizeCallsign(next, userState.username);
+                      if (sanitized !== userState.username) {
+                        onUpdateUsername(sanitized);
+                      }
                     }
                   }}
                   className="p-1 rounded text-slate-400 hover:text-emerald-300 transition-colors"

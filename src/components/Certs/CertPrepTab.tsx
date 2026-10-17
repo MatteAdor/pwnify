@@ -4,9 +4,8 @@ import { OFFICIAL_PBQ_LABS } from '../../data/bountiesAndPbq';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
 import { 
-  ShieldCheck, Award, Lock, Sparkles, Terminal, 
-  CheckCircle2, AlertTriangle, ArrowRight, X, Play, Clock, 
-  HelpCircle, Shield, Check, Flame 
+  ShieldCheck, Lock, Terminal, 
+  CheckCircle2, AlertTriangle, ArrowRight, X, Play 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 

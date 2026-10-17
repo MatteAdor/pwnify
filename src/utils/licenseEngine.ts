@@ -38,10 +38,22 @@ export function generateLicenseKey(seed?: string): string {
 }
 
 /**
+ * Constant-time string comparison to prevent timing side-channel attacks
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/**
  * Validates a ZeroDay PRO license key format and algorithmic checksum
  */
 export function verifyLicenseKey(rawKey: string): boolean {
-  if (!rawKey) return false;
+  if (!rawKey || typeof rawKey !== 'string') return false;
   const cleanKey = rawKey.trim().toUpperCase();
 
   // Pattern: 0xPRO-XXXX-XXXX-XXXX
@@ -53,10 +65,13 @@ export function verifyLicenseKey(rawKey: string): boolean {
   const part2 = parts[2];
   const checksum = parts[3];
 
-  if (part1.length !== 4 || part2.length !== 4 || checksum.length !== 4) {
-    return false;
-  }
+  // Part 1 must be exactly 4 valid hex chars
+  if (!/^[0-9A-F]{4}$/.test(part1)) return false;
+  // Part 2 must be exactly 4 valid alphanumeric chars
+  if (!/^[2-9A-HJ-NP-Z]{4}$/.test(part2)) return false;
+  // Checksum must be exactly 4 valid hex chars
+  if (!/^[0-9A-F]{4}$/.test(checksum)) return false;
 
   const expectedChecksum = computeChecksum(part1, part2);
-  return checksum === expectedChecksum;
+  return timingSafeEqual(checksum, expectedChecksum);
 }

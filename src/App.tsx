@@ -12,8 +12,15 @@ import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
 import { CertPrepTab } from './components/Certs/CertPrepTab';
 import { PaywallModal } from './components/Paywall/PaywallModal';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
-import { generateLicenseKey } from './utils/licenseEngine';
+import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { sound } from './utils/soundEngine';
+import { 
+  sanitizeCallsign, 
+  sanitizeAlphanumeric, 
+  clampNumber, 
+  safeJsonParse, 
+  verifyCheckoutToken 
+} from './utils/security';
 import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck, Edit3 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -48,19 +55,24 @@ const DEFAULT_USER_STATE: UserState = {
 };
 
 export const App: React.FC = () => {
-  // Load initial state from localStorage or fallback
+  // Load initial state from localStorage or fallback with prototype pollution guard
   const [userState, setUserState] = useState<UserState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse<Partial<UserState>>(saved, {});
         return {
           ...DEFAULT_USER_STATE,
           ...parsed,
-          dailyBounties: (parsed.dailyBounties && parsed.dailyBounties.length > 0)
+          username: sanitizeCallsign(parsed.username, DEFAULT_USER_STATE.username),
+          elo: clampNumber(parsed.elo, 100, 3500, DEFAULT_USER_STATE.elo),
+          xp: clampNumber(parsed.xp, 0, 1000000, DEFAULT_USER_STATE.xp),
+          readinessScore: clampNumber(parsed.readinessScore, 0, 100, DEFAULT_USER_STATE.readinessScore),
+          dailyBounties: (parsed.dailyBounties && Array.isArray(parsed.dailyBounties) && parsed.dailyBounties.length > 0)
             ? parsed.dailyBounties
             : INITIAL_DAILY_BOUNTIES,
-          completedPbqIds: parsed.completedPbqIds || []
+          completedPbqIds: Array.isArray(parsed.completedPbqIds) ? parsed.completedPbqIds : [],
+          completedNodeIds: Array.isArray(parsed.completedNodeIds) ? parsed.completedNodeIds : []
         };
       }
     } catch (e) {
@@ -114,19 +126,19 @@ export const App: React.FC = () => {
   const [verifiedCheckoutLicense, setVerifiedCheckoutLicense] = useState<string | null>(null);
   const [licenseCopied, setLicenseCopied] = useState<boolean>(false);
 
-  // Intercept ?seed=... or ?checkout=0x_pro_verified on mount
+  // Intercept ?seed=... or authenticated checkout returns on mount
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.search) {
       const params = new URLSearchParams(window.location.search);
 
-      // Check 1: Post-checkout return verification
-      const isCheckoutVerified = 
-        params.get('checkout') === '0x_pro_verified' || 
-        params.get('checkout') === 'success' ||
-        Boolean(params.get('session_id'));
+      // Check 1: Post-checkout return verification (Defends against URL paywall bypass)
+      const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
+      const incomingLicense = params.get('license');
 
-      if (isCheckoutVerified) {
-        const key = generateLicenseKey(userState.username);
+      if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
+        const key = incomingLicense && verifyLicenseKey(incomingLicense) 
+          ? incomingLicense 
+          : generateLicenseKey(userState.username);
         setUserState(prev => ({
           ...prev,
           isPro: true,
@@ -143,30 +155,35 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Check 2: Incoming Duel Challenge
-      const seed = params.get('seed');
-      if (seed) {
-        const elo = parseInt(params.get('elo') || '1350', 10);
-        const challenger = params.get('challenger') || '0x_Morpheus';
-        const score = parseInt(params.get('score') || '4', 10);
+      // Check 2: Incoming Duel Challenge (Strict input sanitization)
+      const rawSeed = params.get('seed');
+      if (rawSeed) {
+        const seed = sanitizeAlphanumeric(rawSeed, 32, 'blitz_' + Math.floor(Math.random() * 10000));
+        const elo = clampNumber(params.get('elo'), 100, 3000, 1350);
+        const challenger = sanitizeCallsign(params.get('challenger'), '0x_Morpheus');
+        const score = clampNumber(params.get('score'), 0, 5, 4);
         setIncomingDuel({ seed, elo, challenger, score });
         sound.playRadarPing();
       }
     }
-  }, []);
+  }, [userState.username]);
 
-  // Update Callsign / Username handler
+  // Update Callsign / Username handler with strict sanitization
   const handleUpdateUsername = (newName: string) => {
-    const trimmed = newName.trim();
-    if (!trimmed) return;
+    const sanitized = sanitizeCallsign(newName, userState.username);
+    if (!sanitized) return;
     setUserState(prev => ({
       ...prev,
-      username: trimmed
+      username: sanitized
     }));
   };
 
-  // Restore License Key handler
+  // Restore License Key handler with cryptographic verification
   const handleRestoreLicense = (key: string) => {
+    if (!verifyLicenseKey(key)) {
+      sound.playPayloadBlocked();
+      return;
+    }
     setUserState(prev => ({
       ...prev,
       isPro: true,
