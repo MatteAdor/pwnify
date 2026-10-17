@@ -260,9 +260,10 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                 )}
                 <input
                   type="text"
+                  maxLength={256}
                   disabled={hasSubmitted}
                   value={terminalInputText}
-                  onChange={(e) => setTerminalInputText(e.target.value)}
+                  onChange={(e) => setTerminalInputText(e.target.value.slice(0, 256))}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !hasSubmitted) {
                       handleSubmit();

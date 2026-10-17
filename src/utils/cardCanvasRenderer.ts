@@ -6,6 +6,7 @@
 
 import { UserState } from '../types';
 import { getRankFromElo } from '../data/ranks';
+import { sanitizeCallsign, sanitizeAlphanumeric } from './security';
 
 export function renderHackerCardToCanvas(
   canvas: HTMLCanvasElement,
@@ -131,7 +132,7 @@ export function renderHackerCardToCanvas(
   // 7. Operator Callsign / Username
   ctx.font = 'bold 72px "JetBrains Mono", monospace';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(userState.username, width / 2, avatarY + 340);
+  ctx.fillText(sanitizeCallsign(userState.username), width / 2, avatarY + 340);
 
   // Rank Pill
   ctx.font = 'bold 36px "JetBrains Mono", monospace';
@@ -268,9 +269,10 @@ export function downloadHackerCardImage(
   canvas.toBlob((blob) => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
+    const safeName = sanitizeAlphanumeric(userState.username, 24, 'operator');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zeroday_operator_${userState.username}.png`;
+    link.download = `zeroday_operator_${safeName}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

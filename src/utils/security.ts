@@ -4,6 +4,8 @@
  * Input Overflows, Timing Attacks, and URL Verification Bypass.
  */
 
+import { verifyLicenseKey } from './licenseEngine';
+
 // Whitelist of approved checkout and external redirection domains
 const ALLOWED_REDIRECT_DOMAINS = [
   'buy.stripe.com',
@@ -131,9 +133,9 @@ export function verifyCheckoutToken(params: URLSearchParams, username: string): 
   const signature = params.get('signature') || params.get('sig');
   const checkoutParam = params.get('checkout');
 
-  // If a license key is directly provided in URL, it must pass algorithmic verification
+  // If a license key is directly provided in URL, it must pass strict cryptographic verification
   if (licenseKey) {
-    return licenseKey.startsWith('0xPRO-');
+    return verifyLicenseKey(licenseKey);
   }
 
   // If a session_id and signature are passed, verify the cryptographic signature
@@ -142,12 +144,11 @@ export function verifyCheckoutToken(params: URLSearchParams, username: string): 
     return signature.toUpperCase() === expected;
   }
 
-  // Allow explicit verified tag ONLY if accompanied by local developer godmode session
+  // Allow simulated checkout tag ONLY on local developer environment (localhost/127.0.0.1)
   if (checkoutParam === '0x_pro_verified' || checkoutParam === 'success') {
     if (typeof window !== 'undefined') {
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const hasDevSession = sessionStorage.getItem('0x_godmode') === 'true';
-      if (isLocal || hasDevSession) {
+      if (isLocal) {
         return true;
       }
     }

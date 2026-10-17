@@ -92,10 +92,12 @@ export const App: React.FC = () => {
     }
   }, [userState]);
 
-  // God Mode Protected Dev Toolbar State
+  // God Mode Protected Dev Toolbar State (Strictly restricted to local development)
   const [isGodMode] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // Defense against production bypass: Never enable dev toolbar outside localhost
+    if (!isLocal) return false;
     const hasSession = sessionStorage.getItem('0x_godmode') === 'true';
     const params = new URLSearchParams(window.location.search);
     const hasParam = params.get('godmode') === '0xadmin';
@@ -103,7 +105,7 @@ export const App: React.FC = () => {
       sessionStorage.setItem('0x_godmode', 'true');
       return true;
     }
-    return isLocal || hasSession;
+    return hasSession;
   });
 
   // Navigation State
@@ -217,9 +219,10 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
+    const safeUser = sanitizeAlphanumeric(userState.username, 24, 'operator');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zeroday_pro_license_${userState.username}.txt`;
+    link.download = `zeroday_pro_license_${safeUser}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };

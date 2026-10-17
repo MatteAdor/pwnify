@@ -11,14 +11,21 @@ export interface TerminalExecutionResult {
 }
 
 export function executeVirtualCommand(commandString: string): TerminalExecutionResult {
-  const trimmed = commandString.trim();
+  if (typeof commandString !== 'string') {
+    return { output: '', isError: false, exitCode: 0 };
+  }
+
+  // Defend against input overflow / ReDoS: Clamp to 512 chars and strip control characters
+  // eslint-disable-next-line no-control-regex
+  const sanitized = commandString.slice(0, 512).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+  const trimmed = sanitized.trim();
   if (!trimmed) {
     return { output: '', isError: false, exitCode: 0 };
   }
 
   const parts = trimmed.split(/\s+/);
-  const baseCmd = parts[0].toLowerCase();
-  const args = parts.slice(1);
+  const baseCmd = parts[0].toLowerCase().slice(0, 64);
+  const args = parts.slice(1).map(a => a.slice(0, 128));
   const fullArgs = args.join(' ');
 
   switch (baseCmd) {
