@@ -132,6 +132,10 @@ export interface UserState {
   };
   licenseKey?: string;
   survivalHighScore?: number;
+  dailyBreachStreak?: number;
+  activeTheme?: string;
+  customTitle?: string;
+  lastDailyBreachDate?: string;
 }
 
 export type PaywallContext = 

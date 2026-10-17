@@ -4,7 +4,7 @@ import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { 
   Flame, Ticket, Shield, Sparkles, Terminal, 
-  Volume2, VolumeX, RotateCcw, Edit3 
+  Volume2, VolumeX, RotateCcw, Edit3, Palette, AlertTriangle 
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -14,6 +14,8 @@ interface NavbarProps {
   onResetData: () => void;
   isGodMode?: boolean;
   onUpdateUsername?: (name: string) => void;
+  onOpenDailyBreach?: () => void;
+  onOpenArsenal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,7 +24,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPaywall,
   onResetData,
   isGodMode = true,
-  onUpdateUsername
+  onUpdateUsername,
+  onOpenDailyBreach,
+  onOpenArsenal
 }) => {
   const rank = getRankFromElo(userState.elo);
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
@@ -107,6 +111,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </span>
           </div>
+
+          {/* DEFCON Live Indicator & Daily 0xBreach */}
+          <button
+            onClick={() => {
+              sound.playTap();
+              onOpenDailyBreach?.();
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-red-950/70 via-amber-950/60 to-red-950/70 border border-red-500/40 hover:border-amber-400 text-amber-300 font-mono text-[11px] font-bold transition-all shadow-sm active:scale-95 animate-pulse"
+            title="Daily 0xBreach: Risolvi l'incidente Zero-Day globale di oggi!"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+            <span className="hidden sm:inline text-red-400">DEFCON 1 ·</span>
+            <span>0xBREACH</span>
+          </button>
+
+          {/* Cyber Arsenal Customizer */}
+          <button
+            onClick={() => {
+              sound.playTap();
+              onOpenArsenal?.();
+            }}
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-surface/80 border border-white/10 hover:border-indigo-400/50 text-slate-300 hover:text-indigo-300 font-mono text-[11px] transition-colors"
+            title="Cyber Arsenal: Temi Terminale HUD e Titoli Callsign"
+          >
+            <Palette className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden md:inline">ARSENAL</span>
+          </button>
 
           {/* Mute Audio Toggle */}
           <button

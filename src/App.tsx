@@ -12,6 +12,8 @@ import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
 import { CertPrepTab } from './components/Certs/CertPrepTab';
 import { PaywallModal } from './components/Paywall/PaywallModal';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
+import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
+import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { sound } from './utils/soundEngine';
 import { 
@@ -25,6 +27,14 @@ import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck, Edit3 } from
 import confetti from 'canvas-confetti';
 
 const STORAGE_KEY = '0xday_user_state_v5';
+
+const THEME_BG_MAP: Record<TerminalThemeId, string> = {
+  cyber_emerald: 'bg-[#090D16]',
+  matrix_phosphor: 'bg-[#030d06]',
+  cyberpunk_neon: 'bg-[#0c071a]',
+  amber_crt: 'bg-[#120b04]',
+  stealth_oled: 'bg-[#000000]'
+};
 
 const DEFAULT_USER_STATE: UserState = {
   username: '0x_GhostRider',
@@ -129,6 +139,26 @@ export const App: React.FC = () => {
   // Post-Checkout Stripe / LemonSqueezy Verified State
   const [verifiedCheckoutLicense, setVerifiedCheckoutLicense] = useState<string | null>(null);
   const [licenseCopied, setLicenseCopied] = useState<boolean>(false);
+
+  // Daily 0xBreach CVE Triage State
+  const [isDailyBreachOpen, setIsDailyBreachOpen] = useState<boolean>(false);
+
+  // Cyber Arsenal & Customizer State
+  const [isArsenalOpen, setIsArsenalOpen] = useState<boolean>(false);
+  const [currentTheme, setCurrentTheme] = useState<TerminalThemeId>(() => {
+    try {
+      return (localStorage.getItem('0x_arsenal_theme') as TerminalThemeId) || 'cyber_emerald';
+    } catch {
+      return 'cyber_emerald';
+    }
+  });
+  const [currentTitle, setCurrentTitle] = useState<string>(() => {
+    try {
+      return localStorage.getItem('0x_arsenal_title') || 'Script Kiddie';
+    } catch {
+      return 'Script Kiddie';
+    }
+  });
 
   // Intercept ?seed=... or authenticated checkout returns on mount
   useEffect(() => {
@@ -255,6 +285,44 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
       elo: 1480,
       challenger: '0x_NeoCyber',
       score: 4
+    });
+  };
+
+  // Cyber Arsenal Theme & Callsign Handlers
+  const handleSelectTheme = (themeId: TerminalThemeId) => {
+    setCurrentTheme(themeId);
+    try {
+      localStorage.setItem('0x_arsenal_theme', themeId);
+    } catch (e) {
+      console.error(e);
+    }
+    setUserState(prev => ({ ...prev, activeTheme: themeId }));
+  };
+
+  const handleSelectTitle = (title: string) => {
+    setCurrentTitle(title);
+    try {
+      localStorage.setItem('0x_arsenal_title', title);
+    } catch (e) {
+      console.error(e);
+    }
+    setUserState(prev => ({ ...prev, customTitle: title }));
+  };
+
+  // Daily 0xBreach Completion Handler
+  const handleDailyBreachSuccess = (xpGained: number, eloGained: number) => {
+    setUserState(prev => {
+      const xpMultiplier = prev.isPro ? 2 : 1;
+      const currentStreak = prev.dailyBreachStreak || 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+      return {
+        ...prev,
+        xp: prev.xp + xpGained * xpMultiplier,
+        elo: prev.elo + eloGained,
+        dailyBreachStreak: currentStreak + 1,
+        lastDailyBreachDate: todayStr,
+        readinessScore: Math.min(100, prev.readinessScore + 5)
+      };
     });
   };
 
@@ -461,7 +529,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className={`min-h-screen ${THEME_BG_MAP[currentTheme] || 'bg-[#090D16]'} text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300`}>
       {/* Onboarding Mode vs App Mode */}
       {!userState.onboardingCompleted ? (
         <OnboardingFunnel
@@ -478,6 +546,8 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onResetData={handleResetData}
             isGodMode={isGodMode}
             onUpdateUsername={handleUpdateUsername}
+            onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+            onOpenArsenal={() => setIsArsenalOpen(true)}
           />
 
           {/* Subheader Interactive Demo Toolbar (Protected by God Mode) */}
@@ -642,6 +712,27 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onClose={() => setIsHackerCardOpen(false)}
             userState={userState}
             onUpdateUsername={handleUpdateUsername}
+          />
+
+          {/* Daily 0xBreach CVE Triage Modal */}
+          <DailyBreachModal
+            isOpen={isDailyBreachOpen}
+            onClose={() => setIsDailyBreachOpen(false)}
+            userState={userState}
+            onSuccess={handleDailyBreachSuccess}
+            onOpenPaywallContext={(ctx) => triggerPaywall(ctx)}
+          />
+
+          {/* Cyber Arsenal & Terminal HUD Themes Modal */}
+          <CyberArsenalModal
+            isOpen={isArsenalOpen}
+            onClose={() => setIsArsenalOpen(false)}
+            userState={userState}
+            currentTheme={currentTheme}
+            currentTitle={currentTitle}
+            onSelectTheme={handleSelectTheme}
+            onSelectTitle={handleSelectTitle}
+            onOpenPaywallContext={(ctx) => triggerPaywall(ctx)}
           />
 
           {/* Incoming Cyber Duel Challenge Deep-Link Modal */}
