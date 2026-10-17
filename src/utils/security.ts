@@ -22,6 +22,7 @@ export function sanitizeCallsign(raw: unknown, fallback: string = '0x_GhostRider
   const cleaned = raw
     .trim()
     .replace(/[<>"'`/\\]/g, '')
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
 
   // Strip known prototype pollution properties

@@ -131,6 +131,7 @@ export interface UserState {
     'Defense & SOC': number;
   };
   licenseKey?: string;
+  survivalHighScore?: number;
 }
 
 export type PaywallContext = 

@@ -18,7 +18,7 @@ function computeChecksum(part1: string, part2: string): string {
 /**
  * Generates a valid cryptographic license key for ZeroDay PRO
  */
-export function generateLicenseKey(seed?: string): string {
+export function generateLicenseKey(_seed?: string): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
   
   // Part 1: 4 Hex chars

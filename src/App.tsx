@@ -39,6 +39,7 @@ const DEFAULT_USER_STATE: UserState = {
   readinessScore: 38,
   completedNodeIds: [],
   completedPbqIds: [],
+  survivalHighScore: 0,
   dailyBounties: INITIAL_DAILY_BOUNTIES,
   goal: 'Passare CompTIA Security+ / CCNA',
   experienceLevel: 'Intermediate',
@@ -68,6 +69,7 @@ export const App: React.FC = () => {
           elo: clampNumber(parsed.elo, 100, 3500, DEFAULT_USER_STATE.elo),
           xp: clampNumber(parsed.xp, 0, 1000000, DEFAULT_USER_STATE.xp),
           readinessScore: clampNumber(parsed.readinessScore, 0, 100, DEFAULT_USER_STATE.readinessScore),
+          survivalHighScore: clampNumber(parsed.survivalHighScore, 0, 99999, 0),
           dailyBounties: (parsed.dailyBounties && Array.isArray(parsed.dailyBounties) && parsed.dailyBounties.length > 0)
             ? parsed.dailyBounties
             : INITIAL_DAILY_BOUNTIES,
@@ -442,6 +444,19 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
     });
   };
 
+  // Sudden Death Survival Mode Score Handler
+  const handleUpdateSurvivalScore = (newScore: number, gainedXp: number) => {
+    setUserState(prev => {
+      const currentBest = prev.survivalHighScore || 0;
+      return {
+        ...prev,
+        survivalHighScore: Math.max(currentBest, newScore),
+        xp: prev.xp + (prev.isPro ? gainedXp * 2 : gainedXp),
+        readinessScore: Math.min(100, prev.readinessScore + Math.min(5, newScore))
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#090D16] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Onboarding Mode vs App Mode */}
@@ -552,6 +567,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                 onOpenHackerCard={() => setIsHackerCardOpen(true)}
                 initialDuelChallenge={activeDuelForArena}
                 onClearInitialDuel={() => setActiveDuelForArena(null)}
+                onUpdateSurvivalScore={handleUpdateSurvivalScore}
               />
             )}
 

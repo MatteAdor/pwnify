@@ -7,6 +7,7 @@ import {
   ArrowRight, Cpu, Code, CornerDownLeft, Play 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { executeVirtualCommand } from '../../utils/terminalEngine';
 
 interface InteractiveQuizModalProps {
   node: SkillNode;
@@ -29,6 +30,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedLineNum, setSelectedLineNum] = useState<number | null>(null);
   const [terminalInputText, setTerminalInputText] = useState<string>('');
+  const [terminalStdout, setTerminalStdout] = useState<string | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [shouldShake, setShouldShake] = useState<boolean>(false);
@@ -77,6 +79,10 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
       const input = terminalInputText.trim().toLowerCase();
       const combined = `${prefix} ${input}`.trim();
       
+      const fullCmd = `${currentQ.commandPrefix ? currentQ.commandPrefix + ' ' : ''}${terminalInputText}`.trim();
+      const result = executeVirtualCommand(fullCmd);
+      setTerminalStdout(result.output);
+
       // Check if combined or input matches target or correct option
       const correctOpt = currentQ.options.find(o => o.isCorrect);
       if (
@@ -116,6 +122,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
     setSelectedOptionId(null);
     setSelectedLineNum(null);
     setTerminalInputText('');
+    setTerminalStdout(null);
 
     if (currentQuestionIndex < node.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -256,10 +263,22 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                   disabled={hasSubmitted}
                   value={terminalInputText}
                   onChange={(e) => setTerminalInputText(e.target.value)}
-                  placeholder="completa il comando o tocca i chip sotto..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !hasSubmitted) {
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="completa il comando o tocca i chip sotto (Premi Invio per eseguire)..."
                   className="bg-slate-900 border border-slate-700 focus:border-cyan-400 text-cyan-300 px-2 py-1 rounded text-xs flex-1 min-w-[200px] outline-none font-mono"
                 />
               </div>
+
+              {/* Real-time Stdout Terminal Simulation */}
+              {terminalStdout && (
+                <div className="mt-2.5 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-400 bg-black/50 p-2.5 rounded border border-emerald-500/20">
+                  {terminalStdout}
+                </div>
+              )}
             </div>
 
             {/* Clickable Command Chips (Duolingo/Mimo Style) */}

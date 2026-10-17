@@ -746,5 +746,141 @@ Indirizzi totali: 2^6 = 64 indirizzi`,
         ]
       }
     ]
+  },
+  {
+    id: 'mod_api_jwt',
+    title: 'Modulo 5: API Security & JWT Exploitation',
+    certificationFocus: 'OWASP API Security Top 10 & CEH v13 Web Applications',
+    color: '#8B5CF6', // Purple / Violet
+    nodes: [
+      {
+        id: 'node_api_jwt_1',
+        title: 'BOLA / IDOR: Broken Object Level Authorization',
+        subtitle: 'Bypass del controllo accessi orizzontale tramite manipolazione degli identificatori API REST',
+        moduleId: 'mod_api_jwt',
+        status: 'available',
+        domain: 'Web Sec',
+        xpReward: 95,
+        eloReward: 28,
+        questions: [
+          {
+            id: 'q_api_spot_bola',
+            title: 'Spot the Zero-Day: Controllo IDOR Mancante nel Controller Node.js',
+            type: 'spot_the_zeroday',
+            domain: 'Web Sec',
+            difficulty: 'Intermediate',
+            prompt: 'Un endpoint REST permette a utenti autenticati di scaricare documenti confidenziali. TOCCA LA RIGA in cui manca la verifica di ownership tra sessione e record:',
+            codeLines: [
+              { lineNum: 1, code: 'app.get("/api/v1/invoices/:id", authenticateUser, async (req, res) => {' },
+              { lineNum: 2, code: '  const invoiceId = req.params.id;' },
+              { lineNum: 3, code: '  const invoice = await db.invoices.findById(invoiceId);', isVulnerable: true, vulnerabilityHint: 'La query carica il documento basandosi solo sul parametro :id fornito dall\'utente senza filtrare per req.user.id!' },
+              { lineNum: 4, code: '  if (!invoice) return res.status(404).json({ error: "Not found" });' },
+              { lineNum: 5, code: '  res.json(invoice);' },
+              { lineNum: 6, code: '});' }
+            ],
+            options: [
+              { id: 'bola_1', text: 'Riga 3: Il database carica la fattura solo per ID senza verificare req.user.tenantId / req.user.id', isCorrect: true },
+              { id: 'bola_2', text: 'Riga 1: authenticateUser non supporta query async', isCorrect: false },
+              { id: 'bola_3', text: 'Riga 4: Lo status 404 causa memory leak', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'OWASP API1:2023 - Broken Object Level Authorization (BOLA)',
+              whyItWorks: 'Il server autentica l\'utente, ma non autorizza l\'accesso alla risorsa specifica. Modificando :id da 1004 a 1005, qualsiasi utente legge dati altrui.',
+              patchRecommendation: 'Aggiungere filtro vincolante: `db.invoices.findOne({ _id: invoiceId, ownerId: req.user.id })` oppure utilizzare UUID v4 impredicibili con RBAC policy enforcement.',
+              terminalProof: '$ curl -H "Authorization: Bearer <USER_A_TOKEN>" https://api.corp/api/v1/invoices/9924\nHTTP/1.1 200 OK\n{"id": 9924, "owner": "ceo@corp.com", "salary_eur": 185000}'
+            },
+            xpReward: 50,
+            eloReward: 14
+          },
+          {
+            id: 'q_jwt_alg_none',
+            title: 'JWT Algorithm Confusion: Attacco "alg": "none"',
+            type: 'multiple_choice',
+            domain: 'Cryptography',
+            difficulty: 'Hardcore',
+            prompt: 'In una libreria JWT vulnerabile, cosa accade quando un attaccante modifica l\'header del token impostando {"alg": "none", "typ": "JWT"} e omette la firma?',
+            options: [
+              { id: 'alg_1', text: 'Il parser considera il token valido senza verificare alcuna firma crittografica, permettendo l\'impersonificazione arbitraria di admin', isCorrect: true },
+              { id: 'alg_2', text: 'Il server tenta di decifrare il payload con una chiave privata RSA nulla', isCorrect: false },
+              { id: 'alg_3', text: 'Viene sollevata automaticamente un\'eccezione di Certificate Revocation List (CRL)', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'CVE-2015-9235: JSON Web Token "none" Algorithm Vulnerability',
+              whyItWorks: 'La specifica RFC 7519 ammetteva "none" per contesti non firmati. Molte librerie accettavano "none" acriticamente senza forzare gli algoritmi permessi dal backend (es. HS256/RS256).',
+              patchRecommendation: 'Configurare esplicitamente una whitelist rigida: `jwt.verify(token, secret, { algorithms: ["HS256"] })`.',
+              terminalProof: '$ echo -n \'{"alg":"none","typ":"JWT"}\' | base64\neyJhbGciOiJub25lIiwidHlwIjoiSldUIn0=\n$ curl -H "Cookie: token=eyJhbGciOiJub25l...eyJyb2xlIjoiYWRtaW4ifQ." https://bank.internal/admin\nHTTP/1.1 200 OK (Admin Dashboard)'
+            },
+            xpReward: 55,
+            eloReward: 16
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'mod_active_directory',
+    title: 'Modulo 6: Active Directory & Enterprise Lateral Movement',
+    certificationFocus: 'Certified Ethical Hacker (CEH v13) & CompTIA Security+ Enterprise',
+    color: '#EC4899', // Pink / Rose
+    nodes: [
+      {
+        id: 'node_ad_kerberoast',
+        title: 'Kerberoasting & TGS Ticket Extraction',
+        subtitle: 'Richiesta e cracking offline di ticket TGS per Service Principal Names (SPN) di dominio',
+        moduleId: 'mod_active_directory',
+        status: 'available',
+        domain: 'Defense & SOC',
+        xpReward: 110,
+        eloReward: 32,
+        questions: [
+          {
+            id: 'q_kerberoast_concept',
+            title: 'Meccanismo di Attacco Kerberoasting',
+            type: 'multiple_choice',
+            domain: 'Defense & SOC',
+            difficulty: 'Hardcore',
+            prompt: 'Perché qualsiasi utente autenticato di dominio Active Directory può richiedere un ticket TGS per un account di servizio con SPN registrato senza destare allarmi immediati?',
+            options: [
+              { id: 'kb_1', text: 'Il Kerberos KDC rilascia legittimamente il TGS cifrato con l\'hash NTLM dell\'account di servizio associato all\'SPN affinché il client possa autenticarsi al servizio', isCorrect: true },
+              { id: 'kb_2', text: 'I ticket TGS sono firmati in chiaro senza crittografia simmetrica', isCorrect: false },
+              { id: 'kb_3', text: 'Active Directory non richiede autenticazione per le richieste LDAP sulla porta 389', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'MITRE ATT&CK T1558.003: Steal or Forge Kerberos Tickets (Kerberoasting)',
+              whyItWorks: 'Poiché il ticket TGS è cifrato con la password hash dell\'account di servizio, l\'attaccante lo estrae dalla memoria o dalla rete e lo sottopone a cracking offline con Hashcat o John the Ripper senza generare traffico verso il Domain Controller.',
+              patchRecommendation: 'Utilizzare Group Managed Service Accounts (gMSA) con password complesse da 128 caratteri ruotate automaticamente da Windows, oppure imporre cifratura AES invece di RC4 (Event ID 4769).',
+              terminalProof: '$ impacket-GetUserSPNs corp.local/operator:Password123 -request\n$ hashcat -m 13100 kerberoast_tgs.hash /usr/share/wordlists/rockyou.txt\nHash.Target: $krb5tgs$23$*...\nStatus: Cracked (Password: SqlAdmin2024!)'
+            },
+            xpReward: 60,
+            eloReward: 18
+          },
+          {
+            id: 'q_terminal_rubeus',
+            title: 'Terminal Sandbox: AS-REP Roasting con Impacket',
+            type: 'terminal_command',
+            domain: 'Defense & SOC',
+            difficulty: 'Hardcore',
+            prompt: 'Completa il comando Impacket per interrogare il Domain Controller (10.0.0.1) ed estrarre gli hash Kerberos degli utenti con flag DONT_REQ_PREAUTH attiva:',
+            terminalPrompt: 'kali@attacker-box:~$',
+            commandPrefix: 'impacket-GetNPUsers -dc-ip 10.0.0.1 corp.local/ -usersfile users.txt -format hashcat',
+            commandTarget: 'impacket-GetNPUsers -dc-ip 10.0.0.1 corp.local/ -usersfile users.txt -format hashcat -outputfile asrep.hashes',
+            commandChips: ['-outputfile asrep.hashes', '--no-pass', '-k -no-preauth', '| tee /tmp/log', '--aes256'],
+            options: [
+              { id: 'np_1', text: '-outputfile asrep.hashes', isCorrect: true },
+              { id: 'np_2', text: '--no-pass', isCorrect: false },
+              { id: 'np_3', text: '-k -no-preauth', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'MITRE ATT&CK T1558.004: AS-REP Roasting',
+              whyItWorks: 'Quando un account AD ha l\'attributo `Do not require Kerberos preauthentication` (DONT_REQ_PREAUTH), il KDC invia l\'AS-REP con timestamp cifrato con la password dell\'utente anche senza aver fornito prima la prova di autenticazione.',
+              patchRecommendation: 'Eseguire un audit dei flag di dominio: verificare che nessun account utente (specie se amministratore) abbia `UserAccountControl` impostato su `DONT_REQ_PREAUTH`.',
+              terminalProof: '$ impacket-GetNPUsers -dc-ip 10.0.0.1 corp.local/ -usersfile users.txt -format hashcat -outputfile asrep.hashes\n[*] Written 3 AS-REP hashes to asrep.hashes\n$ hashcat -m 18200 asrep.hashes rockyou.txt\nCracked: svc_backup:Summer2024'
+            },
+            xpReward: 65,
+            eloReward: 20
+          }
+        ]
+      }
+    ]
   }
 ];

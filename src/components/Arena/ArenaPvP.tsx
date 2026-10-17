@@ -5,11 +5,12 @@ import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 import { 
   Swords, Flame, Zap, Trophy, Timer, 
-  RotateCcw, Sparkles, CheckCircle2, Copy
+  RotateCcw, Sparkles, CheckCircle2, Copy, Skull
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import { SocialProofBanner } from '../Paywall/SocialProofBanner';
+import { SurvivalModeModal } from './SurvivalModeModal';
 
 export interface DuelChallengeData {
   seed: string;
@@ -27,6 +28,7 @@ interface ArenaPvPProps {
   onOpenHackerCard?: () => void;
   initialDuelChallenge?: DuelChallengeData | null;
   onClearInitialDuel?: () => void;
+  onUpdateSurvivalScore?: (score: number, gainedXp: number) => void;
 }
 
 type MatchPhase = 'idle' | 'searching' | 'vs_screen' | 'battle' | 'post_match';
@@ -39,9 +41,11 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   onOpenPaywall,
   onOpenHackerCard,
   initialDuelChallenge,
-  onClearInitialDuel
+  onClearInitialDuel,
+  onUpdateSurvivalScore
 }) => {
   const [phase, setPhase] = useState<MatchPhase>('idle');
+  const [isSurvivalOpen, setIsSurvivalOpen] = useState<boolean>(false);
   const [searchTimer, setSearchTimer] = useState<number>(0);
   const [opponent, setOpponent] = useState<PvPPlayer | null>(null);
 
@@ -317,13 +321,26 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
               </p>
             </div>
 
-            <button
-              onClick={handleStartMatchmaking}
-              className="w-full sm:w-auto min-w-[260px] py-4 px-6 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-indigo-400 via-indigo-500 to-emerald-400 hover:from-indigo-300 hover:to-emerald-300 transition-all shadow-neon-indigo flex items-center justify-center gap-2 mx-auto transform active:scale-98"
-            >
-              <Zap className="w-4 h-4 fill-slate-950" />
-              <span>TROVA AVVERSARIO (BLITZ)</span>
-            </button>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={handleStartMatchmaking}
+                className="w-full sm:w-auto min-w-[240px] py-3.5 px-6 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-indigo-400 via-indigo-500 to-emerald-400 hover:from-indigo-300 hover:to-emerald-300 transition-all shadow-neon-indigo flex items-center justify-center gap-2 transform active:scale-98"
+              >
+                <Zap className="w-4 h-4 fill-slate-950" />
+                <span>TROVA AVVERSARIO (BLITZ)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  sound.playTap();
+                  setIsSurvivalOpen(true);
+                }}
+                className="w-full sm:w-auto min-w-[240px] py-3.5 px-6 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-rose-300 bg-rose-950/40 border border-rose-500/40 hover:border-rose-400 hover:bg-rose-900/30 transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-98"
+              >
+                <Skull className="w-4 h-4 text-rose-400" />
+                <span>SURVIVAL GAUNTLET (BEST: x{userState.survivalHighScore || 0})</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -623,6 +640,16 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
           </div>
         </div>
       )}
+
+      {/* Sudden Death Survival Mode Gauntlet Modal */}
+      <SurvivalModeModal
+        isOpen={isSurvivalOpen}
+        onClose={() => setIsSurvivalOpen(false)}
+        userState={userState}
+        onUpdateHighScore={(score, gainedXp) => {
+          onUpdateSurvivalScore?.(score, gainedXp);
+        }}
+      />
     </div>
   );
 };

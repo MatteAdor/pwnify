@@ -4,10 +4,11 @@ import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 import { 
   X, Shield, Flame, Check, 
-  Share2, Cpu, Zap, Edit3 
+  Cpu, Zap, Edit3, Download 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sanitizeCallsign } from '../../utils/security';
+import { downloadHackerCardImage } from '../../utils/cardCanvasRenderer';
 
 interface HackerIDCardModalProps {
   userState: UserState;
@@ -25,7 +26,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
   onUpdateUsername
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [cardCopied, setCardCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -52,10 +53,17 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
-  const handleShareCard = () => {
-    sound.playTap();
-    setCardCopied(true);
-    setTimeout(() => setCardCopied(false), 2500);
+  const handleDownloadCard = () => {
+    sound.playVictoryFanfare();
+    setIsExporting(true);
+    try {
+      downloadHackerCardImage(userState, topSkillName, topSkillScore);
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    } catch (e) {
+      console.error('Failed to export card image:', e);
+    } finally {
+      setTimeout(() => setIsExporting(false), 2000);
+    }
   };
 
   return (
@@ -221,13 +229,14 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             )}
           </button>
 
-          {/* Secondary Share Button */}
+          {/* High-Resolution PNG 9:16 Image Export */}
           <button
-            onClick={handleShareCard}
-            className="w-full py-2.5 px-3 rounded-xl font-mono text-xs text-slate-300 hover:text-white bg-surface border border-white/10 hover:border-white/25 transition-all flex items-center justify-center gap-1.5"
+            onClick={handleDownloadCard}
+            disabled={isExporting}
+            className="w-full py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 hover:text-white bg-surface border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5 active:scale-98"
           >
-            <Share2 className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{cardCopied ? 'Carta Salvata per Stories / Discord!' : 'Salva Operator Card per Stories / Discord'}</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{isExporting ? 'Generazione PNG 9:16 in corso...' : 'Scarica Operator Card (.PNG per Stories/Discord)'}</span>
           </button>
         </div>
       </div>

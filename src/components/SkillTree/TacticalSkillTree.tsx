@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SKILL_MODULES } from '../../data/curriculum';
-import { SkillNode, UserState, DailyBounty } from '../../types';
+import { SkillNode, UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { 
   Lock, CheckCircle2, Play, 

@@ -129,5 +129,44 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
     solutionExplanation: 'Ricostruzione della sequenza MITRE ATT&CK: Esecuzione iniziale tramite Macro Office malevola, estrazione delle credenziali in memoria da LSASS per escalation dei privilegi, e stabilizzazione del canale di Comando e Controllo tramite DNS tunneling.',
     xpReward: 300,
     eloReward: 60
+  },
+  {
+    id: 'pbq_ids_c2_mitigation',
+    title: 'PBQ Lab 3: Snort / Suricata IDS Rule & C2 Beacon Mitigation',
+    certification: 'CompTIA Security+',
+    scenarioDescription: 'Gli host interni di un istituto finanziario inviano richieste HTTP sospette verso endpoint sconosciuti. Devi configurare la corretta regola IDS/IPS per intercettare il beaconing C2 ed estrarre la signature corretta.',
+    targetObjective: 'Configura l\'azione della regola IDS (ALERT / DROP), il protocollo (TCP/UDP), la porta di destinazione e la subnet interna da proteggere per mitigare il malware C2.',
+    steps: [
+      {
+        id: 'ids_rule_1',
+        instruction: 'Regola 1 (IPS Drop Signature): Configura l\'azione per bloccare immediatamente il traffico C2 in uscita verso il server C2 su porta 8443.',
+        scenario: 'Blocco automatico inline: scarta il pacchetto ed invia un TCP Reset.',
+        ruleAction: 'DENY',
+        sourceIp: '192.168.1.0/24 ($HOME_NET)',
+        destinationPort: '8443 (C2 Proxy)',
+        protocol: 'TCP'
+      },
+      {
+        id: 'ids_rule_2',
+        instruction: 'Regola 2 (DNS Exfiltration Alert): Genera un alert SIEM prioritario per richieste DNS verso server esterni non autorizzati (porta 53).',
+        scenario: 'Rilevamento anomalie: solo il resolver aziendale 192.168.1.2 può contattare server DNS esterni.',
+        ruleAction: 'ALLOW',
+        sourceIp: '192.168.1.2/32 (DNS Resolver)',
+        destinationPort: '53 (DNS)',
+        protocol: 'UDP'
+      },
+      {
+        id: 'ids_rule_3',
+        instruction: 'Regola 3 (Isolamento Host Compromesso): Blocca qualsiasi traffico SMB (porta 445) proveniente dalla workstation infetta (192.168.1.88) per bloccare EternalBlue / lateral movement.',
+        scenario: 'Contenimento immediato: impedisci la propagazione del worm nella subnet locale.',
+        ruleAction: 'DENY',
+        sourceIp: '192.168.1.88/32',
+        destinationPort: '445 (SMB)',
+        protocol: 'TCP'
+      }
+    ],
+    solutionExplanation: 'Configurazione conforme alle best practice Cisco CCNA Security e CompTIA Security+ SY0-701. Il blocco inline del traffico verso porte non standard (8443) e l\'isolamento della porta SMB 445 fermano il movimento laterale e preservano l\'integrità della rete interna.',
+    xpReward: 320,
+    eloReward: 65
   }
 ];
