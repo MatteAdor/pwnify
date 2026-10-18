@@ -171,8 +171,8 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden animate-fade-in font-sans">
-      <div className={`relative w-full max-w-2xl bg-[#0D131F] border border-white/10 rounded-2xl p-3.5 sm:p-5 shadow-2xl text-slate-100 max-h-[92vh] flex flex-col overflow-hidden transition-transform ${
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 overflow-hidden animate-fade-in font-sans">
+      <div className={`relative w-full max-w-2xl bg-[#0D121D] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl text-zinc-100 max-h-[92vh] flex flex-col overflow-hidden transition-transform ${
         shouldShake ? 'animate-shake border-red-500/60' : ''
       }`}>
 
@@ -182,13 +182,11 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
         {viewPhase === 'briefing' && (
           <div className="flex flex-col h-full overflow-hidden animate-fade-in space-y-3">
             {/* Briefing Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-2.5 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  <Terminal className="w-4 h-4" />
-                </div>
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Terminal className="w-4 h-4 text-zinc-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] font-mono text-emerald-400 font-bold block uppercase tracking-wide">
+                  <span className="text-xs font-mono text-zinc-400 font-bold block uppercase">
                     {briefing.badge}
                   </span>
                   <h3 className="font-bold text-sm sm:text-base text-white truncate max-w-[260px] sm:max-w-none">
@@ -201,7 +199,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                   sound.playTap();
                   onClose();
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -211,33 +209,33 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
             <div className="overflow-y-auto flex-1 pr-1 space-y-3 font-sans">
               
               {/* Card 1: Obiettivo Tattico & Focus Certificazione */}
-              <div className="p-3 rounded-xl bg-[#121A2B] border border-emerald-500/30 space-y-1">
+              <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5" />
-                    OBIETTIVO DIDATTICO
+                  <span className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-zinc-400" />
+                    Obiettivo Didattico
                   </span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
                     {briefing.examRelevance}
                   </span>
                 </div>
-                <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                <p className="text-xs text-zinc-300 leading-relaxed">
                   {briefing.objective}
                 </p>
               </div>
 
               {/* Card 2: Concetto Chiave & Meccanismo */}
-              <div className="p-3.5 rounded-xl bg-[#090E17] border border-white/10 space-y-2">
+              <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-2">
                 <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>COME FUNZIONA // MECCANISMO FONDAMENTALE</span>
+                  <Cpu className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Meccanismo Fondamentale</span>
                 </h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-zinc-400 leading-relaxed">
                   {briefing.coreConcept}
                 </p>
-                <div className="pt-1.5 border-t border-white/5 space-y-1.5 font-mono text-[11px]">
+                <div className="pt-1.5 border-t border-zinc-800 space-y-1.5 font-mono text-xs">
                   {briefing.keyPoints.map((point, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-slate-300">
+                    <div key={idx} className="flex items-start gap-2 text-zinc-300">
                       <span className="text-emerald-400 font-bold mt-0.5">▸</span>
                       <span className="leading-snug">{point}</span>
                     </div>
@@ -247,48 +245,46 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
 
               {/* Card 3: Esempio Tecnico / Terminale di Riferimento */}
               {briefing.syntaxExample && (
-                <div className="rounded-xl bg-[#06090F] border border-cyan-500/30 overflow-hidden">
-                  <div className="bg-[#0B101D] px-3 py-1.5 border-b border-white/10 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span className="flex items-center gap-1.5 text-cyan-300 font-bold">
-                      <Code className="w-3.5 h-3.5" />
+                <div className="rounded-xl bg-zinc-950 border border-zinc-800 overflow-hidden">
+                  <div className="bg-zinc-900 px-3 py-1.5 border-b border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-400">
+                    <span className="flex items-center gap-1.5 text-zinc-300 font-bold">
+                      <Code className="w-3.5 h-3.5 text-zinc-400" />
                       {briefing.syntaxExample.title}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">SINTASSI GUIDA</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">SINTASSI GUIDA</span>
                   </div>
-                  <div className="p-3 font-mono text-xs text-emerald-300 overflow-x-auto whitespace-pre-wrap bg-[#050811]">
+                  <div className="p-3 font-mono text-xs text-emerald-400 overflow-x-auto whitespace-pre-wrap bg-zinc-950">
                     {briefing.syntaxExample.code}
                   </div>
-                  <div className="px-3 py-2 bg-[#090E1A] border-t border-white/5 text-[11px] text-slate-300 font-mono">
-                    <span className="text-cyan-400 font-bold">Nota operativa: </span>
+                  <div className="px-3 py-2 bg-zinc-900 border-t border-zinc-800 text-xs text-zinc-400 font-mono">
+                    <span className="text-zinc-300 font-bold">Nota operativa: </span>
                     {briefing.syntaxExample.explanation}
                   </div>
                 </div>
               )}
 
               {/* Card 4: Regola d'Oro di Difesa */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300 shrink-0 mt-0.5">
-                  <Shield className="w-4 h-4" />
-                </div>
+              <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-start gap-2.5">
+                <Shield className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-[10px] font-mono font-bold text-amber-300 block uppercase tracking-wider">
-                    REGOLA D'ORO DI SICUREZZA
+                  <span className="text-xs font-mono font-bold text-zinc-300 block uppercase tracking-wider">
+                    Regola di Sicurezza
                   </span>
-                  <p className="text-xs text-slate-200 mt-0.5 leading-snug">
+                  <p className="text-xs text-zinc-400 mt-0.5 leading-snug">
                     {briefing.goldenRule}
                   </p>
                 </div>
               </div>
 
               {/* Mission Structure Checklist */}
-              <div className="p-3 rounded-xl bg-[#090E17] border border-white/10 space-y-1.5">
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
-                  STRUTTURA DELL'ESERCITAZIONE ({node.questions.length} SFIDE PRATICHE)
+              <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1.5">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block font-bold">
+                  Esercitazione ({node.questions.length} sfide pratiche)
                 </span>
                 <div className="space-y-1">
                   {node.questions.map((q, qIdx) => (
-                    <div key={q.id} className="flex items-center justify-between text-xs font-mono p-1.5 rounded bg-surface border border-white/5">
-                      <span className="text-slate-300 truncate max-w-[240px]">
+                    <div key={q.id} className="flex items-center justify-between text-xs font-mono p-1.5 rounded bg-zinc-800/60 border border-zinc-800">
+                      <span className="text-zinc-300 truncate max-w-[240px]">
                         {qIdx + 1}. {q.title}
                       </span>
                       <span className="text-[10px] text-emerald-400 shrink-0 font-bold">
@@ -301,13 +297,13 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
             </div>
 
             {/* Briefing CTA Button */}
-            <div className="pt-2 shrink-0 border-t border-white/10">
+            <div className="pt-2 shrink-0 border-t border-zinc-800">
               <button
                 onClick={() => {
                   sound.playTap();
                   setViewPhase('quiz');
                 }}
-                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>INIZIA ESERCITAZIONE PRATICA ({node.questions.length} QUESITI)</span>
                 <ArrowRight className="w-4 h-4" />
@@ -689,15 +685,15 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                       : !selectedOptionId
                   }
                   onClick={handleSubmit}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Play className="w-3.5 h-3.5 fill-slate-950" />
+                  <Play className="w-3.5 h-3.5 fill-current" />
                   <span>ESEGUI E VERIFICA RISPOSTA</span>
                 </button>
               ) : (
                 <button
                   onClick={handleNextOrFinish}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>
                     {currentQuestionIndex < node.questions.length - 1 ? 'PROSSIMO QUESITO' : 'VEDI RIEPILOGO LEZIONE'}
@@ -715,64 +711,62 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
         {viewPhase === 'completed' && (
           <div className="flex flex-col h-full overflow-hidden animate-fade-in space-y-4 py-2">
             <div className="flex-1 flex flex-col items-center justify-center text-center p-2 space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg">
-                <Award className="w-8 h-8" />
-              </div>
+              <Award className="w-12 h-12 text-emerald-400 mx-auto" />
 
               <div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase font-bold tracking-wider inline-block mb-1">
-                  LEZIONE COMPLETATA CON SUCCESSO
+                <span className="text-xs font-mono text-zinc-400 font-bold tracking-wider inline-block mb-1">
+                  LEZIONE COMPLETATA
                 </span>
-                <h2 className="text-lg sm:text-xl font-extrabold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-white">
                   {node.title}
                 </h2>
-                <p className="text-xs text-slate-300 max-w-sm mt-1">
+                <p className="text-xs text-zinc-400 max-w-sm mt-1">
                   Hai superato tutte le sfide pratiche e completato il modulo guidato.
                 </p>
               </div>
 
               {/* Rewards Summary Pills */}
               <div className="flex items-center gap-3 pt-1">
-                <div className="px-3.5 py-2 rounded-xl bg-[#121A2B] border border-emerald-500/40 text-center min-w-[100px]">
-                  <span className="text-[10px] font-mono text-slate-400 block">PUNTI XP</span>
-                  <span className="text-base sm:text-lg font-black text-emerald-400 font-mono">
+                <div className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-center min-w-[100px]">
+                  <span className="text-[10px] font-mono text-zinc-500 block">PUNTI XP</span>
+                  <span className="text-base sm:text-lg font-bold text-emerald-400 font-mono">
                     +{node.xpReward} XP
                   </span>
                 </div>
-                <div className="px-3.5 py-2 rounded-xl bg-[#121A2B] border border-indigo-500/40 text-center min-w-[100px]">
-                  <span className="text-[10px] font-mono text-slate-400 block">RATING ELO</span>
-                  <span className="text-base sm:text-lg font-black text-indigo-400 font-mono">
+                <div className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-center min-w-[100px]">
+                  <span className="text-[10px] font-mono text-zinc-500 block">RATING ELO</span>
+                  <span className="text-base sm:text-lg font-bold text-zinc-200 font-mono">
                     +{node.eloReward} ELO
                   </span>
                 </div>
-                <div className="px-3.5 py-2 rounded-xl bg-[#121A2B] border border-white/10 text-center min-w-[100px]">
-                  <span className="text-[10px] font-mono text-slate-400 block">PRECISIONE</span>
-                  <span className="text-base sm:text-lg font-black text-white font-mono">
+                <div className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-center min-w-[100px]">
+                  <span className="text-[10px] font-mono text-zinc-500 block">PRECISIONE</span>
+                  <span className="text-base sm:text-lg font-bold text-white font-mono">
                     {Math.round((correctCount / node.questions.length) * 100)}%
                   </span>
                 </div>
               </div>
 
               {/* Key Takeaways Recap */}
-              <div className="w-full text-left p-3 rounded-xl bg-[#090E17] border border-white/10 space-y-1.5 font-mono text-xs">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
-                  COMPETENZE ACQUISITE
+              <div className="w-full text-left p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1.5 font-mono text-xs">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider block font-bold">
+                  Competenze Acquisite
                 </span>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
+                <p className="text-zinc-300 text-xs leading-relaxed">
                   ✓ {briefing.goldenRule}
                 </p>
-                <p className="text-slate-400 text-[10px]">
+                <p className="text-zinc-500 text-[11px]">
                   Standard esame: {briefing.examRelevance}
                 </p>
               </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-2 shrink-0 border-t border-white/10 flex gap-2">
+            <div className="pt-2 shrink-0 border-t border-zinc-800 flex gap-2">
               <button
                 type="button"
                 onClick={handleResetLesson}
-                className="py-2.5 px-3 rounded-xl border border-white/10 text-slate-400 hover:text-white font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-3 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Rivedi Teoria</span>
@@ -780,7 +774,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
               <button
                 type="button"
                 onClick={handleFinalClaim}
-                className="flex-1 py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                className="flex-1 py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>SALVA E PROSEGUI NEL PERCORSO</span>

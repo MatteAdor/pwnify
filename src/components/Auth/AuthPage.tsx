@@ -526,34 +526,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#060A12] text-slate-100 flex flex-col justify-center items-center px-2.5 py-4 sm:px-4 sm:py-8 relative overflow-hidden font-sans select-none safe-top safe-bottom">
-      {/* Background Cyber Ambient Mesh & Lighting */}
-      <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:28px_28px] opacity-35 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-emerald-500/10 via-cyan-500/10 to-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
-
+    <div className="min-h-screen w-full bg-[#060A12] text-zinc-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 relative font-sans select-none safe-top safe-bottom">
       {/* Main Authentication Card */}
       <div 
-        className="w-full max-w-md bg-[#0A101D]/90 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.12)] relative z-10 space-y-3.5 sm:space-y-5"
+        className="w-full max-w-sm sm:max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl relative z-10 space-y-6"
       >
-        {/* Header with Language Switcher */}
-        <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.08]">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] font-bold uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <Terminal className="w-3 h-3" />
-            <span>{t.authGateway}</span>
-          </div>
+        {/* Header with Brand & Language Switcher */}
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
+            0xDAY
+          </span>
 
-          <div className="flex items-center gap-1 bg-[#090D17] p-0.5 rounded-lg border border-white/10">
+          <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
             <button
               type="button"
               onClick={() => {
                 sound.playTap();
                 setLanguage('en');
               }}
-              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all ${
+              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-colors ${
                 lang === 'en'
-                  ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-zinc-800 text-white'
+                  : 'text-zinc-500 hover:text-white'
               }`}
             >
               EN
@@ -564,10 +558,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 sound.playTap();
                 setLanguage('it');
               }}
-              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-all ${
+              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-colors ${
                 lang === 'it'
-                  ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-zinc-800 text-white'
+                  : 'text-zinc-500 hover:text-white'
               }`}
             >
               IT
@@ -575,33 +569,32 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
         </div>
 
-        {/* Branding Header */}
-        <div className="text-center space-y-0.5">
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            {t.academyTitle}
+        {/* Clean Header */}
+        <div className="text-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            {authMode === 'login' 
+              ? (isEn ? 'Log in' : 'Accedi') 
+              : (isEn ? 'Create Account' : 'Crea Account')}
           </h1>
-          <p className="text-[11px] sm:text-xs text-slate-400">
-            {t.academySubtitle}
-          </p>
         </div>
 
         {/* Global Notifications */}
         {errorMsg && (
-          <div className="p-2.5 sm:p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-[11px] font-mono flex items-start gap-2 animate-shake">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono flex items-start gap-2">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* Mode Selector Tabs: Accedi vs Registrati */}
-        <div className="grid grid-cols-2 p-0.5 rounded-xl bg-[#090D17] border border-white/10 font-mono text-xs font-bold">
+        {/* Mode Selector Tabs */}
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -610,10 +603,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
               authMode === 'login'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <span>{t.loginTab}</span>
@@ -626,83 +619,76 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
               authMode === 'signup'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <span>{t.signupTab}</span>
           </button>
         </div>
 
-        {/* ============================================================== */}
-        {/* FAST 1-CLICK AUTHENTICATION BUTTONS: GOOGLE & GITHUB */}
-        {/* ============================================================== */}
-        <div className="space-y-1.5">
-          {/* Google Button */}
+        {/* Fast Authentication: Google & GitHub */}
+        <div className="space-y-2.5">
           <button
             type="button"
             onClick={handleGoogleClick}
             disabled={isProcessing}
-            className="w-full py-2.5 px-3 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-sm cursor-pointer group"
+            className="w-full h-11 px-3 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 font-medium text-xs flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
           >
-            <GoogleIcon className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            <GoogleIcon className="w-4 h-4" />
             <span>{t.loginWithGoogle}</span>
           </button>
 
-          {/* GitHub Button */}
           <button
             type="button"
             onClick={handleGitHubClick}
             disabled={isProcessing}
-            className="w-full py-2.5 px-3 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-sm cursor-pointer group"
+            className="w-full h-11 px-3 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200 font-medium text-xs flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
           >
-            <GitHubIcon className="w-3.5 h-3.5 text-white group-hover:scale-110 transition-transform" />
+            <GitHubIcon className="w-4 h-4 text-white" />
             <span>{t.loginWithGithub}</span>
           </button>
         </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
-          <div className="border-t border-white/10 w-full" />
-          <span className="bg-[#0D1424] px-3 font-mono text-[10px] text-slate-500 uppercase tracking-widest absolute">
-            {t.orViaEmail}
+          <div className="border-t border-zinc-800 w-full" />
+          <span className="bg-[#0D121D] px-3 font-mono text-[10px] text-zinc-500 uppercase tracking-widest absolute">
+            {isEn ? 'or with email' : 'oppure con email'}
           </span>
         </div>
 
-        {/* ============================================================== */}
-        {/* TAB 1: STANDARD LOGIN FOR EXISTING ACCOUNTS */}
-        {/* ============================================================== */}
+        {/* TAB 1: STANDARD LOGIN */}
         {authMode === 'login' && (
           <div className="space-y-4 animate-fade-in">
-            {/* Standard Email / Callsign + Password Form */}
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                  {t.operatorCallsignOrEmail}
+                <label className="text-xs font-mono text-zinc-400 block mb-1.5">
+                  {isEn ? 'Email or Username' : 'Email o Username'}
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                     <User className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
                     required
-                    placeholder={t.operatorCallsignPlaceholder}
+                    placeholder={isEn ? 'operator@domain.com' : 'operatore@dominio.com'}
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-sm text-white placeholder-slate-600 font-mono transition-colors"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 text-sm text-white placeholder-zinc-600 font-mono transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-mono text-slate-300 block mb-1">
+                <label className="text-xs font-mono text-zinc-400 block mb-1.5">
                   {t.password}
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -711,7 +697,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="••••••••"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-sm text-white placeholder-slate-600 font-mono transition-colors"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 text-sm text-white placeholder-zinc-600 font-mono transition-colors"
                   />
                 </div>
               </div>
@@ -719,7 +705,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <button
                 type="submit"
                 disabled={isProcessing}
-                className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 transition-colors cursor-pointer mt-1"
               >
                 <span>{t.loginButton}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -735,10 +721,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   setIsEmailOtpModalOpen(true);
                   setErrorMsg(null);
                 }}
-                className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1.5"
+                className="text-xs font-mono text-zinc-400 hover:text-white transition-colors"
               >
-                <KeyRound className="w-3 h-3" />
-                <span>{t.forgotPassword}</span>
+                {t.forgotPassword}
               </button>
             </div>
           </div>
@@ -789,7 +774,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>{t.send2FACodeBtn}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -862,7 +847,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-3.5 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>{t.verify2FACodeBtn}</span>
                   <Check className="w-4 h-4" />
@@ -974,9 +959,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full mt-2 py-4 px-4 rounded-xl font-mono font-black text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 shadow-neon-emerald flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                  className="w-full mt-2 py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 fill-current" />
                   <span>{t.completeSignupBtn}</span>
                 </button>
               </form>
@@ -986,23 +971,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
         {/* Optional Sandbox / Guest Access link */}
         {onGuestAccess && (
-          <div className="pt-2 text-center border-t border-white/5">
+          <div className="pt-3 text-center border-t border-zinc-800">
             <button
               type="button"
               onClick={onGuestAccess}
-              className="text-[11px] font-mono text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+              className="text-xs font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
-              {t.exploreAsGuest}
+              {isEn ? 'Continue as Guest →' : 'Continua come Ospite →'}
             </button>
           </div>
         )}
 
         {/* Footer Legal Links */}
-        <div className="pt-2 text-center border-t border-white/5 flex flex-wrap items-center justify-center gap-2.5 text-[10px] font-mono text-slate-500">
+        <div className="pt-1 text-center flex flex-wrap items-center justify-center gap-2 text-[10px] font-mono text-zinc-600">
           <button
             type="button"
             onClick={() => onOpenLegal && onOpenLegal('privacy')}
-            className="hover:text-slate-300 transition-colors"
+            className="hover:text-zinc-400 transition-colors"
           >
             {t.privacyPolicy}
           </button>
@@ -1010,7 +995,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             type="button"
             onClick={() => onOpenLegal && onOpenLegal('terms')}
-            className="hover:text-slate-300 transition-colors"
+            className="hover:text-zinc-400 transition-colors"
           >
             {t.termsOfService}
           </button>
@@ -1018,7 +1003,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             type="button"
             onClick={() => onOpenLegal && onOpenLegal('refund')}
-            className="hover:text-slate-300 transition-colors"
+            className="hover:text-zinc-400 transition-colors"
           >
             {t.refund}
           </button>
@@ -1026,7 +1011,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             type="button"
             onClick={() => onOpenLegal && onOpenLegal('cookies')}
-            className="hover:text-slate-300 transition-colors"
+            className="hover:text-zinc-400 transition-colors"
           >
             {t.cookies}
           </button>

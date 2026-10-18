@@ -72,29 +72,29 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-4 animate-fade-in font-sans">
       
-      {/* 1. Header Banner: Compact, Clean, No Colliding Badges */}
-      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+      {/* 1. Header Banner */}
+      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <BarChart2 className="w-3.5 h-3.5 text-emerald-400" />
-              TELEMETRY & AUDIT
+            <BarChart2 className="w-4 h-4 text-zinc-400" />
+            <span className="text-xs font-mono text-zinc-400 uppercase font-bold tracking-wider">
+              Telemetry & Audit
             </span>
           </div>
 
           {onOpenHackerCard && (
             <button
               onClick={onOpenHackerCard}
-              className="py-1 px-2.5 rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-mono text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              className="py-1 px-2.5 rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 font-mono text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>HACKER ID (9:16)</span>
+              <span>HACKER ID</span>
             </button>
           )}
         </div>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             {t.readinessRadarTitle}
           </h1>
           <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
@@ -296,23 +296,21 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
             </div>
 
             {/* Crisp Lock Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-center rounded-xl border border-zinc-700/80">
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-emerald-400 mb-2">
-                <Lock className="w-4 h-4" />
-              </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 p-4 text-center rounded-xl border border-zinc-800">
+              <Lock className="w-5 h-5 text-zinc-400 mb-2" />
               <h4 className="font-mono font-bold text-xs sm:text-sm text-white mb-1">
                 {isEn ? 'WEAKNESS DRILL LOCKED' : 'ANALISI LACUNE BLOCCATA'}
               </h4>
-              <p className="text-[11px] text-zinc-300 max-w-xs mb-3 leading-relaxed">
+              <p className="text-xs text-zinc-400 max-w-xs mb-3 leading-relaxed">
                 {isEn 
                   ? 'Upgrade to ZeroDay PRO to inspect granular domain accuracy and launch targeted drills.'
                   : 'Sblocca ZeroDay PRO per esaminare l\'accuratezza dettagliata e avviare sessioni mirate.'}
               </p>
               <button
                 onClick={() => onOpenPaywall('weakness_drill')}
-                className="py-2.5 px-5 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                className="py-2.5 px-5 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 fill-zinc-950" />
+                <Sparkles className="w-3.5 h-3.5 fill-current" />
                 <span>{isEn ? 'UNLOCK WITH PRO' : 'SBLOCCA CON PRO'}</span>
               </button>
             </div>

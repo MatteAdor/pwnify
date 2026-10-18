@@ -206,50 +206,26 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] bg-grid-cyber flex flex-col justify-center items-center px-2.5 py-3 sm:px-4 sm:py-8">
-      <div className="w-full max-w-xl bg-[#131B2E] border border-white/10 rounded-2xl p-3.5 sm:p-7 shadow-2xl relative overflow-hidden">
-        {/* Glow corner */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        {/* Header Progress Stepper */}
-        <div className="mb-3.5 sm:mb-5">
-          <div className="flex items-center justify-between text-xs font-mono text-slate-400 mb-1.5">
-            <span className="text-emerald-400 font-bold">{t.diagPhaseTitle}</span>
-            <span>{t.stepOf} {step} {t.of}</span>
-          </div>
-          <div className="w-full bg-slate-800/80 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-300"
-              style={{ width: `${(step / 5) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* STEP 1: Goal / Faculty Selection & Language Selector */}
-        {step === 1 && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
-            {/* Language Selector placed right when selecting the goal/faculty */}
-            <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-[#0b1220] border border-white/10 shadow-sm">
-              <div className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-mono font-bold text-slate-200">
-                  {t.selectLanguageLabel}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 bg-[#070b14] p-0.5 rounded-lg border border-white/10">
+    <div className="min-h-screen bg-[#060A12] text-zinc-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 select-none safe-top safe-bottom">
+      <div className="w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-xl relative space-y-6">
+        {/* Header Progress Stepper & Language Switcher */}
+        <div>
+          <div className="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2.5">
+            <span className="font-bold text-zinc-300">0xDAY // ONBOARDING</span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-zinc-500 font-mono">{step} / 5</span>
+              <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
                 <button
                   type="button"
                   onClick={() => {
                     sound.playTap();
                     setLanguage('en');
                   }}
-                  className={`px-2.5 py-0.5 rounded font-mono text-[11px] font-bold transition-all cursor-pointer ${
-                    lang === 'en'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
-                      : 'text-slate-400 hover:text-white'
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-colors ${
+                    lang === 'en' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'
                   }`}
                 >
-                  English
+                  EN
                 </button>
                 <button
                   type="button"
@@ -257,60 +233,65 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                     sound.playTap();
                     setLanguage('it');
                   }}
-                  className={`px-2.5 py-0.5 rounded font-mono text-[11px] font-bold transition-all cursor-pointer ${
-                    lang === 'it'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
-                      : 'text-slate-400 hover:text-white'
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold transition-colors ${
+                    lang === 'it' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-white'
                   }`}
                 >
-                  Italiano
+                  IT
                 </button>
               </div>
             </div>
+          </div>
+          <div className="w-full bg-zinc-800 h-1 rounded-full overflow-hidden">
+            <div 
+              className="bg-emerald-400 h-full transition-all duration-300"
+              style={{ width: `${(step / 5) * 100}%` }}
+            />
+          </div>
+        </div>
 
+        {/* STEP 1: Goal Selection */}
+        {step === 1 && (
+          <div className="space-y-6 animate-fade-in">
             <div>
-              <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 {t.onboardingStep1Title}
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {t.onboardingStep1Desc}
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+            <div className="space-y-3">
               {goals.map((g) => {
                 const Icon = g.icon;
                 const isSelected = selectedGoal === g.id;
                 return (
                   <div
                     key={g.id}
-                    onClick={() => setSelectedGoal(g.id)}
-                    className={`cursor-pointer p-2.5 sm:p-3 rounded-xl border transition-all flex items-start gap-2.5 ${
+                    onClick={() => {
+                      sound.playTap();
+                      setSelectedGoal(g.id);
+                    }}
+                    className={`p-4 rounded-xl border transition-colors flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-950/40 border-emerald-500 shadow-neon-emerald'
-                        : 'bg-surface/70 border-white/10 hover:border-white/20'
+                        ? 'bg-zinc-800/80 border-emerald-500 text-white'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
                     }`}
                   >
-                    <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-                      <Icon className="w-4 h-4" />
+                    <div className="flex items-center gap-3.5">
+                      <Icon className={`w-5 h-5 shrink-0 ${isSelected ? 'text-emerald-400' : 'text-zinc-400'}`} />
+                      <span className="text-sm font-bold text-white leading-snug">{g.title}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <h2 className="text-xs sm:text-sm font-bold text-white leading-tight truncate">{g.title}</h2>
-                        <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0">
-                          {g.badge}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{g.desc}</p>
-                    </div>
+                    {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />}
                   </div>
                 );
               })}
             </div>
 
             <button
-              onClick={() => setStep(2)}
-              className="w-full py-2.5 sm:py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 shadow-neon-emerald cursor-pointer"
+              onClick={() => {
+                sound.playTap();
+                setStep(2);
+              }}
+              className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{t.continueBtn}</span>
               <ArrowRight className="w-4 h-4" />
@@ -320,49 +301,67 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
         {/* STEP 2: Current Experience Level */}
         {step === 2 && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 {t.onboardingStep2Title}
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {t.onboardingStep2Desc}
-              </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {levels.map((lvl) => {
                 const isSelected = selectedLevel === lvl.id;
+                const shortTitle = lvl.id === 'beginner'
+                  ? (lang === 'it' ? 'Principiante' : 'Beginner')
+                  : lvl.id === 'intermediate'
+                  ? (lang === 'it' ? 'Intermedio (Dev / Sysadmin)' : 'Intermediate (Dev / Sysadmin)')
+                  : (lang === 'it' ? 'Avanzato (Pentester / SOC)' : 'Advanced (Pentester / SOC)');
+
+                const shortDesc = lvl.id === 'beginner' 
+                  ? (lang === 'it' ? 'Nessuna esperienza precedente con exploit o reti' : 'No prior exploit or networking experience')
+                  : lvl.id === 'intermediate'
+                  ? (lang === 'it' ? 'Uso Linux o sviluppo, conosco i protocolli di rete' : 'Regular Linux/dev usage, know network protocols')
+                  : (lang === 'it' ? 'Pratica su laboratori pratici o analisi SOC' : 'Hands-on lab practice or SOC analysis');
+
                 return (
                   <div
                     key={lvl.id}
-                    onClick={() => setSelectedLevel(lvl.id)}
-                    className={`cursor-pointer p-2.5 sm:p-3 rounded-xl border transition-all ${
+                    onClick={() => {
+                      sound.playTap();
+                      setSelectedLevel(lvl.id);
+                    }}
+                    className={`p-4 rounded-xl border transition-colors flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-950/40 border-indigo-500 shadow-neon-indigo'
-                        : 'bg-surface/70 border-white/10 hover:border-white/20'
+                        ? 'bg-zinc-800/80 border-emerald-500'
+                        : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-0.5">
-                      <h3 className="text-xs sm:text-sm font-bold text-white">{lvl.title}</h3>
-                      {isSelected && <Check className="w-4 h-4 text-indigo-400" />}
+                    <div>
+                      <h3 className="text-sm font-bold text-white mb-0.5">{shortTitle}</h3>
+                      <p className="text-xs text-zinc-400">{shortDesc}</p>
                     </div>
-                    <p className="text-[11px] text-slate-400">{lvl.desc}</p>
+                    {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-3" />}
                   </div>
                 );
               })}
             </div>
 
-            <div className="flex gap-2.5 pt-1">
+            <div className="flex items-center gap-3 pt-1">
               <button
-                onClick={() => setStep(1)}
-                className="py-2.5 px-3.5 rounded-xl font-mono text-xs text-slate-400 hover:text-white border border-white/10 cursor-pointer"
+                onClick={() => {
+                  sound.playTap();
+                  setStep(1);
+                }}
+                className="py-3 px-4 rounded-xl font-mono text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 {t.backBtn}
               </button>
               <button
-                onClick={() => setStep(3)}
-                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-indigo-500 hover:bg-indigo-400 transition-all flex items-center justify-center gap-2 shadow-neon-indigo cursor-pointer"
+                onClick={() => {
+                  sound.playTap();
+                  setStep(3);
+                }}
+                className="flex-1 py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{t.continueBtn}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -373,58 +372,64 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
         {/* STEP 3: Daily Commitment */}
         {step === 3 && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
+          <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 {t.onboardingStep3Title}
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {t.onboardingStep3Desc}
-              </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {commitments.map((c) => {
                 const isSelected = dailyTime === c.minutes;
                 return (
                   <div
                     key={c.minutes}
-                    onClick={() => setDailyTime(c.minutes)}
-                    className={`cursor-pointer p-2.5 sm:p-3 rounded-xl border transition-all flex items-center justify-between ${
+                    onClick={() => {
+                      sound.playTap();
+                      setDailyTime(c.minutes);
+                    }}
+                    className={`p-4 rounded-xl border transition-colors flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? 'bg-emerald-950/40 border-emerald-500 shadow-neon-emerald'
-                        : 'bg-surface/70 border-white/10 hover:border-white/20'
+                        ? 'bg-zinc-800/80 border-emerald-500 text-white'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs sm:text-sm text-white">{c.label}</span>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-mono font-bold text-sm text-white">{c.label}</span>
                         {c.recommended && (
-                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
                             {t.recommendedBadge}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{c.desc}</p>
+                      <p className="text-xs text-zinc-400">{c.desc}</p>
                     </div>
-                    {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                    {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0 ml-3" />}
                   </div>
                 );
               })}
             </div>
 
-            <div className="flex gap-2.5 pt-1">
+            <div className="flex items-center gap-3 pt-1">
               <button
-                onClick={() => setStep(2)}
-                className="py-2.5 px-3.5 rounded-xl font-mono text-xs text-slate-400 hover:text-white border border-white/10 cursor-pointer"
+                onClick={() => {
+                  sound.playTap();
+                  setStep(2);
+                }}
+                className="py-3 px-4 rounded-xl font-mono text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
                 {t.backBtn}
               </button>
               <button
-                onClick={() => setStep(4)}
-                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 shadow-neon-emerald cursor-pointer"
+                onClick={() => {
+                  sound.playTap();
+                  setStep(4);
+                }}
+                className="flex-1 py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>{t.nextScenarioBtn} (3 {t.challenge}s)</span>
+                <span>{t.nextScenarioBtn}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -433,58 +438,58 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
         {/* STEP 4: Live Diagnostic Benchmark */}
         {step === 4 && (
-          <div className="space-y-2.5 sm:space-y-3.5 animate-fade-in">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">
                   {currentQuestion.domain}
                 </span>
-                <span className="text-[11px] text-slate-400 font-mono">
+                <span className="text-xs text-zinc-400 font-mono">
                   {t.challenge} {currentDiagIndex + 1}/{diagQuestions.length}
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-emerald-400 font-bold">
+              <span className="text-xs font-mono text-emerald-400 font-bold">
                 {t.liveScore} {userScore}/{diagQuestions.length}
               </span>
             </div>
 
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white leading-tight">
+              <h3 className="text-sm font-bold text-white leading-tight">
                 {currentQuestion.title}
               </h3>
-              <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
+              <p className="text-xs text-zinc-400 mt-1 leading-normal">
                 {currentQuestion.prompt}
               </p>
             </div>
 
             {/* Code / Packet Snippet display */}
             {currentQuestion.codeSnippet && !currentQuestion.codeLines && currentQuestion.type !== 'terminal_command' && (
-              <div className="rounded-lg bg-[#06090F] border border-white/10 p-2 overflow-x-auto text-[11px] font-mono text-slate-300 shadow-inner max-h-24 sm:max-h-32 overflow-y-auto">
+              <div className="rounded-xl bg-[#090D17] border border-zinc-800 p-3 overflow-x-auto text-xs font-mono text-zinc-300 max-h-32 overflow-y-auto">
                 <pre className="whitespace-pre-wrap">{currentQuestion.codeSnippet}</pre>
               </div>
             )}
 
             {/* Spot the Zero-Day line picker */}
             {currentQuestion.codeLines && (
-              <div className="rounded-lg bg-[#06090F] border border-white/10 p-1.5 overflow-hidden shadow-inner max-h-28 sm:max-h-36 overflow-y-auto">
-                <div className="text-[9px] font-mono text-slate-500 px-1.5 py-0.5 border-b border-white/5 flex items-center justify-between">
+              <div className="rounded-xl bg-[#090D17] border border-zinc-800 p-2 overflow-hidden max-h-36 overflow-y-auto">
+                <div className="text-[10px] font-mono text-zinc-500 px-2 py-1 border-b border-zinc-800 flex items-center justify-between">
                   <span>{t.tapVulnerableLine}</span>
                   <span className="text-amber-400">{t.clickToSelect}</span>
                 </div>
-                <div className="divide-y divide-white/5 font-mono text-[11px]">
+                <div className="divide-y divide-zinc-800/60 font-mono text-xs">
                   {currentQuestion.codeLines.map((line) => {
                     const isSelected = selectedLineNum === line.lineNum;
                     return (
                       <div
                         key={line.lineNum}
                         onClick={() => !hasAnswered && setSelectedLineNum(line.lineNum)}
-                        className={`px-2 py-1 flex items-center gap-2 cursor-pointer transition-colors ${
+                        className={`px-2.5 py-1.5 flex items-center gap-2.5 cursor-pointer transition-colors ${
                           isSelected
                             ? 'bg-amber-500/20 text-amber-300 border-l-2 border-amber-400'
-                            : 'hover:bg-white/5 text-slate-300'
+                            : 'hover:bg-zinc-800/50 text-zinc-300'
                         }`}
                       >
-                        <span className="text-slate-600 select-none w-3 text-right text-[10px]">
+                        <span className="text-zinc-600 select-none w-4 text-right text-[10px]">
                           {line.lineNum}
                         </span>
                         <span className="truncate">{line.code}</span>
@@ -497,24 +502,17 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
             {/* Interactive Terminal Sandbox */}
             {currentQuestion.type === 'terminal_command' && (
-              <div className="space-y-2">
-                <div className="rounded-xl bg-[#060A14] border border-cyan-500/40 p-3 sm:p-4 shadow-inner font-mono text-xs text-slate-200">
-                  <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-white/10 text-[11px] text-slate-400">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/90 shadow-sm" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/90 shadow-sm" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90 shadow-sm" />
-                      </div>
-                      <span className="text-slate-300 font-mono font-bold tracking-wider text-[11px]">TTY1 // DIAGNOSTIC SANDBOX</span>
-                    </div>
+              <div className="space-y-3">
+                <div className="rounded-xl bg-[#090D17] border border-zinc-800 p-3 sm:p-4 font-mono text-xs text-zinc-200">
+                  <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-zinc-800 text-[11px] text-zinc-400">
+                    <span className="text-zinc-300 font-mono font-bold tracking-wider text-xs">TTY1 // SANDBOX</span>
                     <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       <span>ONLINE</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 bg-[#0A0F1D] p-2 rounded-lg border border-white/5">
+                  <div className="flex flex-wrap items-center gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
                     <span className="text-emerald-400 font-bold shrink-0 text-xs">
                       {currentQuestion.terminalPrompt || 'operator@zeroday:~$'}
                     </span>
@@ -534,13 +532,13 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                           handleDiagnosticAnswer();
                         }
                       }}
-                      placeholder="digita o tocca i comandi sotto..."
-                      className="bg-[#0D1527] border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-cyan-300 px-2.5 py-1.5 rounded text-xs flex-1 min-w-[150px] outline-none font-mono"
+                      placeholder="digita comando..."
+                      className="bg-transparent text-emerald-300 px-2 py-1 rounded text-xs flex-1 min-w-[140px] outline-none font-mono"
                     />
                   </div>
 
                   {terminalStdout && (
-                    <div className="mt-2.5 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-300 bg-black/70 p-2.5 rounded-lg border border-emerald-500/30 shadow-inner">
+                    <div className="mt-2.5 pt-2 border-t border-zinc-800 font-mono text-xs whitespace-pre-wrap text-emerald-300 bg-zinc-950 p-2.5 rounded-lg">
                       {terminalStdout}
                     </div>
                   )}
@@ -548,9 +546,6 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
                 {currentQuestion.commandChips && currentQuestion.commandChips.length > 0 && !hasAnswered && (
                   <div>
-                    <span className="text-[10px] font-mono text-slate-400 block mb-1 uppercase">
-                      Tocca i parametri per assemblare la sintassi:
-                    </span>
                     <div className="flex flex-wrap gap-1.5">
                       {currentQuestion.commandChips.map((chip, i) => (
                         <button
@@ -560,10 +555,9 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                             sound.playTap();
                             setTerminalInputText(prev => prev ? `${prev} ${chip}` : chip);
                           }}
-                          className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-surface border border-white/10 hover:border-cyan-400 text-slate-200 hover:text-cyan-300 font-mono text-xs font-semibold transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                          className="min-h-[32px] px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-200 font-mono text-xs font-semibold transition-colors cursor-pointer"
                         >
-                          <span>{chip}</span>
-                          <CornerDownLeft className="w-3 h-3 opacity-60 text-cyan-400" />
+                          {chip}
                         </button>
                       ))}
                       <button
@@ -572,9 +566,9 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                           sound.playTap();
                           setTerminalInputText('');
                         }}
-                        className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-red-950/40 border border-red-500/30 hover:border-red-500/60 text-red-400 text-xs font-mono font-bold transition-all active:scale-95 cursor-pointer"
+                        className="min-h-[32px] px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-mono transition-colors cursor-pointer"
                       >
-                        Cancella
+                        Reset
                       </button>
                     </div>
                   </div>
@@ -584,19 +578,19 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
             {/* Multiple choice options */}
             {currentQuestion.type !== 'terminal_command' && (
-              <div className="space-y-1.5 pt-0.5">
+              <div className="space-y-2 pt-1">
                 {currentQuestion.options.map((opt) => {
                   const isSelected = selectedOptionId === opt.id;
-                  let optClass = 'bg-surface/80 border-white/10 hover:border-white/20';
+                  let optClass = 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700 text-zinc-200';
 
                   if (hasAnswered) {
                     if (opt.isCorrect) {
                       optClass = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
                     } else if (isSelected && !opt.isCorrect) {
-                      optClass = 'bg-red-950/60 border-red-500 text-red-300';
+                      optClass = 'bg-rose-950/60 border-rose-500 text-rose-300';
                     }
                   } else if (isSelected) {
-                    optClass = 'bg-indigo-950/40 border-indigo-500 text-indigo-200';
+                    optClass = 'bg-zinc-800 border-emerald-500 text-white';
                   }
 
                   return (
@@ -604,11 +598,11 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                       key={opt.id}
                       disabled={hasAnswered}
                       onClick={() => setSelectedOptionId(opt.id)}
-                      className={`w-full text-left py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-xs transition-all flex items-center justify-between cursor-pointer leading-snug ${optClass}`}
+                      className={`w-full text-left py-3 px-3.5 rounded-xl border text-xs transition-colors flex items-center justify-between cursor-pointer ${optClass}`}
                     >
                       <span className="font-mono">{opt.text}</span>
                       {hasAnswered && opt.isCorrect && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-1.5" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
                       )}
                     </button>
                   );
@@ -627,41 +621,41 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                     : !selectedOptionId
                 }
                 onClick={handleDiagnosticAnswer}
-                className="w-full mt-1.5 py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-sm"
+                className="w-full mt-2 py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
               >
                 {t.verifyAnswerBtn}
               </button>
             ) : (
-              <div className="pt-1 animate-fade-in space-y-2">
-                <div className={`p-2.5 rounded-xl border text-[11px] ${
+              <div className="pt-1 animate-fade-in space-y-2.5">
+                <div className={`p-3 rounded-xl border text-xs ${
                   isAnswerCorrect 
-                    ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300' 
-                    : 'bg-red-950/40 border-red-500/50 text-red-300'
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' 
+                    : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
                 }`}>
-                  <div className="font-mono font-bold flex items-center gap-1.5 mb-0.5">
+                  <div className="font-mono font-bold flex items-center gap-1.5 mb-1">
                     {isAnswerCorrect ? (
                       <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         <span>{t.attackSuccess} (+{currentQuestion.eloReward} ELO)</span>
                       </>
                     ) : (
                       <>
-                        <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                        <AlertTriangle className="w-4 h-4 text-rose-400" />
                         <span>{t.payloadBlocked}</span>
                       </>
                     )}
                   </div>
-                  <p className="text-slate-300 text-[10px] leading-tight">
+                  <p className="text-zinc-400 text-xs">
                     {currentQuestion.options.find(o => o.isCorrect)?.explanation || 'Analisi completata.'}
                   </p>
                 </div>
 
                 <button
                   onClick={handleNextDiagnostic}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{currentDiagIndex < diagQuestions.length - 1 ? t.nextQuestionBtn : t.calcReadinessBtn}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -670,96 +664,87 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
         {/* STEP 5: Animated Calculation & Readiness Score */}
         {step === 5 && (
-          <div className="space-y-4 text-center animate-fade-in py-1">
+          <div className="space-y-6 text-center animate-fade-in">
             {!calculationComplete ? (
-              <div className="space-y-3 py-6">
-                <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-4 border-emerald-500/20 border-t-emerald-400 animate-spin" />
-                  <Terminal className="w-7 h-7 text-emerald-400 animate-pulse" />
+              <div className="space-y-4 py-8">
+                <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin" />
+                  <Terminal className="w-6 h-6 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="font-mono font-bold text-base sm:text-lg text-white">
+                  <h3 className="font-mono font-bold text-base text-white">
                     {t.analyzingVulns}
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  <p className="text-xs text-zinc-400 font-mono mt-1">
                     {t.scanningGaps} ({calculatingProgress}%)
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold">
-                  <Check className="w-3.5 h-3.5" />
-                  {t.initialEvalComplete}
-                </div>
-
+              <div className="space-y-6">
                 <div>
-                  <div className="flex items-center justify-center gap-2.5 my-1.5">
-                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-[#06090F] border border-white/10 text-center min-w-[110px] sm:min-w-[130px]">
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono block">{t.baseReadiness}</span>
-                      <span className="text-2xl sm:text-4xl font-mono font-extrabold text-amber-400">
+                  <div className="flex items-center justify-center gap-3 my-2">
+                    <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-center min-w-[120px]">
+                      <span className="text-[10px] text-zinc-400 font-mono block mb-1">{t.baseReadiness}</span>
+                      <span className="text-3xl font-mono font-bold text-amber-400">
                         {calculatedReadiness}%
                       </span>
                     </div>
 
-                    <ArrowRight className="w-4 h-4 sm:w-6 sm:h-6 text-slate-500 shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-zinc-600 shrink-0" />
 
-                    <div className="p-2.5 sm:p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-center min-w-[110px] sm:min-w-[130px] shadow-neon-emerald">
-                      <span className="text-[9px] sm:text-[10px] text-emerald-300 font-mono block">{t.certBenchmark}</span>
-                      <span className="text-2xl sm:text-4xl font-mono font-extrabold text-emerald-400">
+                    <div className="p-4 rounded-xl bg-zinc-900 border border-emerald-500/40 text-center min-w-[120px]">
+                      <span className="text-[10px] text-emerald-400 font-mono block mb-1">{t.certBenchmark}</span>
+                      <span className="text-3xl font-mono font-bold text-emerald-400">
                         85%+
                       </span>
                     </div>
                   </div>
-                  <p className="text-[11px] sm:text-xs text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
+                  <p className="text-xs text-zinc-400 max-w-sm mx-auto mt-2 leading-relaxed">
                     {t.onboardingSummaryText}
                   </p>
                 </div>
 
-                {/* Operator Callsign / Username Selection */}
-                <div className="p-3 sm:p-4 rounded-xl bg-[#06090F] border border-white/10 text-left space-y-1.5 my-2">
-                  <label className="text-[10px] sm:text-xs font-mono font-bold text-slate-300 uppercase tracking-wider block">
-                    {lang === 'it' ? 'Scegli il tuo Callsign / Nome Operatore:' : 'Choose your Operator Callsign:'}
+                {/* Operator Callsign Selection */}
+                <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-left space-y-2">
+                  <label className="text-xs font-mono font-bold text-zinc-300 block">
+                    {lang === 'it' ? 'Callsign / Nome Operatore:' : 'Operator Callsign:'}
                   </label>
                   <input
                     type="text"
                     value={customCallsign}
                     onChange={(e) => setCustomCallsign(e.target.value)}
-                    placeholder={lang === 'it' ? 'Es. DarkMatteo, Shadow_Op, GhostSec' : 'e.g. DarkMatteo, Shadow_Op, GhostSec'}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-emerald-500 text-xs text-white font-mono"
+                    placeholder={lang === 'it' ? 'Es. DarkMatteo, Shadow_Op' : 'e.g. DarkMatteo, Shadow_Op'}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 focus:border-emerald-500 text-sm text-white font-mono"
                   />
-                  <p className="text-[10px] text-slate-400 font-mono">
-                    {lang === 'it' 
-                      ? 'Questo nome comparirà nel tuo profilo, nelle leghe e nella roadmap.'
-                      : 'This callsign will appear in your profile, leagues, and skill roadmap.'}
-                  </p>
                 </div>
 
-                {/* Primary CTA: Launch Paywall */}
-                <button
-                  onClick={handleFinishOnboarding}
-                  className="w-full py-2.5 sm:py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 hover:from-emerald-300 hover:to-teal-400 transition-all shadow-neon-emerald flex items-center justify-center gap-2 transform active:scale-98 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>{t.exploreProPlansBtn}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                {/* Actions */}
+                <div className="space-y-2.5">
+                  <button
+                    onClick={handleFinishOnboarding}
+                    className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>{t.exploreProPlansBtn}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
 
-                <button
-                  onClick={() => {
-                    onComplete({
-                      goal: selectedGoal,
-                      level: selectedLevel,
-                      commitment: dailyTime,
-                      readinessScore: calculatedReadiness,
-                      chosenUsername: customCallsign.trim() || undefined,
-                      profession: goals.find(g => g.id === selectedGoal)?.title
-                    });
-                  }}
-                  className="text-xs text-slate-400 hover:text-slate-200 underline font-mono cursor-pointer"
-                >
-                  {t.continueFreeBtn}
-                </button>
+                  <button
+                    onClick={() => {
+                      onComplete({
+                        goal: selectedGoal,
+                        level: selectedLevel,
+                        commitment: dailyTime,
+                        readinessScore: calculatedReadiness,
+                        chosenUsername: customCallsign.trim() || undefined,
+                        profession: goals.find(g => g.id === selectedGoal)?.title
+                      });
+                    }}
+                    className="w-full py-2 text-xs text-zinc-400 hover:text-white font-mono transition-colors cursor-pointer"
+                  >
+                    {t.continueFreeBtn}
+                  </button>
+                </div>
               </div>
             )}
           </div>

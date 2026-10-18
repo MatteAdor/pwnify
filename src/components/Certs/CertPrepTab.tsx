@@ -202,17 +202,19 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   return (
     <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-4 animate-fade-in font-sans">
       {/* Header Banner */}
-      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold flex items-center gap-1.5 uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            {t.certHeaderBadge}
-          </span>
-          <span className="text-xs font-mono text-zinc-400">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-zinc-400" />
+            <span className="text-xs font-mono text-zinc-400 uppercase font-bold tracking-wider">
+              {t.certHeaderBadge}
+            </span>
+          </div>
+          <span className="text-xs font-mono text-zinc-500">
             {t.certHeaderSub}
           </span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
           {t.certHeaderTitle}
         </h1>
         <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
@@ -221,46 +223,46 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       </div>
 
       {/* Certifications List */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {certs.map((cert) => (
           <div 
             key={cert.id}
-            className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-5 sm:p-6 shadow-[0_15px_40px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-4 hover:border-white/20 transition-all duration-300 backdrop-blur-xl"
+            className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${cert.color}`}>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
                     {cert.code}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono">
+                  <span className="text-xs text-zinc-400 font-mono">
                     {cert.issuer}
                   </span>
                 </div>
-                <h2 className="text-lg font-bold text-white">
+                <h2 className="text-base sm:text-lg font-bold text-white">
                   {cert.name}
                 </h2>
               </div>
 
               <div className="text-right font-mono">
-                <span className="text-[10px] text-slate-400 block">{t.passProbability}</span>
-                <span className={`text-xl font-extrabold ${cert.readiness < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
+                <span className="text-[10px] text-zinc-500 block">{t.passProbability}</span>
+                <span className={`text-lg font-bold ${cert.readiness < 50 ? 'text-rose-400' : 'text-emerald-400'}`}>
                   {cert.readiness}%
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-zinc-400 leading-relaxed">
               {cert.description}
             </p>
 
             {/* PBQ Progress Bar */}
-            <div className="space-y-1.5 bg-[#090D16] p-3 rounded-xl border border-white/5">
+            <div className="space-y-1.5 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">PBQ Labs</span>
+                <span className="text-zinc-400">PBQ Labs</span>
                 <span className="text-emerald-400 font-bold">{cert.completedPBQs} / {cert.totalPBQs}</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
                 <div 
                   className="bg-emerald-500 h-full rounded-full transition-all duration-300"
                   style={{ width: `${(cert.completedPBQs / cert.totalPBQs) * 100}%` }}
@@ -294,16 +296,16 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   setQuickAnswered(false);
                   setQuickCompleted(false);
                 }}
-                className="py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 bg-surface-light border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                className="py-2 px-3 rounded-xl font-mono text-xs text-zinc-200 bg-zinc-900 border border-zinc-750 hover:bg-zinc-850 hover:border-zinc-600 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Play className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                <Play className="w-3.5 h-3.5 text-zinc-400 fill-current" />
                 <span>{t.quickCheckBtn}</span>
               </button>
 
               {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
               <button
                 onClick={() => handleStartPbq(cert.pbqRef)}
-                className="py-2.5 px-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all flex items-center justify-center gap-1.5 shadow-neon-emerald cursor-pointer"
+                className="py-2 px-3 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {!userState.isPro ? (
                   <>
@@ -324,12 +326,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
 
       {/* QUICK DOMAIN CHECK MODAL (FREE ACCESS) */}
       {quickCheckCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg bg-[#131B2E] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl text-slate-100">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in">
+          <div className="relative w-full max-w-lg bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
               <div>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold block">
-                  RAPID DIAGNOSTIC DRILL (5 QUESTIONS)
+                <span className="text-xs font-mono text-zinc-400 font-bold block uppercase">
+                  Rapid Diagnostic Drill (5 Questions)
                 </span>
                 <h3 className="font-bold text-base text-white">{quickCheckCert}</h3>
               </div>
@@ -338,7 +340,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   sound.playTap();
                   setQuickCheckCert(null);
                 }}
-                className="p-1 rounded text-slate-400 hover:text-white"
+                className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -346,12 +348,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
 
             {!quickCompleted ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
                   <span>Question {quickQuestionIndex + 1} of {activeQuickQuestions.length}</span>
-                  <span className="text-emerald-400">Score: {quickScore}/{activeQuickQuestions.length}</span>
+                  <span className="text-emerald-400 font-bold">Score: {quickScore}/{activeQuickQuestions.length}</span>
                 </div>
 
-                <p className="text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
+                <p className="text-xs sm:text-sm text-zinc-200 font-medium leading-relaxed">
                   {activeQuickQuestions[quickQuestionIndex].q}
                 </p>
 
@@ -371,7 +373,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                         }
                         setQuickAnswered(true);
                       }}
-                      className="w-full p-3 rounded-xl border border-white/10 bg-[#090D16] text-left text-xs font-mono hover:border-emerald-500/40 transition-all flex items-center justify-between text-slate-300"
+                      className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-900 text-left text-xs font-mono hover:border-zinc-700 transition-colors flex items-center justify-between text-zinc-300 cursor-pointer"
                     >
                       <span>{opt.text}</span>
                     </button>
@@ -380,8 +382,8 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
 
                 {quickAnswered && (
                   <div className="pt-2 animate-fade-in space-y-3">
-                    <p className="text-xs text-slate-300 bg-surface-light p-3 rounded-xl border border-white/5">
-                      <strong>Technical Explanation:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
+                    <p className="text-xs text-zinc-300 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+                      <strong className="text-white">Technical Explanation:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
                     </p>
                     <button
                       onClick={() => {
@@ -393,7 +395,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                           setQuickCompleted(true);
                         }
                       }}
-                      className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 flex items-center justify-center gap-2"
+                      className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"
                     >
                       <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'NEXT QUESTION' : 'VIEW RESULT'}</span>
                       <ArrowRight className="w-4 h-4" />
@@ -403,11 +405,9 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
               </div>
             ) : (
               <div className="text-center space-y-4 py-2">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h4 className="text-lg font-bold text-white">Quick Check Completed</h4>
-                <p className="text-xs text-slate-300 font-mono">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                <h4 className="text-base sm:text-lg font-bold text-white">Quick Check Completed</h4>
+                <p className="text-xs text-zinc-400 font-mono">
                   You answered <span className="text-emerald-400 font-bold">{quickScore}/{activeQuickQuestions.length}</span> questions correctly.
                 </p>
                 <button
@@ -415,7 +415,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                     sound.playTap();
                     setQuickCheckCert(null);
                   }}
-                  className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300"
+                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 cursor-pointer transition-colors"
                 >
                   Close Check
                 </button>
@@ -427,15 +427,15 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
 
       {/* FULL INTERACTIVE PBQ LAB MODAL (PRO EXCLUSIVE PLAYABLE) */}
       {activePbq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto animate-fade-in">
-          <div className="relative w-full max-w-2xl my-auto bg-[#131B2E] border border-emerald-500/50 rounded-2xl p-5 sm:p-7 shadow-2xl text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-2xl my-auto bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-7 shadow-xl text-zinc-100">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-4">
               <div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
-                  OFFICIAL SIMULATION: {activePbq.certification}
+                <span className="text-xs font-mono text-zinc-400 font-bold uppercase block">
+                  Simulation: {activePbq.certification}
                 </span>
-                <h3 className="font-extrabold text-base sm:text-lg text-white mt-1">
+                <h3 className="font-bold text-base sm:text-lg text-white mt-0.5">
                   {activePbq.title}
                 </h3>
               </div>
@@ -444,7 +444,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   sound.playTap();
                   setActivePbq(null);
                 }}
-                className="p-1 rounded text-slate-400 hover:text-white"
+                className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -547,7 +547,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             {!pbqSubmitted ? (
               <button
                 onClick={handleSubmitPbq}
-                className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-neon-emerald transition-all"
+                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer"
               >
                 APPLY ACL & VERIFY PBQ COMPLIANCE
               </button>
@@ -557,7 +557,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   sound.playTap();
                   setActivePbq(null);
                 }}
-                className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-neon-emerald transition-all"
+                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer"
               >
                 CLOSE EXAM LAB
               </button>

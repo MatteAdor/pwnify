@@ -815,66 +815,54 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
           {/* Incoming Cyber Duel Challenge Deep-Link Modal */}
           {incomingDuel && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in">
-              <div className="relative w-full max-w-md bg-[#131B2E] border-2 border-indigo-500/60 rounded-3xl p-6 shadow-neon-indigo text-slate-100 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center mx-auto shadow-neon-indigo">
-                  <Swords className="w-8 h-8 animate-pulse" />
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
+              <div className="relative w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100 text-center space-y-4">
+                <Swords className="w-10 h-10 text-emerald-400 mx-auto" />
 
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 mb-2">
-                    <Swords className="w-3.5 h-3.5" />
-                    <span>INCOMING CYBER DUEL CHALLENGE</span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white">
-                    {isEn ? '1v1 Challenge Received!' : 'Sfida 1v1 Ricevuta!'}
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
+                    {isEn ? '1v1 Challenge Received' : 'Sfida 1v1 Ricevuta'}
                   </h2>
-                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
                     {isEn ? (
-                      <>Operator <strong className="text-emerald-400 font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-indigo-400 font-mono">{incomingDuel.elo}</strong>) has challenged you on seed <span className="font-mono text-slate-400">#{incomingDuel.seed}</span> with a target score of <strong className="text-amber-400 font-mono">{incomingDuel.score}/5</strong>.</>
+                      <>Operator <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) has challenged you on seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> with a target score of <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
                     ) : (
-                      <>L'operatore <strong className="text-emerald-400 font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-indigo-400 font-mono">{incomingDuel.elo}</strong>) ti ha sfidato sul seed <span className="font-mono text-slate-400">#{incomingDuel.seed}</span> con un punteggio di <strong className="text-amber-400 font-mono">{incomingDuel.score}/5</strong>.</>
+                      <>L'operatore <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) ti ha sfidato sul seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> con un punteggio di <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
                     )}
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#090D16] border border-white/5 font-mono text-xs text-slate-400 flex items-center justify-around">
+                <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs text-zinc-400 flex items-center justify-around">
                   <div>
-                    <span className="text-[10px] block text-slate-500">{isEn ? 'CHALLENGER' : 'SFIDANTE'}</span>
+                    <span className="text-[10px] block text-zinc-500">{isEn ? 'CHALLENGER' : 'SFIDANTE'}</span>
                     <span className="font-bold text-white">{incomingDuel.challenger}</span>
                   </div>
-                  <div className="w-px h-6 bg-white/10" />
+                  <div className="w-px h-6 bg-zinc-800" />
                   <div>
-                    <span className="text-[10px] block text-slate-500">{isEn ? 'RATING' : 'RATING'}</span>
-                    <span className="font-bold text-indigo-400">{incomingDuel.elo} ELO</span>
+                    <span className="text-[10px] block text-zinc-500">RATING</span>
+                    <span className="font-bold text-zinc-200">{incomingDuel.elo} ELO</span>
                   </div>
-                  <div className="w-px h-6 bg-white/10" />
+                  <div className="w-px h-6 bg-zinc-800" />
                   <div>
-                    <span className="text-[10px] block text-slate-500">{isEn ? 'TARGET SCORE' : 'TARGET SCORE'}</span>
-                    <span className="font-bold text-amber-400">{incomingDuel.score}/5 Pts</span>
+                    <span className="text-[10px] block text-zinc-500">TARGET</span>
+                    <span className="font-bold text-emerald-400">{incomingDuel.score}/5 Pts</span>
                   </div>
                 </div>
 
-                {/* Operator Callsign Badge */}
-                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                  <span>{isEn ? 'Defending Operator:' : 'Operatore in Difesa:'}</span>
-                  <strong className="text-white font-mono bg-[#090D16] px-2 py-0.5 rounded border border-white/10">{userState.username}</strong>
-                </div>
-
-                <div className="space-y-2 pt-2">
+                <div className="space-y-2 pt-1">
                   <button
                     onClick={handleAcceptDuel}
-                    className="w-full py-4 px-4 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2 transform active:scale-98 cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <Zap className="w-4 h-4 fill-current" />
                     <span>{isEn ? 'ACCEPT CHALLENGE (FREE)' : 'ACCETTA LA SFIDA (GRATIS)'}</span>
                   </button>
 
                   <button
                     onClick={handleDeclineDuel}
-                    className="text-xs text-slate-500 hover:text-slate-300 font-mono transition-colors pt-1 cursor-pointer"
+                    className="text-xs text-zinc-500 hover:text-zinc-300 font-mono transition-colors pt-1 cursor-pointer"
                   >
-                    {isEn ? 'Decline challenge (Return to standard view)' : 'Rifiuta la sfida (Torna alla visuale standard)'}
+                    {isEn ? 'Decline challenge' : 'Rifiuta la sfida'}
                   </button>
                 </div>
               </div>
@@ -883,34 +871,28 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
           {/* Celebratory Post-Checkout License Key Modal */}
           {verifiedCheckoutLicense && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in">
-              <div className="relative w-full max-w-md bg-[#131B2E] border-2 border-emerald-500/70 rounded-3xl p-6 shadow-neon-emerald text-slate-100 text-center space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-neon-emerald">
-                  <ShieldCheck className="w-9 h-9" />
-                </div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
+              <div className="relative w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100 text-center space-y-4">
+                <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto" />
 
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mb-2">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{isEn ? 'TRANSACTION CONFIRMED // STRIPE VERIFIED' : 'TRANSAZIONE CONFERMATA // STRIPE VERIFIED'}</span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-white">
-                    {isEn ? 'ZERODAY PRO ACCESS AUTHORIZED!' : 'ACCESSO ZERODAY PRO AUTORIZZATO!'}
+                  <h2 className="text-lg sm:text-xl font-bold text-white">
+                    {isEn ? 'ZeroDay PRO Access Authorized' : 'Accesso ZeroDay PRO Autorizzato'}
                   </h2>
-                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
                     {isEn ? (
-                      <>Welcome to the elite Red Team, operator <strong className="text-emerald-400 font-mono">{userState.username}</strong>. All features, official simulators, and PBQ labs are now unlocked.</>
+                      <>Welcome, operator <strong className="text-white font-mono">{userState.username}</strong>. All exam simulators, PBQ labs, and features are unlocked.</>
                     ) : (
-                      <>Benvenuto nel Red Team d'élite, operatore <strong className="text-emerald-400 font-mono">{userState.username}</strong>. Tutte le funzionalità, i simulatori ufficiali e i laboratori PBQ sono ora sbloccati.</>
+                      <>Benvenuto, operatore <strong className="text-white font-mono">{userState.username}</strong>. Tutti i simulatori d'esame, i laboratori PBQ e le funzionalità sono sbloccati.</>
                     )}
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-[#090D16] border border-white/10 space-y-2">
-                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
-                    {isEn ? 'Your Cryptographic License Key (Zero-Backend)' : 'La tua Chiave di Licenza Crittografica (Zero-Backend)'}
+                <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-2">
+                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider block">
+                    {isEn ? 'Your License Key' : 'La tua Chiave di Licenza'}
                   </span>
-                  <div className="p-2.5 rounded-xl bg-[#0e1628] border border-emerald-500/40 font-mono font-black text-base text-emerald-300 tracking-widest select-all">
+                  <div className="p-2.5 rounded-lg bg-black border border-zinc-800 font-mono font-bold text-sm text-emerald-400 tracking-wider select-all">
                     {verifiedCheckoutLicense}
                   </div>
                   <div className="flex gap-2 pt-1">
@@ -921,23 +903,23 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                         setLicenseCopied(true);
                         setTimeout(() => setLicenseCopied(false), 2500);
                       }}
-                      className="flex-1 py-2 px-3 rounded-lg bg-surface border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      {licenseCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                      {licenseCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
                       <span>{licenseCopied ? (isEn ? 'COPIED!' : 'COPIATA!') : (isEn ? 'COPY' : 'COPIA')}</span>
                     </button>
                     <button
                       onClick={() => handleDownloadLicenseCertificate(verifiedCheckoutLicense)}
-                      className="flex-1 py-2 px-3 rounded-lg bg-surface border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-slate-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <Download className="w-3.5 h-3.5 text-emerald-400" />
+                      <Download className="w-3.5 h-3.5 text-zinc-400" />
                       <span>{isEn ? 'DOWNLOAD .TXT' : 'SCARICA .TXT'}</span>
                     </button>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-slate-400 font-mono">
-                  {isEn ? 'You can use this key to restore your subscription on any device via the "Restore PRO License" button.' : 'Puoi usare questa chiave per ripristinare il tuo abbonamento su qualsiasi dispositivo tramite il pulsante "Ripristina Licenza PRO".'}
+                <p className="text-[10px] text-zinc-500 font-mono">
+                  {isEn ? 'Use this key to restore your subscription on any device.' : 'Usa questa chiave per ripristinare il tuo abbonamento su qualsiasi dispositivo.'}
                 </p>
 
                 <button
@@ -945,10 +927,10 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                     sound.playExploitSuccess();
                     setVerifiedCheckoutLicense(null);
                   }}
-                  className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-sm text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{isEn ? 'ENTER PRO LABS' : 'ENTRA NEI LABORATORI PRO'}</span>
-                  <Zap className="w-4 h-4 fill-slate-950" />
+                  <Zap className="w-4 h-4 fill-current" />
                 </button>
               </div>
             </div>

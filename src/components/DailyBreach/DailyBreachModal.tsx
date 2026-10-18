@@ -91,27 +91,22 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-2xl my-auto bg-[#101726] border border-amber-500/40 rounded-2xl p-5 sm:p-7 shadow-2xl text-slate-100 overflow-hidden shadow-neon-amber">
-        {/* Glow Header Accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 animate-pulse" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto animate-fade-in font-sans">
+      <div className="relative w-full max-w-2xl my-auto bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-7 shadow-xl text-zinc-100">
         {/* Header Bar */}
-        <div className="flex items-start justify-between border-b border-white/10 pb-4 mb-4 gap-3">
+        <div className="flex items-start justify-between border-b border-zinc-800 pb-4 mb-4 gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
-              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-500/40 font-bold uppercase tracking-wider">
-                  DEFCON 1 · DAILY 0xBREACH #{incident.dayIndex}
+                <span className="text-xs font-mono text-zinc-400 font-bold uppercase tracking-wider">
+                  Daily 0xBreach #{incident.dayIndex}
                 </span>
-                <span className="text-[10px] font-mono text-amber-400 font-bold">
+                <span className="text-xs font-mono text-amber-400 font-bold">
                   {incident.cveId}
                 </span>
               </div>
-              <h3 className="font-extrabold text-base sm:text-lg text-white mt-0.5">
+              <h3 className="font-bold text-base sm:text-lg text-white mt-0.5">
                 {incident.title}
               </h3>
             </div>
@@ -122,7 +117,7 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
               sound.playTap();
               onClose();
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -257,17 +252,17 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
               {/* Wordle-style Bragging Share Button */}
               <button
                 onClick={handleCopyShare}
-                className="py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-emerald-400 to-amber-300 hover:from-emerald-300 hover:to-amber-200 transition-all flex items-center justify-center gap-2 shadow-neon-emerald"
+                className="py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 {copiedShare ? (
                   <>
-                    <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                    <span>SHARE CARD COPIED!</span>
+                    <CheckCircle2 className="w-4 h-4 fill-current" />
+                    <span>SHARE CARD COPIED</span>
                   </>
                 ) : (
                   <>
-                    <Share2 className="w-4 h-4 text-slate-950" />
-                    <span>SHARE TRIAGE (WORDLE STYLE)</span>
+                    <Share2 className="w-4 h-4" />
+                    <span>SHARE TRIAGE</span>
                   </>
                 )}
               </button>
@@ -282,10 +277,10 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                     onClose();
                   }
                 }}
-                className="py-3 px-4 rounded-xl font-mono text-xs sm:text-sm border border-indigo-500/40 bg-indigo-950/40 hover:bg-indigo-900/50 text-indigo-300 flex items-center justify-center gap-2"
+                className="py-2.5 px-4 rounded-xl font-mono text-xs sm:text-sm border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"
               >
-                <Lock className="w-4 h-4 text-indigo-400" />
-                <span>HISTORICAL 0xBREACH ARCHIVE (PRO)</span>
+                <Lock className="w-4 h-4 text-zinc-400" />
+                <span>HISTORICAL ARCHIVE (PRO)</span>
               </button>
             </div>
           </div>

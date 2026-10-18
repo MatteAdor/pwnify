@@ -108,23 +108,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-[#0B0E14]/95 backdrop-blur-md border-b border-zinc-800/80 px-3 sm:px-6 pt-safe pb-2.5 min-h-[58px] flex items-center transition-all">
+      <header className="sticky top-0 z-40 w-full bg-[#090D16] border-b border-zinc-800 px-3 sm:px-6 pt-safe pb-2.5 min-h-[56px] flex items-center">
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2.5">
           {/* Brand Logo */}
           <div 
             onClick={() => sound.playTap()}
             className="flex items-center gap-2 cursor-pointer select-none shrink-0"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 text-emerald-400 font-mono font-bold text-xs shadow-sm">
+            <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-emerald-400">
               0x
-            </div>
+            </span>
             <div className="flex items-center gap-1.5">
               <span className="font-mono font-bold text-base sm:text-lg tracking-tight text-white">
                 Zero<span className="text-emerald-400">Day</span>
               </span>
-              {/* Only render PRO badge if user has PRO */}
+              {/* PRO badge if user has PRO */}
               {userState.isPro && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold">
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/30 font-bold">
                   PRO
                 </span>
               )}
@@ -212,16 +212,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Tactical Settings & Profile Modal */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#121620] border border-zinc-800 rounded-2xl p-5 shadow-2xl text-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 animate-fade-in">
+          <div className="relative w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 shadow-2xl text-zinc-100 space-y-4 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-emerald-400">
-                  <Settings className="w-4 h-4" />
-                </div>
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-zinc-400" />
                 <div>
-                  <h3 className="font-mono font-bold text-sm text-white tracking-wide">
+                  <h3 className="font-mono font-bold text-sm text-white">
                     {t.settingsConfig}
                   </h3>
                   <p className="text-[11px] font-mono text-zinc-400">
@@ -234,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   sound.playTap();
                   setIsSettingsOpen(false);
                 }}
-                className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="p-1 rounded text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 aria-label="Chiudi impostazioni"
               >
                 <X className="w-4 h-4" />
@@ -242,7 +240,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Operator Account Section */}
-            <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-3">
+            <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
                   {t.activeOperator}
@@ -250,14 +248,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               {/* Profession Displayed Above Username */}
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-mono font-bold w-fit">
-                <Shield className="w-3 h-3 text-cyan-400" />
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-mono font-bold w-fit">
+                <Shield className="w-3 h-3 text-emerald-400" />
                 <span className="uppercase tracking-wide">{chosenProfession}</span>
               </div>
 
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 font-mono">
+                  <div className="w-9 h-9 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 font-mono">
                     {userState.username.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="truncate">
@@ -358,11 +356,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Language Switcher */}
-            <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
-                  <Globe className="w-4 h-4" />
-                </div>
+            <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-zinc-400" />
                 <div>
                   <span className="text-xs font-mono font-bold text-white block">
                     {t.languageSection}
@@ -420,14 +416,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setIsSettingsOpen(false);
                   onOpenArsenal?.();
                 }}
-                className="w-full p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 text-left flex items-center justify-between transition-all group cursor-pointer"
+                className="w-full p-3 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-left flex items-center justify-between transition-all group cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-                    <Palette className="w-4 h-4" />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-zinc-400 group-hover:text-emerald-400" />
                   <div>
-                    <span className="text-xs font-mono font-bold text-white group-hover:text-indigo-300 block">
+                    <span className="text-xs font-mono font-bold text-white group-hover:text-emerald-300 block">
                       {t.cyberArsenalTitle}
                     </span>
                     <p className="text-[10px] text-zinc-400">
@@ -435,18 +429,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono text-indigo-400 font-bold">
+                <span className="text-xs font-mono text-emerald-400 font-bold">
                   {t.openBtn}
                 </span>
               </button>
             </div>
 
             {/* Audio Settings */}
-            <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                </div>
+            <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-zinc-400" />}
                 <div>
                   <span className="text-xs font-mono font-bold text-white block">
                     {t.audioEffectsTitle}
@@ -461,8 +453,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={handleToggleSound}
                 className={`px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all cursor-pointer ${
                   isMuted
-                    ? 'bg-red-950/60 border border-red-500/40 text-red-300'
-                    : 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300'
+                    ? 'bg-zinc-800 border border-red-500/40 text-red-300'
+                    : 'bg-zinc-800 border border-zinc-700 text-zinc-200'
                 }`}
               >
                 {isMuted ? t.soundMuted : t.soundActive}
