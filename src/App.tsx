@@ -223,6 +223,13 @@ export const App: React.FC = () => {
         setIncomingDuel({ seed, elo, challenger, score });
         sound.playRadarPing();
       }
+
+      // Check 2b: Incoming Live P2P Room Code (e.g. ?duel=0x7B42)
+      const roomCode = params.get('duel') || params.get('room');
+      if (roomCode) {
+        setActiveTab('arena');
+        sound.playRadarPing();
+      }
     }
   }, [userState.username]);
 

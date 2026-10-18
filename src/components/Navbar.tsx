@@ -121,9 +121,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 cursor-pointer select-none shrink-0"
             title={lang === 'it' ? 'Torna al Portale & Download APK' : 'Back to Portal & Download APK'}
           >
-            <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-emerald-400">
-              0x
-            </span>
+            <img 
+              src="/brand/zeroday_icon_192.png" 
+              alt="ZeroDay" 
+              className="w-6 h-6 rounded object-cover border border-emerald-500/30 shadow-sm" 
+            />
             <div className="flex items-center gap-1.5">
               <span className="font-mono font-bold text-base sm:text-lg tracking-tight text-white">
                 Zero<span className="text-emerald-400">Day</span>

@@ -5,8 +5,9 @@ import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 import { 
   Trophy, Sparkles, ArrowUp, ArrowDown, 
-  Zap, Crown, Clock, Users 
+  Zap, Crown, Clock, Users, Globe, Wifi, Radio
 } from 'lucide-react';
+import { checkNetworkTelemetry, NetworkTelemetry } from '../../utils/cloudSync';
 
 interface LeagueTabProps {
   userState: UserState;
@@ -20,6 +21,23 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
   const { lang } = useLanguage();
   const isEn = lang === 'en';
   const userRank = getRankFromElo(userState.elo);
+
+  // Live Online Telemetry
+  const [telemetry, setTelemetry] = useState<NetworkTelemetry>({
+    isOnline: true,
+    pingMs: 24,
+    activeOperators: 340,
+    region: 'EU-CENTRAL',
+    lastSyncAt: Date.now()
+  });
+
+  useEffect(() => {
+    checkNetworkTelemetry().then(setTelemetry).catch(() => {});
+    const interval = setInterval(() => {
+      checkNetworkTelemetry().then(setTelemetry).catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Generate 14 simulated league competitors around user's XP
   const [hackers, setHackers] = useState<LeagueHacker[]>([]);
@@ -91,6 +109,22 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
 
   return (
     <div className="w-full max-w-xl mx-auto space-y-4 font-sans">
+      {/* Real-time Network Telemetry Status */}
+      <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-xs font-mono shadow-sm">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10B981]" />
+          <span className="text-zinc-300 font-bold">GRID ONLINE</span>
+          <span className="text-zinc-600">·</span>
+          <span className="text-emerald-400 font-bold">{telemetry.activeOperators} {isEn ? 'Operators Active' : 'Operatori Attivi'}</span>
+        </div>
+        <div className="text-zinc-400 text-[11px] flex items-center gap-1.5">
+          <Wifi className="w-3 h-3 text-emerald-400" />
+          <span>{telemetry.pingMs}ms</span>
+          <span className="text-zinc-600 hidden sm:inline">|</span>
+          <span className="text-zinc-400 hidden sm:inline">{telemetry.region}</span>
+        </div>
+      </div>
+
       {/* League Header Card */}
       <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-md">
         <div className="flex items-center justify-between mb-1">
@@ -215,12 +249,13 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <span className={`font-mono text-xs font-bold truncate block ${
+                    <span className={`font-mono text-xs font-bold truncate flex items-center gap-1.5 ${
                       hacker.isUser ? 'text-emerald-400' : 'text-zinc-200'
                     }`}>
-                      {hacker.username} {hacker.isUser && (isEn ? '(You)' : '(Tu)')}
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_5px_#10B981]" />
+                      <span className="truncate">{hacker.username} {hacker.isUser && (isEn ? '(You)' : '(Tu)')}</span>
                     </span>
-                    <div className="text-[10px] font-mono text-zinc-400">
+                    <div className="text-[10px] font-mono text-zinc-400 pl-3">
                       <span>x{hacker.winStreak} streak</span>
                     </div>
                   </div>
