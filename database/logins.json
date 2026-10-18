@@ -79,12 +79,12 @@
     }
   },
   {
-    "id": "usr_google_1792271472991",
+    "id": "usr_google_1792316411850",
     "username": "Google_Operator",
     "email": "operator.zeroday@gmail.com",
     "provider": "google",
-    "createdAt": "2026-10-17T21:11:12.991Z",
-    "lastLoginAt": "2026-10-17T21:11:12.991Z",
+    "createdAt": "2026-10-18T09:40:11.850Z",
+    "lastLoginAt": "2026-10-18T09:40:11.850Z",
     "userState": {
       "username": "Google_Operator",
       "userEmail": "operator.zeroday@gmail.com",
@@ -97,7 +97,7 @@
       "maxTickets": 3,
       "winStreak": 0,
       "xp": 0,
-      "readinessScore": 48,
+      "readinessScore": 26,
       "completedNodeIds": [],
       "completedPbqIds": [],
       "survivalHighScore": 0,
@@ -142,7 +142,7 @@
           "proTickets": 2
         }
       ],
-      "goal": "web_hacking",
+      "goal": "comptia_sec",
       "experienceLevel": "intermediate",
       "dailyCommitment": 15,
       "onboardingCompleted": true,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UserState, PvPPlayer, PvPChallenge } from '../../types';
+import { UserState, PvPPlayer, PvPChallenge, PaywallContext } from '../../types';
 import { SMART_BOTS, generatePvPMatchChallenges } from '../../data/pvpChallenges';
 import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
@@ -10,6 +10,7 @@ import {
 import confetti from 'canvas-confetti';
 
 import { SurvivalModeModal } from './SurvivalModeModal';
+import { LeagueTab } from '../Leaderboard/LeagueTab';
 
 export interface DuelChallengeData {
   seed: string;
@@ -23,7 +24,7 @@ interface ArenaPvPProps {
   onConsumeTicket: () => boolean; // returns true if has tickets or is pro
   onWinMatch: (eloGain: number) => void;
   onLossMatch: (eloLoss: number) => void;
-  onOpenPaywall: (context: 'win_streak_trap') => void;
+  onOpenPaywall: (context: PaywallContext) => void;
   onOpenHackerCard?: () => void;
   initialDuelChallenge?: DuelChallengeData | null;
   onClearInitialDuel?: () => void;
@@ -354,6 +355,26 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                 <span>SURVIVAL GAUNTLET (BEST: x{userState.survivalHighScore || 0})</span>
               </button>
             </div>
+          </div>
+
+          {/* ZeroDay Leagues & Global Leaderboard Embedded at the bottom */}
+          <div className="pt-6 border-t border-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base sm:text-lg font-mono font-extrabold text-white flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                  <span>Classifica & ZeroDay Leagues</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Scala le leghe settimanali vincendo match nell'Arena
+                </p>
+              </div>
+            </div>
+
+            <LeagueTab
+              userState={userState}
+              onOpenPaywall={(ctx) => onOpenPaywall(ctx)}
+            />
           </div>
         </div>
       )}
