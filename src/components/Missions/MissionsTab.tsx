@@ -6,6 +6,7 @@ import {
   Check, Sparkles, Zap, Clock, Shield, Award, ChevronRight, Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useLanguage } from '../../utils/language';
 
 interface MissionsTabProps {
   userState: UserState;
@@ -22,6 +23,9 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
   onClaimFreeBounty,
   onClaimProBounty
 }) => {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
   // Midnight countdown timer
   const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
 
@@ -49,33 +53,34 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
   const isBreachSolvedToday = userState.lastDailyBreachDate === todayStr;
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-28 space-y-6 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-4 animate-fade-in font-sans">
       {/* Header Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-surface to-[#1B2640] border border-white/10 p-5 shadow-cyber-glass overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
                 OPERATIONAL_OPS
               </span>
-              <span className="text-xs text-slate-400 font-mono">
-                Reset tra: <strong className="text-slate-200">{timeLeft}</strong>
+              <span className="text-xs text-zinc-400 font-mono">
+                {isEn ? 'Reset in:' : 'Reset tra:'} <strong className="text-zinc-200">{timeLeft}</strong>
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
-              <Target className="w-6 h-6 text-amber-400" />
-              <span>Centro Missioni & Taglie</span>
+            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2 uppercase tracking-tight">
+              <Target className="w-5 h-5 text-amber-400" />
+              <span>{isEn ? 'Bounties & Missions Hub' : 'Centro Missioni & Taglie'}</span>
             </h1>
-            <p className="text-xs text-slate-300 mt-1 max-w-md">
-              Risolvi l'incidente Zero-Day quotidiano, riscatta i contratti Bug Bounty e completa le operazioni speciali per accumulare XP e ticket.
+            <p className="text-xs text-zinc-400 mt-1 max-w-md leading-relaxed">
+              {isEn 
+                ? 'Triage daily Zero-Day incidents, claim Bug Bounty contracts, and complete tactical objectives for XP and tickets.'
+                : 'Risolvi l\'incidente Zero-Day quotidiano, riscatta i contratti Bug Bounty e completa le operazioni speciali.'}
             </p>
           </div>
 
           <div className="hidden sm:flex flex-col items-end text-right">
-            <span className="text-[10px] font-mono text-slate-400">DAILY STREAK</span>
-            <div className="flex items-center gap-1 font-mono font-extrabold text-2xl text-amber-400">
-              <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
+            <span className="text-[10px] font-mono text-zinc-400">STREAK</span>
+            <div className="flex items-center gap-1 font-mono font-bold text-xl text-amber-400">
+              <Flame className="w-4 h-4 text-amber-400" />
               <span>{userState.streakDays}d</span>
             </div>
           </div>

@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 
 import { SurvivalModeModal } from './SurvivalModeModal';
 import { LeagueTab } from '../Leaderboard/LeagueTab';
+import { useLanguage } from '../../utils/language';
 
 export interface DuelChallengeData {
   seed: string;
@@ -44,6 +45,8 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   onClearInitialDuel,
   onUpdateSurvivalScore
 }) => {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
   const [phase, setPhase] = useState<MatchPhase>('idle');
   const [isSurvivalOpen, setIsSurvivalOpen] = useState<boolean>(false);
   const [searchTimer, setSearchTimer] = useState<number>(0);
@@ -260,88 +263,73 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   const userRatio = totalPoints === 0 ? 50 : Math.round((userScore / totalPoints) * 100);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 pb-32 space-y-7 animate-fade-in">
+    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-5 animate-fade-in font-sans">
       {/* PHASE 1: IDLE / LOBBY */}
       {phase === 'idle' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Header Banner */}
-          <div className="rounded-3xl bg-[#0B1120]/90 border border-indigo-500/30 p-6 sm:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-bold flex items-center gap-1.5 shadow-sm">
-                <Swords className="w-3.5 h-3.5" />
-                BLITZ 1V1 LIVE ARENA
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold flex items-center gap-1.5 uppercase">
+                <Swords className="w-3.5 h-3.5 text-indigo-400" />
+                BLITZ 1V1 ARENA
               </span>
-              <div className="flex items-center gap-1.5 text-xs font-mono text-amber-400 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 font-bold">
-                <Flame className="w-4 h-4 fill-amber-500" />
-                <span>Win Streak: x{userState.winStreak}</span>
+              <div className="flex items-center gap-1.5 text-xs font-mono text-amber-400 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 font-bold">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>Streak: x{userState.winStreak}</span>
               </div>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              ZeroDay Cyber Arena
+            <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+              {t.blitzArenaTitle}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg leading-relaxed">
-              Challenge other hackers in real-time 60-second Blitz battles. Answer first, gain ELO points, and climb competitive leagues.
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              {t.blitzArenaSub}
             </p>
 
             {/* Arena Tickets Status Box */}
-            <div className="mt-5 p-4 rounded-2xl bg-[#060A12]/80 border border-white/10 flex items-center justify-between shadow-inner">
+            <div className="mt-3 p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold border border-indigo-500/30">
-                  <Ticket className="w-5 h-5 text-indigo-400" />
+                <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 text-indigo-400 flex items-center justify-center font-bold">
+                  <Ticket className="w-4 h-4 text-indigo-400" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-white block">Arena Payloads (Tickets)</span>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    {userState.isPro ? 'Unlimited PRO Access Active' : 'Consumes 1 ticket per match (max 3/3 free daily)'}
+                  <span className="text-xs font-bold text-white block">{t.arenaTicketsLabel}</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    {userState.isPro ? t.unlimitedPro : (isEn ? '1 ticket per match (3/3 daily)' : '1 ticket per match (max 3/3 giornalieri)')}
                   </span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-sm text-indigo-400 px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+              <span className="font-mono font-bold text-xs text-indigo-400 px-2.5 py-1 rounded bg-zinc-950 border border-zinc-800">
                 {userState.isPro ? 'UNLIMITED' : `${userState.arenaTickets}/${userState.maxTickets}`}
               </span>
             </div>
           </div>
 
-          {/* Authentic Arena Training Banner */}
-          <div className="w-full p-4 rounded-2xl bg-[#0B1120]/90 border border-white/10 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-                <Trophy className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-bold text-white block">Tactical ELO Simulation & Direct Duels</span>
-                <span className="text-[10px] text-slate-400">1v1 training on CompTIA Security+, CCNA & CEH scenarios</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-slate-300">
-              <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 font-mono">60s per match</span>
-              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono font-bold">ELO Calibrated</span>
-            </div>
-          </div>
-
           {/* Quick Match Action */}
-          <div className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-7 sm:p-8 text-center space-y-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center mx-auto shadow-neon-indigo">
-              <Swords className="w-8 h-8" />
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 text-center space-y-4 shadow-md">
+            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 text-emerald-400 flex items-center justify-center mx-auto">
+              <Swords className="w-6 h-6" />
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-white">Ready for 1v1 Blitz?</h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
-                Challenge a training agent calibrated to your ELO ({userState.elo} - {userRank.tier}) or send a duel challenge link.
+              <h3 className="text-base sm:text-lg font-bold text-white">
+                {isEn ? 'Ready for 1v1 Blitz Battle?' : 'Pronto per il Duello Blitz 1v1?'}
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
+                {isEn 
+                  ? `Challenge an agent calibrated to your ELO (${userState.elo} - ${userRank.tier}) or send a direct challenge link.`
+                  : `Sfida un operatore calibrato al tuo ELO (${userState.elo} - ${userRank.tier}) in 60 secondi.`}
               </p>
             </div>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-2.5">
               <button
                 onClick={handleStartMatchmaking}
-                className="w-full sm:w-auto min-w-[240px] py-4 px-7 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-indigo-400 via-indigo-500 to-emerald-400 hover:from-indigo-300 hover:to-emerald-300 transition-all shadow-neon-indigo flex items-center justify-center gap-2 transform active:scale-98"
+                className="w-full sm:w-auto min-w-[200px] py-3 px-6 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
               >
-                <Zap className="w-4 h-4 fill-slate-950" />
-                <span>FIND OPPONENT (BLITZ)</span>
+                <Zap className="w-4 h-4 fill-zinc-950 text-zinc-950" />
+                <span>{t.findOpponentBlitz}</span>
               </button>
 
               <button
@@ -349,24 +337,24 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   sound.playTap();
                   setIsSurvivalOpen(true);
                 }}
-                className="w-full sm:w-auto min-w-[240px] py-4 px-7 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-rose-300 bg-rose-950/40 border border-rose-500/40 hover:border-rose-400 hover:bg-rose-900/30 transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-98"
+                className="w-full sm:w-auto min-w-[200px] py-3 px-6 rounded-xl font-mono font-bold text-xs text-rose-300 bg-rose-950/40 border border-rose-500/40 hover:border-rose-400 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
                 <Skull className="w-4 h-4 text-rose-400" />
-                <span>SURVIVAL GAUNTLET (BEST: x{userState.survivalHighScore || 0})</span>
+                <span>{t.survivalGauntlet} (x{userState.survivalHighScore || 0})</span>
               </button>
             </div>
           </div>
 
           {/* ZeroDay Leagues & Global Leaderboard Embedded at the bottom */}
-          <div className="pt-6 border-t border-white/10 space-y-4">
+          <div className="pt-4 border-t border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base sm:text-lg font-mono font-extrabold text-white flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-amber-400" />
-                  <span>Classifica & ZeroDay Leagues</span>
+                <h3 className="text-sm sm:text-base font-mono font-bold text-white flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span>{t.leaguesTitle}</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Scala le leghe settimanali vincendo match nell'Arena
+                <p className="text-[11px] text-zinc-400">
+                  {t.leaguesSub}
                 </p>
               </div>
             </div>
@@ -484,13 +472,13 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
 
             {/* Split Tug-of-War Score Bar */}
-            <div className="w-full h-3 rounded-full bg-slate-900 border border-white/5 overflow-hidden flex">
+            <div className="w-full h-2 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden flex">
               <div 
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-300 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                className="bg-emerald-500 h-full transition-all duration-300"
                 style={{ width: `${userRatio}%` }}
               />
               <div 
-                className="bg-gradient-to-r from-rose-500 to-red-600 h-full transition-all duration-300 shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+                className="bg-rose-500 h-full transition-all duration-300"
                 style={{ width: `${100 - userRatio}%` }}
               />
             </div>
@@ -616,10 +604,10 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   handleStartMatchmaking();
                 }
               }}
-              className="w-full py-4 px-4 rounded-xl font-mono font-extrabold text-sm sm:text-base text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2 transform active:scale-98"
+              className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>PLAY AGAIN (PROTECT WIN STREAK)</span>
+              <span>{isEn ? 'PLAY AGAIN (PROTECT WIN STREAK)' : 'GIOCA ANCORA (PROTEGGI STREAK)'}</span>
             </button>
 
             {/* Viral Growth & Challenge a Friend */}

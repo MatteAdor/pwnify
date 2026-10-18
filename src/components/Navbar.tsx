@@ -20,6 +20,7 @@ interface NavbarProps {
   onOpenArsenal?: () => void;
   onOpenAuth?: () => void;
   onUpdateUsername?: (newUsername: string) => { success: boolean; error?: string };
+  onUpdateLanguage?: (lang: 'it' | 'en') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,7 +32,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenDailyBreach,
   onOpenArsenal,
   onOpenAuth,
-  onUpdateUsername
+  onUpdateUsername,
+  onUpdateLanguage
 }) => {
   const { lang, setLanguage, t } = useLanguage();
   const rank = getRankFromElo(userState.elo);
@@ -154,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
               title={t.dailyStreak}
             >
-              <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
               <span className="font-mono font-bold text-xs text-amber-300">
                 {userState.streakDays}d
               </span>
@@ -168,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Ticket className="w-3.5 h-3.5 text-indigo-400" />
               <span className="font-mono font-bold text-xs text-indigo-300">
                 {userState.isPro ? (
-                  <span className="text-emerald-400 font-semibold text-xs">∞ PRO</span>
+                  <span className="text-emerald-400 font-bold text-xs">PRO</span>
                 ) : (
                   <span>{userState.arenaTickets}/{userState.maxTickets}</span>
                 )}
@@ -220,10 +222,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <div>
                   <h3 className="font-mono font-bold text-sm text-white tracking-wide">
-                    CONFIGURAZIONE // ACCOUNT
+                    {t.settingsConfig}
                   </h3>
                   <p className="text-[11px] font-mono text-zinc-400">
-                    Parametri operatore & impostazioni
+                    {t.settingsSubtitle}
                   </p>
                 </div>
               </div>
@@ -243,10 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
-                  OPERATORE ATTIVO
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-bold border border-zinc-700">
-                  {rank.tier}
+                  {t.activeOperator}
                 </span>
               </div>
 
@@ -332,7 +331,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       disabled={isUsernameCooldownActive}
                       value={usernameInput}
                       onChange={(e) => setUsernameInput(e.target.value)}
-                      placeholder="Nuovo Callsign (min 3 car.)"
+                      placeholder={t.newCallsignPlaceholder}
                       className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-emerald-500 text-xs font-mono text-white disabled:opacity-50"
                     />
                     <button
@@ -341,7 +340,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-mono font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
                     >
                       <Check className="w-3 h-3" />
-                      <span>Salva</span>
+                      <span>{t.saveBtn}</span>
                     </button>
                   </div>
 
@@ -352,7 +351,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <p className="text-[10px] font-mono text-emerald-400">{usernameSuccess}</p>
                   )}
                   <p className="text-[9px] text-zinc-500 font-mono">
-                    *Il primo cambio è immediato; le modifiche successive richiedono 1 settimana di cooldown.
+                    {t.cooldownNote}
                   </p>
                 </div>
               )}
@@ -366,10 +365,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <div>
                   <span className="text-xs font-mono font-bold text-white block">
-                    Lingua / Language
+                    {t.languageSection}
                   </span>
                   <p className="text-[10px] text-zinc-400">
-                    Seleziona lingua interfaccia & quiz
+                    {t.languageSub}
                   </p>
                 </div>
               </div>
@@ -380,8 +379,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     sound.playTap();
                     setLanguage('it');
                     saveLanguage('it');
+                    onUpdateLanguage?.('it');
                   }}
-                  className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
                     lang === 'it' 
                       ? 'bg-emerald-500 text-zinc-950 shadow-sm' 
                       : 'text-zinc-400 hover:text-white'
@@ -394,8 +394,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     sound.playTap();
                     setLanguage('en');
                     saveLanguage('en');
+                    onUpdateLanguage?.('en');
                   }}
-                  className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
                     lang === 'en' 
                       ? 'bg-emerald-500 text-zinc-950 shadow-sm' 
                       : 'text-zinc-400 hover:text-white'
@@ -409,7 +410,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Tactical Customization: Cyber Arsenal */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-mono text-zinc-400 uppercase font-bold tracking-wider px-1">
-                Personalizzazione & HUD
+                {t.hudSection}
               </span>
 
               {/* Cyber Arsenal Customizer */}
@@ -427,15 +428,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                   <div>
                     <span className="text-xs font-mono font-bold text-white group-hover:text-indigo-300 block">
-                      Cyber Arsenal & Temi Terminale
+                      {t.cyberArsenalTitle}
                     </span>
                     <p className="text-[10px] text-zinc-400">
-                      Personalizza fosfori CRT e callsign
+                      {t.cyberArsenalSub}
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-mono text-indigo-400 font-bold">
-                  Apri
+                  {t.openBtn}
                 </span>
               </button>
             </div>
@@ -448,10 +449,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <div>
                   <span className="text-xs font-mono font-bold text-white block">
-                    Effetti Sonori Web Audio
+                    {t.audioEffectsTitle}
                   </span>
                   <p className="text-[10px] text-zinc-400">
-                    Oscillatori sintetizzati per feedback tattile
+                    {t.audioEffectsSub}
                   </p>
                 </div>
               </div>
@@ -464,7 +465,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'bg-emerald-950/60 border border-emerald-500/40 text-emerald-300'
                 }`}
               >
-                {isMuted ? 'MUTO' : 'ATTIVO'}
+                {isMuted ? t.soundMuted : t.soundActive}
               </button>
             </div>
 
@@ -473,7 +474,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                  Stato Licenza ZeroDay
+                  {t.proLicenseTitle}
                 </span>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
                   userState.isPro ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-zinc-800 text-zinc-400'
@@ -483,9 +484,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               <p className="text-xs text-zinc-400 leading-relaxed">
-                {userState.isPro 
-                  ? 'Accesso completo ai simulatori d\'esame ufficiali CompTIA, CCNA e CEH, laboratori PBQ e arena illimitata.'
-                  : 'Sblocca le simulazioni ufficiali d\'esame, i laboratori PBQ e l\'arena 1v1 senza limiti.'}
+                {t.proLicenseDesc}
               </p>
 
               {!userState.isPro && (

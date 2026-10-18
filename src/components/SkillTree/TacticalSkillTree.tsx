@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { SKILL_MODULES } from '../../data/curriculum';
 import { SkillModule, SkillNode, UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
+import { useLanguage } from '../../utils/language';
 import { 
-  Lock, CheckCircle2, Play, Sparkles, Shield, 
-  Terminal, Globe, Network, Cpu, Key, Server, 
-  ArrowLeft, ChevronRight, Zap, BookOpen, 
-  Check, Copy, FileText, Flame, Target,
-  AlertTriangle, Clock, X, ChevronDown, Wrench
+  Terminal, Globe, Key, Shield, Server, Network, Cpu, Lock, 
+  ArrowLeft, Check, Sparkles, AlertTriangle, Zap, Clock, 
+  BookOpen, ChevronRight, Copy, ChevronDown, Award
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {
@@ -17,82 +16,17 @@ interface TacticalSkillTreeProps {
   onOpenDailyBreach?: () => void;
 }
 
-// 8 Core Operational Missions (Fulfills min 5, max 10 requirement)
-interface CoreMissionConfig {
-  nodeId: string;
-  keywordTitle: string;
-  domainTag: string;
-  shortSubtitle: string;
-  icon: React.ElementType;
-  accentBadge: string;
-}
-
-const CORE_MISSIONS: CoreMissionConfig[] = [
-  {
-    nodeId: 'node_basics_1',
-    keywordTitle: 'BASH & TERMINAL',
-    domainTag: 'FONDAMENTA',
-    shortSubtitle: 'Navigazione filesystem & permessi',
-    icon: Terminal,
-    accentBadge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
-  },
-  {
-    nodeId: 'node_basics_2',
-    keywordTitle: 'PROTOCOLLI & RETI',
-    domainTag: 'NETWORKING',
-    shortSubtitle: 'Porte standard 80/443 & status HTTP',
-    icon: Globe,
-    accentBadge: 'bg-blue-500/15 text-blue-300 border-blue-500/30'
-  },
-  {
-    nodeId: 'node_basics_3',
-    keywordTitle: 'CRITTOGRAFIA & HASH',
-    domainTag: 'AUTH & CRYPTO',
-    shortSubtitle: 'Hashing SHA-256, salt & crack',
-    icon: Key,
-    accentBadge: 'bg-purple-500/15 text-purple-300 border-purple-500/30'
-  },
-  {
-    nodeId: 'node_sqli_1',
-    keywordTitle: 'SQL INJECTION',
-    domainTag: 'OFFENSIVE WEB',
-    shortSubtitle: 'Auth bypass & estrazione database',
-    icon: Shield,
-    accentBadge: 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-  },
-  {
-    nodeId: 'node_sqli_2',
-    keywordTitle: 'SSRF & CLOUD METADATA',
-    domainTag: 'CLOUD SECURITY',
-    shortSubtitle: 'IMDSv1 & exfiltration token cloud',
-    icon: Server,
-    accentBadge: 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-  },
-  {
-    nodeId: 'node_net_1',
-    keywordTitle: 'RETI & SUBNETTING',
-    domainTag: 'PACKET ANALYSIS',
-    shortSubtitle: 'Calcolo CIDR, broadcast & routing',
-    icon: Network,
-    accentBadge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
-  },
-  {
-    nodeId: 'node_lin_2',
-    keywordTitle: 'LINUX PRIVILEGE ESCALATION',
-    domainTag: 'LOW LEVEL',
-    shortSubtitle: 'Misconfigurazioni sudo & GTFOBins',
-    icon: Cpu,
-    accentBadge: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
-  },
-  {
-    nodeId: 'node_ad_kerberoast',
-    keywordTitle: 'ACTIVE DIRECTORY ATTACK',
-    domainTag: 'ENTERPRISE',
-    shortSubtitle: 'Kerberoasting & crack ticket TGS',
-    icon: Lock,
-    accentBadge: 'bg-red-500/15 text-red-300 border-red-500/30'
-  }
-];
+// Icon mapping for the 8 core missions
+const MISSION_ICON_MAP: Record<string, React.ElementType> = {
+  mod_bash: Terminal,
+  mod_networking: Globe,
+  mod_crypto: Key,
+  mod_web_sqli: Shield,
+  mod_ssrf: Server,
+  mod_subnetting: Network,
+  mod_linux: Cpu,
+  mod_active_directory: Lock
+};
 
 // Tactical reference cheat sheets
 const CHAPTER_TOOLS: Record<string, {
@@ -163,7 +97,13 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   onOpenPaywall,
   onOpenDailyBreach
 }) => {
-  // Cheat Sheet Modal State
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
+  // State: currently active mission container for drill-down view (null = main missions overview)
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+
+  // Tactical Cheat Sheets modal / drawer state
   const [activeToolKey, setActiveToolKey] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [showToolsSection, setShowToolsSection] = useState<boolean>(false);
@@ -172,9 +112,6 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   const todayStr = new Date().toISOString().split('T')[0];
   const isBreachSolvedToday = userState.lastDailyBreachDate === todayStr;
 
-  // Flatten all nodes from modules
-  const allNodes = SKILL_MODULES.flatMap(m => m.nodes);
-
   const handleCopyCommand = (cmd: string, index: number) => {
     sound.playTap();
     navigator.clipboard.writeText(cmd.split('#')[0].trim());
@@ -182,375 +119,424 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
     setTimeout(() => setCopiedIndex(null), 1800);
   };
 
+  // Find currently active drill-down module
+  const activeModule = SKILL_MODULES.find(m => m.id === selectedModuleId);
+
+  // Calculate overall mission completion
+  const totalMissions = SKILL_MODULES.length;
+  const completedMissionsCount = SKILL_MODULES.filter(m => 
+    m.nodes.every(n => userState.completedNodeIds.includes(n.id))
+  ).length;
+
   return (
-    <div className="w-full max-w-xl mx-auto px-4 py-5 pb-28 space-y-6 sm:space-y-7">
+    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-5 animate-fade-in font-sans">
       
       {/* ========================================================================= */}
-      {/* 1. HERO BANNER: PERCORSO OPERATIVO & READINESS                            */}
+      {/* VIEW A: MISSION DRILL-DOWN (LIST OF 6 LESSONS INSIDE CLICKED MISSION)     */}
       {/* ========================================================================= */}
-      <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#111726] via-[#141d33] to-[#0d1424] border border-white/10 p-5 sm:p-6 shadow-cyber-glass overflow-hidden space-y-4">
-        <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        {/* Top telemetry tags */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold uppercase tracking-wider">
-            PERCORSO CERTIFICAZIONI
-          </span>
-          
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="text-slate-400">READINESS:</span>
-            <span className="text-emerald-400 font-bold text-sm">{userState.readinessScore}%</span>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-            PERCORSO OPERATIVO
-          </h1>
-          <p className="text-xs text-slate-300 mt-1">
-            8 Missioni Tattiche sul Campo · Dalle basi terminale al dominio Enterprise
-          </p>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span>PROGRESSO OPERAZIONI</span>
-            <span className="text-slate-200 font-bold">
-              {CORE_MISSIONS.filter(m => userState.completedNodeIds.includes(m.nodeId)).length} / {CORE_MISSIONS.length} COMPLETATE
-            </span>
-          </div>
-          <div className="w-full h-2 rounded-full bg-slate-900/90 border border-white/5 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-500"
-              style={{ 
-                width: `${Math.max(
-                  (CORE_MISSIONS.filter(m => userState.completedNodeIds.includes(m.nodeId)).length / CORE_MISSIONS.length) * 100, 
-                  5
-                )}%` 
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 2. DAILY 0xBREACH CHALLENGE (SPACIOUS & BREATHABLE)                      */}
-      {/* ========================================================================= */}
-      <div className="rounded-2xl bg-[#111420] border border-red-500/30 p-5 sm:p-6 relative overflow-hidden space-y-4 shadow-lg">
-        {/* Top row: DEFCON, Title, 2X XP / Streak */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
-                  DEFCON 1
-                </span>
-                <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                  Daily 0xBreach
-                </h2>
-              </div>
-            </div>
-          </div>
-
-          {/* 2X XP Triggerable Pill */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              sound.playTap();
-              if (!userState.isPro) {
-                onOpenPaywall();
-              }
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-xs transition-all cursor-pointer ${
-              userState.isPro
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                : 'bg-zinc-800/90 hover:bg-zinc-750 text-amber-400 border-amber-500/40 hover:border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-            }`}
-            title={userState.isPro ? '2x XP Boost Attivo' : 'Tocca per sbloccare 2x XP permanente con PRO'}
-          >
-            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            <span>2X XP {userState.isPro ? 'ATTIVO' : 'PRO'}</span>
-          </button>
-        </div>
-
-        {/* Short, clear prompt */}
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          Analizza la vulnerabilità CVE quotidiana nel codice target e individua la root cause prima degli attaccanti.
-        </p>
-
-        {/* Action Button */}
-        <div className="pt-1 space-y-2">
+      {activeModule ? (
+        <div className="space-y-4 animate-fade-in">
+          {/* Back to Missions Button */}
           <button
             onClick={() => {
               sound.playTap();
-              if (onOpenDailyBreach) onOpenDailyBreach();
+              setSelectedModuleId(null);
             }}
-            className={`w-full py-3 px-5 rounded-xl font-mono font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 transform active:scale-98 cursor-pointer ${
-              isBreachSolvedToday
-                ? 'bg-zinc-800 border border-emerald-500/40 text-emerald-300 hover:bg-zinc-750'
-                : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-md font-black'
-            }`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white font-mono text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
-            {isBreachSolvedToday ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>TRIAGE COMPLETATO OGGI (RIVEDI ANALISI)</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4 fill-slate-950 text-slate-950" />
-                <span>AVVIA TRIAGE ZERO-DAY (+150 XP)</span>
-              </>
-            )}
+            <ArrowLeft className="w-4 h-4 text-emerald-400" />
+            <span>{t.backToMissions}</span>
           </button>
 
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span>Nuovo breach alle 00:00</span>
-            </span>
-            <span>x{userState.dailyBreachStreak || 0} TRIAGE STREAK</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 3. CORE OPERATIONAL LESSONS (8 MISSIONS: BIG KEYWORDS & BREATHABLE)       */}
-      {/* ========================================================================= */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <h2 className="text-sm font-mono font-bold text-white uppercase tracking-wider">
-              LEZIONI OPERATIVE ({CORE_MISSIONS.length})
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Tocca una lezione per aprire il briefing completo e iniziare l'operazione.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {CORE_MISSIONS.map((mission, index) => {
-            const node = allNodes.find(n => n.id === mission.nodeId);
-            const isCompleted = userState.completedNodeIds.includes(mission.nodeId);
-            const isLocked = node?.status === 'locked' && !userState.isPro;
-            const MissionIcon = mission.icon;
-
-            return (
-              <div
-                key={mission.nodeId}
-                onClick={() => {
-                  sound.playTap();
-                  if (node) {
-                    onSelectNode(node);
-                  }
-                }}
-                className={`group cursor-pointer rounded-2xl bg-[#0D1322] border transition-all duration-200 p-5 sm:p-6 shadow-cyber-glass hover:shadow-xl space-y-3.5 relative overflow-hidden ${
-                  isCompleted
-                    ? 'border-emerald-500/40 bg-gradient-to-r from-[#0D1322] to-[#0A1A1E]'
-                    : isLocked
-                    ? 'border-white/10 opacity-80 hover:opacity-100 hover:border-amber-500/40'
-                    : 'border-white/10 hover:border-emerald-500/40 hover:bg-[#10172A]'
-                }`}
-              >
-                {/* Top Row: Mission Number, Domain Badge, Rewards */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-white/10 font-bold">
-                      MISSIONE 0{index + 1}
-                    </span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold border ${mission.accentBadge}`}>
-                      {mission.domainTag}
-                    </span>
-                  </div>
-
-                  {/* Rewards or Status Badge */}
-                  <div className="flex items-center gap-2">
-                    {isCompleted ? (
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 flex items-center gap-1">
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        COMPLETATA
-                      </span>
-                    ) : isLocked ? (
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
-                        ZERO-DAY PRO
-                      </span>
-                    ) : (
-                      <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400">
-                        <span>+{node?.xpReward || 80} XP</span>
-                        <span className="text-slate-600">·</span>
-                        <span className="text-indigo-400">+{node?.eloReward || 25} ELO</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Main Content: Big Keyword Title & Minimalist Subtitle */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#070B14] border border-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-emerald-400 shadow-sm">
-                    <MissionIcon className="w-6 h-6" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {/* BIG PUNCHY KEYWORD TITLE */}
-                    <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-white group-hover:text-emerald-300 transition-colors leading-tight">
-                      {mission.keywordTitle}
-                    </h3>
-                    <p className="text-xs text-slate-400 font-mono mt-1">
-                      {mission.shortSubtitle}
-                    </p>
-                  </div>
-
-                  <div className="w-8 h-8 rounded-xl bg-slate-900/90 border border-white/10 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 group-hover:translate-x-1 transition-all shrink-0">
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 4. STRUMENTI & CHEAT SHEET TATTICI (ACCORDION / SEZIONE ESPANDIBILE)      */}
-      {/* ========================================================================= */}
-      <div className="rounded-2xl bg-surface border border-white/10 p-5 space-y-4">
-        <div 
-          onClick={() => {
-            sound.playTap();
-            setShowToolsSection(prev => !prev);
-          }}
-          className="flex items-center justify-between cursor-pointer select-none"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
-              <Wrench className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white font-mono">
-                Strumenti Tattici & Cheat Sheet
-              </h3>
-              <p className="text-xs text-slate-400">
-                Comandi rapidi, payload e regole di riferimento per esami
-              </p>
-            </div>
-          </div>
-
-          <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${showToolsSection ? 'rotate-180 text-emerald-400' : ''}`} />
-        </div>
-
-        {showToolsSection && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/5 animate-fade-in">
-            {Object.entries(CHAPTER_TOOLS).map(([key, tool]) => (
-              <div
-                key={key}
-                onClick={() => {
-                  sound.playTap();
-                  setActiveToolKey(key);
-                }}
-                className="cursor-pointer p-3.5 rounded-xl bg-[#070B14] border border-white/10 hover:border-cyan-500/40 hover:bg-cyan-950/20 transition-all group space-y-1.5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-white group-hover:text-cyan-300 font-mono">
-                    {tool.cheatSheetTitle}
-                  </span>
-                  <FileText className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                </div>
-                <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
-                  {tool.keyTakeaway}
-                </p>
-                <span className="text-[10px] font-mono text-cyan-400 font-bold inline-block pt-1">
-                  APRI COMANDI →
+          {/* Mission Header Card */}
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold uppercase tracking-wider">
+                {activeModule.certificationFocus}
+              </span>
+              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400">
+                <span>
+                  {activeModule.nodes.filter(n => userState.completedNodeIds.includes(n.id)).length} / {activeModule.nodes.length} {t.completed}
                 </span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
 
-      {/* ========================================================================= */}
-      {/* 5. MODALE: CHEAT SHEET TATTICO & COMANDI RAPIDI                          */}
-      {/* ========================================================================= */}
-      {activeToolKey && CHAPTER_TOOLS[activeToolKey] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-[#0B0F19] border border-white/15 p-5 sm:p-6 shadow-2xl space-y-4">
-            
-            <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                {activeModule.title}
+              </h1>
+              <p className="text-xs text-zinc-400 mt-1">
+                {t.missionsSubtitle}
+              </p>
+            </div>
+
+            {/* Mission Progress Bar */}
+            <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                style={{
+                  width: `${(activeModule.nodes.filter(n => userState.completedNodeIds.includes(n.id)).length / activeModule.nodes.length) * 100}%`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* List of 6 Lessons (5 Guided Explanations + 1 Final Test) */}
+          <div className="space-y-2.5">
+            {activeModule.nodes.map((node, index) => {
+              const isCompleted = userState.completedNodeIds.includes(node.id);
+              const isLocked = node.status === 'locked' && !userState.isPro;
+              const isFinal = node.isFinalTest;
+
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => {
+                    sound.playTap();
+                    onSelectNode(node);
+                  }}
+                  className={`group rounded-xl border p-4 transition-all duration-150 cursor-pointer ${
+                    isFinal
+                      ? isCompleted
+                        ? 'bg-[#101726] border-emerald-500/50 hover:border-emerald-400'
+                        : 'bg-[#151224] border-purple-500/40 hover:border-purple-400 shadow-md'
+                      : isCompleted
+                      ? 'bg-[#0E1420] border-emerald-500/30 hover:border-emerald-500/50'
+                      : 'bg-[#0D121D] border-zinc-800 hover:border-zinc-700 hover:bg-[#121622]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      {/* Badge row: Lesson Index, Explanation / Final Test */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                          isFinal 
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' 
+                            : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                        }`}>
+                          {isFinal ? t.finalTestBadge : `${t.lessonWord} 0${index + 1}`}
+                        </span>
+
+                        {!isFinal && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase">
+                            {t.explanationBadge}
+                          </span>
+                        )}
+
+                        {isCompleted && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center gap-1 border border-emerald-500/30">
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            {t.completed}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Lesson Title */}
+                      <h3 className={`font-mono font-bold text-sm truncate ${
+                        isFinal ? 'text-purple-200 group-hover:text-white' : 'text-zinc-100 group-hover:text-emerald-300'
+                      }`}>
+                        {node.title}
+                      </h3>
+
+                      {/* Brief Explanation Preview or Subtitle */}
+                      <p className="text-[11px] text-zinc-400 line-clamp-1">
+                        {node.lessonExplanation?.keyTakeaway || node.subtitle}
+                      </p>
+                    </div>
+
+                    {/* Right side: Rewards & Arrow Button */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <div className="text-[11px] font-mono font-bold text-emerald-400">
+                        +{node.xpReward} XP
+                      </div>
+                      <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 transition-colors">
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+
+        /* ========================================================================= */
+        /* VIEW B: MAIN MISSIONS CONTAINERS OVERVIEW (8 CORE MISSIONS)               */
+        /* ========================================================================= */
+        <>
+          {/* 1. Header Banner: Compact, Solid, Professional */}
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3.5 shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold uppercase tracking-wider">
+                {t.operationalRoadmap}
+              </span>
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <span className="text-zinc-400">READINESS:</span>
+                <span className="text-emerald-400 font-bold text-sm">{userState.readinessScore}%</span>
+              </div>
+            </div>
+
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                {t.missionsTitle}
+              </h1>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {isEn 
+                  ? '8 Field Missions · Minimum 5 to 10 guided lessons per mission + 1 final practical test.'
+                  : '8 Missioni Tattiche · Da 5 a 10 lezioni guidate per missione + 1 test finale pratico.'}
+              </p>
+            </div>
+
+            {/* Overall Progress */}
+            <div className="space-y-1.5 pt-0.5">
+              <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                <span>{t.missionProgress}</span>
+                <span className="text-zinc-200 font-bold">
+                  {completedMissionsCount} / {totalMissions} {t.completed}
+                </span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${Math.max((completedMissionsCount / totalMissions) * 100, 4)}%` 
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Daily 0xBreach CVE Triage: Solid, Crisp, Breathable */}
+          <div className="rounded-2xl bg-[#0F1420] border border-zinc-800 p-4 sm:p-5 space-y-3 shadow-md">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center">
-                  <Terminal className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-rose-400 shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-mono font-bold text-sm text-white">
-                    {CHAPTER_TOOLS[activeToolKey].cheatSheetTitle}
-                  </h3>
-                  <span className="text-[11px] text-slate-400 font-mono">
-                    Tocca un comando per copiarlo
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                      DEFCON 1
+                    </span>
+                    <h2 className="text-sm font-bold text-white tracking-wide">
+                      {t.dailyBreachTitle}
+                    </h2>
+                  </div>
                 </div>
               </div>
 
+              {/* 2X XP Pill Button */}
               <button
-                onClick={() => setActiveToolKey(null)}
-                className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                aria-label="Chiudi cheat sheet"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  sound.playTap();
+                  if (!userState.isPro) onOpenPaywall();
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-mono font-bold text-xs transition-all cursor-pointer ${
+                  userState.isPro
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                    : 'bg-zinc-800 text-amber-400 border-amber-500/30 hover:border-amber-400'
+                }`}
+                title={userState.isPro ? '2x XP Boost Active' : 'Unlock 2x XP with PRO'}
               >
-                <X className="w-4 h-4" />
+                <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>2X XP {userState.isPro ? (isEn ? 'ACTIVE' : 'ATTIVO') : 'PRO'}</span>
               </button>
             </div>
 
-            {/* Commands List */}
-            <div className="space-y-2 pt-1 max-h-72 overflow-y-auto">
-              {CHAPTER_TOOLS[activeToolKey].cheatSheetCommands.map((cmd, idx) => {
-                const isCopied = copiedIndex === idx;
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              {t.dailyBreachDesc}
+            </p>
+
+            <button
+              onClick={() => {
+                sound.playTap();
+                if (onOpenDailyBreach) onOpenDailyBreach();
+              }}
+              className={`w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                isBreachSolvedToday
+                  ? 'bg-zinc-800 border border-emerald-500/40 text-emerald-300 hover:bg-zinc-750'
+                  : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black'
+              }`}
+            >
+              {isBreachSolvedToday ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>{t.triageCompletedToday}</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 fill-zinc-950 text-zinc-950" />
+                  <span>{t.startDailyBreach}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* 3. The 8 Core Mission Containers */}
+          <div className="space-y-3">
+            <div className="px-1">
+              <h2 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-wider">
+                {isEn ? `TACTICAL MISSION CONTAINERS (${SKILL_MODULES.length})` : `CONTENITORI MISSIONI TATTICHE (${SKILL_MODULES.length})`}
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {SKILL_MODULES.map((module, index) => {
+                const completedCount = module.nodes.filter(n => userState.completedNodeIds.includes(n.id)).length;
+                const totalLessons = module.nodes.length;
+                const isAllCompleted = completedCount === totalLessons && totalLessons > 0;
+                const IconComponent = MISSION_ICON_MAP[module.id] || Terminal;
+
                 return (
-                  <div 
-                    key={idx}
-                    onClick={() => handleCopyCommand(cmd, idx)}
-                    className="cursor-pointer group flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[#050811] border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-950/20 transition-all font-mono text-xs"
+                  <div
+                    key={module.id}
+                    onClick={() => {
+                      sound.playTap();
+                      setSelectedModuleId(module.id);
+                    }}
+                    className={`group rounded-xl border p-4 sm:p-5 transition-all duration-150 cursor-pointer ${
+                      isAllCompleted
+                        ? 'bg-[#0E1420] border-emerald-500/40 hover:border-emerald-400'
+                        : 'bg-[#0D121D] border-zinc-800 hover:border-zinc-700 hover:bg-[#111624] shadow-md'
+                    }`}
                   >
-                    <span className="text-slate-200 select-all font-mono break-all text-[11px]">
-                      {cmd}
-                    </span>
-                    <button 
-                      className="shrink-0 p-1.5 rounded bg-slate-900 border border-white/10 text-slate-400 group-hover:text-cyan-400"
-                      title="Copia comando negli appunti"
-                    >
-                      {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-start justify-between gap-3">
+                      {/* Left: Icon, Number, Title, Subtitle */}
+                      <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 group-hover:border-zinc-700 transition-colors">
+                          <IconComponent className="w-5 h-5" />
+                        </div>
+
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold uppercase">
+                              {isEn ? `MISSION 0${index + 1}` : `MISSIONE 0${index + 1}`}
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-400 truncate">
+                              {module.certificationFocus}
+                            </span>
+                          </div>
+
+                          <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-tight group-hover:text-emerald-300 transition-colors truncate">
+                            {module.title}
+                          </h3>
+
+                          {/* Lessons count indicator */}
+                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 pt-0.5">
+                            <span>{completedCount} / {totalLessons} {t.lessonsCountWord}</span>
+                            <span className="text-zinc-600">·</span>
+                            <span className="text-zinc-400 text-[11px]">{t.guidedLessonsWord}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Status badge or Explore Button */}
+                      <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
+                        {isAllCompleted ? (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            {t.completed}
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1 text-xs font-mono font-bold text-zinc-300 group-hover:text-emerald-400 transition-colors">
+                            <span className="hidden xs:inline">{isEn ? 'Open' : 'Apri'}</span>
+                            <ChevronRight className="w-4 h-4 text-emerald-400" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mission Micro Progress Bar */}
+                    <div className="w-full h-1 rounded-full bg-zinc-800 overflow-hidden mt-3">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                        style={{ width: `${(completedCount / totalLessons) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Key Takeaway Banner */}
-            <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 text-xs text-slate-300">
-              <span className="font-mono font-bold text-cyan-400 block mb-1">
-                REGOLA CHIAVE D'ESAME:
-              </span>
-              {CHAPTER_TOOLS[activeToolKey].keyTakeaway}
-            </div>
-
-            <div className="flex justify-end pt-1">
-              <button
-                onClick={() => setActiveToolKey(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white/10 hover:bg-white/15 text-white transition-all cursor-pointer"
-              >
-                CHIUDI CHEAT SHEET
-              </button>
-            </div>
-
           </div>
-        </div>
-      )}
 
+          {/* 4. Tactical Reference Cheat Sheets Drawer */}
+          <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-4 space-y-3">
+            <button
+              onClick={() => {
+                sound.playTap();
+                setShowToolsSection(!showToolsSection);
+              }}
+              className="w-full flex items-center justify-between text-left cursor-pointer group"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 group-hover:text-white">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-mono font-bold text-xs sm:text-sm text-zinc-200 group-hover:text-white">
+                    {t.tacticalToolsTitle}
+                  </h3>
+                  <p className="text-[10px] text-zinc-400">
+                    {t.tacticalToolsSub}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${showToolsSection ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showToolsSection && (
+              <div className="pt-2 border-t border-zinc-800 space-y-2.5 animate-fade-in">
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(CHAPTER_TOOLS).map(([key, data]) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        sound.playTap();
+                        setActiveToolKey(activeToolKey === key ? null : key);
+                      }}
+                      className={`px-2.5 py-1 rounded text-xs font-mono font-bold border transition-colors cursor-pointer ${
+                        activeToolKey === key
+                          ? 'bg-emerald-500 text-zinc-950 border-emerald-400'
+                          : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-700'
+                      }`}
+                    >
+                      {key.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+
+                {activeToolKey && CHAPTER_TOOLS[activeToolKey] && (
+                  <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 space-y-2 text-xs font-mono animate-fade-in">
+                    <p className="text-emerald-400 font-bold">
+                      {CHAPTER_TOOLS[activeToolKey].cheatSheetTitle}
+                    </p>
+                    <div className="space-y-1">
+                      {CHAPTER_TOOLS[activeToolKey].cheatSheetCommands.map((cmd, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => handleCopyCommand(cmd, idx)}
+                          className="p-1.5 rounded bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer group"
+                        >
+                          <span className="truncate">{cmd}</span>
+                          <span className="text-[10px] text-zinc-400 shrink-0 ml-2">
+                            {copiedIndex === idx ? (isEn ? 'Copied!' : 'Copiato!') : (isEn ? 'Copy' : 'Copia')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-zinc-400 pt-1 border-t border-zinc-800">
+                      💡 {CHAPTER_TOOLS[activeToolKey].keyTakeaway}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };

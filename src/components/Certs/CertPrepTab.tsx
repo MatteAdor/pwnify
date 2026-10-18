@@ -200,23 +200,22 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 pb-32 space-y-7">
+    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-28 space-y-4 animate-fade-in font-sans">
       {/* Header Banner */}
-      <div className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#0B1222] to-[#070C18] border border-white/10 p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.12)] overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1.5 uppercase tracking-wider">
+      <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold flex items-center gap-1.5 uppercase tracking-wider">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             {t.certHeaderBadge}
           </span>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-zinc-400">
             {t.certHeaderSub}
           </span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
           {t.certHeaderTitle}
         </h1>
-        <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
+        <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
           {t.certHeaderDesc}
         </p>
       </div>

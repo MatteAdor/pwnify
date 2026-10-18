@@ -592,6 +592,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onOpenArsenal={() => setIsArsenalOpen(true)}
             onOpenAuth={() => setIsAuthOpen(true)}
             onUpdateUsername={handleUpdateUsername}
+            onUpdateLanguage={(l) => setUserState(prev => ({ ...prev, language: l }))}
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}

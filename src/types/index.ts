@@ -70,6 +70,13 @@ export interface HardcoreQuestion {
   eloReward: number;
 }
 
+export interface LessonExplanation {
+  conceptTitle: string;
+  keyTakeaway: string;
+  syntaxExample?: string;
+  operationalContext: string;
+}
+
 export interface SkillNode {
   id: string;
   title: string;
@@ -80,6 +87,8 @@ export interface SkillNode {
   xpReward: number;
   eloReward: number;
   questions: HardcoreQuestion[];
+  isFinalTest?: boolean;
+  lessonExplanation?: LessonExplanation;
 }
 
 export interface SkillModule {
