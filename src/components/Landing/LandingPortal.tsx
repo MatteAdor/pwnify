@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../utils/language';
 import { PRICING_CONFIG } from '../../config/pricing.config';
+import { MONETIZATION_CONFIG } from '../../config/monetization';
 import { sound } from '../../utils/soundEngine';
+import { isSafeRedirectUrl } from '../../utils/security';
 import { 
   Download, 
   Terminal, 
@@ -18,7 +20,8 @@ import {
   Radar, 
   AlertTriangle,
   Flame,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 
 interface LandingPortalProps {
@@ -51,6 +54,15 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     navigator.clipboard.writeText(APK_SHA256);
     setCopiedHash(true);
     setTimeout(() => setCopiedHash(false), 2500);
+  };
+
+  const handleCheckoutRedirect = (url: string) => {
+    sound.playTap();
+    if (url && isSafeRedirectUrl(url)) {
+      window.location.href = url;
+    } else {
+      onLaunchApp();
+    }
   };
 
   const interactiveSnippets = [
@@ -738,15 +750,21 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 </ul>
               </div>
 
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  onLaunchApp();
-                }}
-                className="w-full py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold transition-colors shadow-md"
-              >
-                {isEn ? 'Start 7-Day Free Trial' : 'Attiva 7 Giorni di Prova Gratis'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeMonthlyUrl)}
+                  className="w-full py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold transition-colors shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                  <span>{isEn ? 'Start 7-Day Free Trial (Monthly)' : 'Attiva 7 Giorni Gratis (Mensile)'}</span>
+                </button>
+                <button
+                  onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeAnnualUrl)}
+                  className="w-full py-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
+                >
+                  <span>{isEn ? 'Choose Annual (€69/yr · Save 42%)' : 'Scegli Annuale (€69/anno · Risparmi 42%)'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Tier 3: Starter Pass 90 Days */}
@@ -788,13 +806,11 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <button
-                onClick={() => {
-                  sound.playTap();
-                  onLaunchApp();
-                }}
-                className="w-full py-2.5 rounded bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-semibold border border-white/10 transition-colors"
+                onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.starterPassUrl)}
+                className="w-full py-2.5 rounded bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-semibold border border-white/10 transition-colors flex items-center justify-center gap-1.5"
               >
-                {isEn ? 'Get 90-Day Pass' : 'Acquista Starter Pass 90d'}
+                <span>{isEn ? 'Get 90-Day Pass (€19.99)' : 'Acquista Starter Pass (€19.99)'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 

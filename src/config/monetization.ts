@@ -15,11 +15,11 @@ export interface MonetizationConfig {
 }
 
 export const MONETIZATION_CONFIG: MonetizationConfig = {
-  stripeAnnualUrl: (import.meta.env?.VITE_STRIPE_ANNUAL_URL as string) || '',
-  stripeMonthlyUrl: (import.meta.env?.VITE_STRIPE_MONTHLY_URL as string) || '',
-  starterPassUrl: (import.meta.env?.VITE_STRIPE_STARTER_URL as string) || '',
+  stripeAnnualUrl: (import.meta.env?.VITE_STRIPE_ANNUAL_URL as string) || 'https://zeroday-app.lemonsqueezy.com/checkout/buy/9dcce9d8-1477-4a77-b4b7-387f7b6a2d3d',
+  stripeMonthlyUrl: (import.meta.env?.VITE_STRIPE_MONTHLY_URL as string) || 'https://zeroday-app.lemonsqueezy.com/checkout/buy/386f6353-c719-4d1b-b63d-360002bf5520',
+  starterPassUrl: (import.meta.env?.VITE_STRIPE_STARTER_URL as string) || 'https://zeroday-app.lemonsqueezy.com/checkout/buy/dd9271e3-bbc4-41d6-ac63-3f5f4cddc0b0',
 
-  enableRealRedirect: import.meta.env?.VITE_ENABLE_REAL_STRIPE_REDIRECT === 'true',
+  enableRealRedirect: import.meta.env?.VITE_ENABLE_REAL_STRIPE_REDIRECT !== 'false',
 
   currency: PRICING_CONFIG.currencySymbol,
 
