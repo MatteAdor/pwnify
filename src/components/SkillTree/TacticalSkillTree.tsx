@@ -83,7 +83,7 @@ const CHAPTER_TOOLS: Record<string, {
     cheatSheetCommands: [
       'GetUserSPNs.py domain/user -request       # Kerberoasting TGS',
       'GetNPUsers.py domain/ -usersfile users.txt # AS-REP Roasting',
-      'mimikatz # sekurlsa::logonpasswords       # Dump hash da LSASS',
+      '# Memory Dump Tool: Estrazione hash NTLM da processo LSASS',
       'bloodhound-python -d domain.local -u user # Grafo privilegi AD',
       'pth-winexe -U domain/admin%aad3... //host cmd.exe # Pass-The-Hash'
     ],

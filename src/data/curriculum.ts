@@ -2143,7 +2143,7 @@ export const SKILL_MODULES: SkillModule[] = [
       },
       {
         id: 'node_ad_5',
-        title: 'Pass-The-Hash & Mimikatz LSASS Dump',
+        title: 'Pass-The-Hash & Memory LSASS Extraction',
         subtitle: 'Extracting NTLM hashes from memory and lateral movement over SMB/RPC',
         moduleId: 'mod_active_directory',
         status: 'available',
@@ -2151,7 +2151,7 @@ export const SKILL_MODULES: SkillModule[] = [
         xpReward: 60,
         eloReward: 15,
         lessonExplanation: {
-          conceptTitle: 'Pass-The-Hash e Dump LSASS con Mimikatz',
+          conceptTitle: 'Pass-The-Hash ed Estrazione LSASS',
           keyTakeaway: 'Il protocollo NTLM autentica gli utenti verificando l\'hash della password, non la password in chiaro. Con Pass-The-Hash l\'attaccante usa direttamente l\'hash NTLM per autenticarsi su altre macchine.',
           syntaxExample: '$ pth-winexe -U corp/admin%aad3b435...:b4b9b02e6f09a9bd86c022ac00a7edb4 //10.0.0.5 cmd.exe',
           operationalContext: 'Windows Defender Credential Guard isola LSASS in un processo virtualizzato VBS, impedendo il dump degli hash di memoria.'
@@ -2215,7 +2215,7 @@ export const SKILL_MODULES: SkillModule[] = [
               cveOrTopic: 'MITRE ATT&CK T1558.001 / T1558.002: Golden & Silver Tickets',
               whyItWorks: 'krbtgt encrypts all TGTs; compromising it allows creating forged TGTs for any user with any group membership.',
               patchRecommendation: 'Reset the krbtgt account password twice with a 24-hour interval following an incident.',
-              terminalProof: 'Mimikatz: kerberos::golden /user:Administrator /domain:corp.local /sid:S-1-5-21... /krbtgt:...'
+              terminalProof: 'TicketEngine: kerberos::forge_golden_ticket /user:Administrator /domain:corp.local /sid:S-1-5-21... /krbtgt:...'
             },
             xpReward: 60,
             eloReward: 17
