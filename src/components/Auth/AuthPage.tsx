@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { UserState } from '../../types';
 import { 
   send2FACode, 
   verify2FACode, 
@@ -24,6 +25,7 @@ interface AuthPageProps {
   onLoginSuccess: (account: UserAccount) => void;
   onGuestAccess?: () => void;
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
+  currentUserState?: UserState;
 }
 
 type AuthMode = 'login' | 'signup';
@@ -47,7 +49,8 @@ const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' })
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess,
   onGuestAccess,
-  onOpenLegal
+  onOpenLegal,
+  currentUserState
 }) => {
   const { lang, setLanguage, t } = useLanguage();
   const isEn = lang === 'en';
@@ -137,7 +140,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               if (data && (data.email || data.sub)) {
                 const mail = data.email || 'operator.google@gmail.com';
                 const name = data.name || mail.split('@')[0];
-                const res = loginWithOAuth('google', { name, email: mail });
+                const res = loginWithOAuth('google', { name, email: mail }, currentUserState);
                 sound.playVictoryFanfare();
                 confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
                 if (window.history) {
@@ -268,7 +271,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
 
     setTimeout(() => {
-      const res = completeEmailRegistration(email, callsign, password);
+      const res = completeEmailRegistration(email, callsign, password, currentUserState);
       setIsProcessing(false);
 
       if (!res.success || !res.account) {
@@ -318,7 +321,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
 
     setTimeout(() => {
-      const res = loginEmailAccount(loginIdentifier, loginPassword);
+      const res = loginEmailAccount(loginIdentifier, loginPassword, currentUserState);
       setIsProcessing(false);
 
       if (!res.success || !res.account) {
@@ -386,7 +389,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         name: finalName, 
         email: cleanMail,
         customUsername: googleInputCallsign.trim() || undefined
-      });
+      }, currentUserState);
       setIsProcessing(false);
       setIsGoogleModalOpen(false);
       sound.playVictoryFanfare();
@@ -435,7 +438,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         name: finalName, 
         email: gitEmail,
         customUsername: githubInputCallsign.trim() || undefined
-      });
+      }, currentUserState);
       setIsProcessing(false);
       setIsGitHubModalOpen(false);
       sound.playVictoryFanfare();
@@ -489,14 +492,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
 
     setTimeout(() => {
-      // Authenticate via email OTP (logs in or initializes clean account if not present)
-      const res = loginWithEmailOtp(otpLoginEmail);
+      // Authenticate via email OTP (logs in or initializes account with current progress)
+      const res = loginWithEmailOtp(otpLoginEmail, currentUserState);
       setIsProcessing(false);
 
       if (!res.success || !res.account) {
-        // If account doesn't exist, create it clean on the fly
+        // If account doesn't exist, create it on the fly with current progress
         const cleanName = otpLoginEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-        const created = completeEmailRegistration(otpLoginEmail, cleanName, 'Pass_' + Math.random().toString(36).substring(2, 8));
+        const created = completeEmailRegistration(otpLoginEmail, cleanName, 'Pass_' + Math.random().toString(36).substring(2, 8), currentUserState);
         if (created.success && created.account) {
           sound.playVictoryFanfare();
           setIsEmailOtpModalOpen(false);

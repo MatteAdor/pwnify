@@ -72,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const res = registerAccount(safeName, email, password);
+    const res = registerAccount(safeName, email, password, userState);
     if (!res.success || !res.account) {
       setErrorMsg(res.error || (isEn ? 'Registration error.' : 'Errore durante la registrazione.'));
       sound.playPayloadBlocked();
@@ -106,7 +106,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const res = loginAccount(identifier, password);
+    const res = loginAccount(identifier, password, userState);
     if (!res.success || !res.account) {
       setErrorMsg(res.error || (isEn ? 'Invalid credentials.' : 'Credenziali non valide.'));
       sound.playPayloadBlocked();

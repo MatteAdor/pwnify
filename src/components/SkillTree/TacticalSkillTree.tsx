@@ -91,6 +91,41 @@ const CHAPTER_TOOLS: Record<string, {
   }
 };
 
+const MISSION_FOCUS_MAP: Record<string, { it: string; en: string }> = {
+  mod_bash: {
+    it: 'Navigazione shell Linux, permessi Unix, piping, grep e scripting di base per amministrazione sicura.',
+    en: 'Shell navigation, Unix permissions, piping, grep, and essential scripting for secure systems.'
+  },
+  mod_networking: {
+    it: 'Modello OSI, subnetting CIDR, analisi TCP/UDP, ARP poisoning e cattura pacchetti Wireshark.',
+    en: 'OSI model, CIDR subnetting, TCP/UDP handshake analysis, ARP poisoning, and Wireshark inspection.'
+  },
+  mod_blue_team: {
+    it: 'Monitoraggio SIEM, analisi log Syslog/Auth, triage incidenti SOC e configurazione firewall iptables/UFW.',
+    en: 'SIEM log telemetry, authentication audit trails, SOC triage alerts, and UFW firewall rules.'
+  },
+  mod_web_sec: {
+    it: 'OWASP Top 10: SQL Injection, Cross-Site Scripting (XSS), CSRF e prevenzione vulnerabilità applicative.',
+    en: 'OWASP Top 10 vulnerabilities: SQL Injection, XSS, CSRF, and defensive secure coding sanitization.'
+  },
+  mod_crypto: {
+    it: 'Crittografia asimmetrica RSA/ECC, hashing SHA-256/bcrypt, certificati X.509 e protocollo TLS 1.3.',
+    en: 'Asymmetric cryptography, SHA-256 hashing, X.509 PKI certificate chains, and TLS 1.3 handshakes.'
+  },
+  mod_cloud_infra: {
+    it: 'AWS IAM privilege escalation, misconfigurazioni bucket S3, sicurezza Kubernetes e container Docker.',
+    en: 'AWS IAM policy hardening, S3 public leakage containment, and Kubernetes cluster security controls.'
+  },
+  mod_red_recon: {
+    it: 'Scansione porte Nmap (SYN scan), fingerprinting servizi, enumeration OS e mapping superficie d\'attacco.',
+    en: 'Nmap stealth SYN scans, banner grabbing, OS fingerprinting, and external attack surface mapping.'
+  },
+  mod_threat_intel: {
+    it: 'Framework MITRE ATT&CK, indicatori di compromissione (IoC), Cyber Kill Chain e threat intelligence tattica.',
+    en: 'MITRE ATT&CK mapping, Indicators of Compromise (IoCs), Cyber Kill Chain, and triage feeds.'
+  }
+};
+
 export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   userState,
   onSelectNode,
@@ -149,11 +184,16 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
           </button>
 
           {/* Mission Header Card */}
-          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-lg">
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-4 sm:p-5 space-y-3 shadow-lg">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold uppercase tracking-wider">
-                {activeModule.certificationFocus}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 font-bold uppercase whitespace-nowrap">
+                  {isEn ? `MISSION 0${SKILL_MODULES.findIndex(m => m.id === activeModule.id) + 1}` : `MISSIONE 0${SKILL_MODULES.findIndex(m => m.id === activeModule.id) + 1}`}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-bold uppercase tracking-wider">
+                  {activeModule.certificationFocus}
+                </span>
+              </div>
               <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400">
                 <span>
                   {activeModule.nodes.filter(n => userState.completedNodeIds.includes(n.id)).length} / {activeModule.nodes.length} {t.completed}
@@ -165,8 +205,8 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
               <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
                 {activeModule.title}
               </h1>
-              <p className="text-xs text-zinc-400 mt-1">
-                {t.missionsSubtitle}
+              <p className="text-xs text-zinc-300 mt-2 leading-relaxed">
+                {MISSION_FOCUS_MAP[activeModule.id]?.[isEn ? 'en' : 'it'] || activeModule.certificationFocus}
               </p>
             </div>
 
@@ -383,7 +423,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
               </h2>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {SKILL_MODULES.map((module, index) => {
                 const completedCount = module.nodes.filter(n => userState.completedNodeIds.includes(n.id)).length;
                 const totalLessons = module.nodes.length;
@@ -397,52 +437,48 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                       sound.playTap();
                       setSelectedModuleId(module.id);
                     }}
-                    className={`group rounded-xl border p-4 sm:p-5 transition-all duration-150 cursor-pointer ${
+                    className={`group rounded-xl border p-3.5 sm:p-4 transition-all duration-150 cursor-pointer ${
                       isAllCompleted
                         ? 'bg-[#0E1420] border-emerald-500/40 hover:border-emerald-400'
                         : 'bg-[#0D121D] border-zinc-800 hover:border-zinc-700 hover:bg-[#111624] shadow-md'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      {/* Left: Icon, Number, Title, Subtitle */}
-                      <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Left: Icon, Number, Title, Lessons Count */}
+                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 group-hover:border-zinc-700 transition-colors">
                           <IconComponent className="w-5 h-5" />
                         </div>
 
                         <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold uppercase">
+                          {/* Badge: MISSIONE 01 on a single line, NO description next to it */}
+                          <div className="flex items-center">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 font-bold uppercase whitespace-nowrap shrink-0">
                               {isEn ? `MISSION 0${index + 1}` : `MISSIONE 0${index + 1}`}
-                            </span>
-                            <span className="text-[10px] font-mono text-zinc-400 truncate">
-                              {module.certificationFocus}
                             </span>
                           </div>
 
-                          <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-tight group-hover:text-emerald-300 transition-colors truncate">
+                          {/* BIGGER TITLE: text-lg sm:text-xl font-black */}
+                          <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight group-hover:text-emerald-300 transition-colors truncate">
                             {module.title}
                           </h3>
 
-                          {/* Lessons count indicator */}
-                          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 pt-0.5">
-                            <span>{completedCount} / {totalLessons} {t.lessonsCountWord}</span>
-                            <span className="text-zinc-600">·</span>
-                            <span className="text-zinc-400 text-[11px]">{t.guidedLessonsWord}</span>
+                          {/* ONLY lessons count: e.g. "0 / 6 Lezioni" */}
+                          <div className="text-xs font-mono text-zinc-400 font-bold">
+                            {completedCount} / {totalLessons} {t.lessonsCountWord}
                           </div>
                         </div>
                       </div>
 
                       {/* Right: Status badge or Explore Button */}
-                      <div className="flex flex-col items-end gap-2 shrink-0 pt-1">
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {isAllCompleted ? (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 flex items-center gap-1 whitespace-nowrap">
                             <Check className="w-3 h-3 text-emerald-400" />
                             {t.completed}
                           </span>
                         ) : (
-                          <div className="flex items-center gap-1 text-xs font-mono font-bold text-zinc-300 group-hover:text-emerald-400 transition-colors">
-                            <span className="hidden xs:inline">{isEn ? 'Open' : 'Apri'}</span>
+                          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 transition-colors">
                             <ChevronRight className="w-4 h-4 text-emerald-400" />
                           </div>
                         )}
@@ -450,7 +486,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                     </div>
 
                     {/* Mission Micro Progress Bar */}
-                    <div className="w-full h-1 rounded-full bg-zinc-800 overflow-hidden mt-3">
+                    <div className="w-full h-1 rounded-full bg-zinc-800 overflow-hidden mt-2.5">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                         style={{ width: `${(completedCount / totalLessons) * 100}%` }}

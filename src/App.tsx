@@ -22,6 +22,7 @@ import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { 
   createDefaultGuestState, 
+  getCachedGuestState,
   purgeLegacyStorage, 
   getCurrentSession, 
   setCurrentSession, 
@@ -55,13 +56,17 @@ export const App: React.FC = () => {
   const { lang } = useLanguage();
   const isEn = lang === 'en';
 
-  // Load initial state from active user database session or fallback to clean guest state
+  // Load initial state from active user database session or cached guest state or fallback to default
   const [userState, setUserState] = useState<UserState>(() => {
     try {
       purgeLegacyStorage();
       const session = getCurrentSession();
       if (session && session.userState) {
         return sanitizeUserState(session.userState);
+      }
+      const cachedGuest = getCachedGuestState();
+      if (cachedGuest) {
+        return sanitizeUserState(cachedGuest);
       }
     } catch (e) {
       console.error('Failed to parse active user session', e);
@@ -80,7 +85,15 @@ export const App: React.FC = () => {
 
   // Sync local accounts with physical disk file database/logins.json
   useEffect(() => {
-    syncDatabaseWithBackend().catch(err => {
+    syncDatabaseWithBackend().then(accs => {
+      const session = getCurrentSession();
+      if (session && Array.isArray(accs)) {
+        const found = accs.find(a => a.id === session.id);
+        if (found && found.userState) {
+          setUserState(sanitizeUserState(found.userState));
+        }
+      }
+    }).catch(err => {
       console.debug('Disk database background sync:', err);
     });
   }, []);
@@ -568,7 +581,12 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
       {!userState.isLoggedIn ? (
         <AuthPage
           onLoginSuccess={handleLoginSuccess}
-          onGuestAccess={() => setUserState(prev => ({ ...prev, isLoggedIn: true, onboardingCompleted: false }))}
+          currentUserState={userState}
+          onGuestAccess={() => setUserState(prev => {
+            const updated = { ...prev, isLoggedIn: true, onboardingCompleted: false };
+            persistActiveAccountState(updated);
+            return updated;
+          })}
           onOpenLegal={(tab) => {
             setLegalTab(tab);
             setIsLegalModalOpen(true);

@@ -6,6 +6,7 @@ import { isContributor } from './licenseEngine';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
+const GUEST_STATE_KEY = 'zeroday_guest_state_v1';
 const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v4';
 const PENDING_2FA_STORAGE_KEY = 'zeroday_pending_2fa_v1';
 
@@ -52,6 +53,101 @@ export function sanitizeUserState(state: UserState): UserState {
     ...state,
     dailyBounties: sanitizeBounties(state.dailyBounties)
   };
+}
+
+/**
+ * Retrieves cached guest state if available.
+ */
+export function getCachedGuestState(): UserState | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(GUEST_STATE_KEY);
+    if (!raw) return null;
+    return sanitizeUserState(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persists guest progress to local storage so progress is never lost before login.
+ */
+export function saveCachedGuestState(state: UserState): void {
+  try {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(GUEST_STATE_KEY, JSON.stringify(sanitizeUserState(state)));
+  } catch (e) {
+    console.error('Failed to save cached guest state', e);
+  }
+}
+
+/**
+ * Merges base account state with active session/guest progress, ensuring that
+ * completed lessons, PBQs, XP, ELO, streak, paid PRO status, and license keys
+ * are never lost when logging in or registering.
+ */
+export function mergeUserStates(base: UserState, incoming?: UserState | null): UserState {
+  if (!incoming) return sanitizeUserState(base);
+
+  const cleanEmail = base.userEmail || incoming.userEmail;
+  const username = base.username || incoming.username;
+  const autoPro = isContributor(cleanEmail) || isContributor(username);
+
+  const isPro = Boolean(autoPro || base.isPro || incoming.isPro);
+  const licenseKey = autoPro 
+    ? (base.licenseKey || incoming.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME')
+    : (base.licenseKey || incoming.licenseKey || (isPro ? '0xPRO-LIFETIME' : undefined));
+
+  const mergedNodes = Array.from(new Set([
+    ...(base.completedNodeIds || []),
+    ...(incoming.completedNodeIds || [])
+  ]));
+
+  const mergedPbqs = Array.from(new Set([
+    ...(base.completedPbqIds || []),
+    ...(incoming.completedPbqIds || [])
+  ]));
+
+  const maxXp = Math.max(base.xp || 0, incoming.xp || 0);
+  const maxElo = Math.max(base.elo || 1000, incoming.elo || 1000);
+  const maxStreak = Math.max(base.streakDays || 0, incoming.streakDays || 0);
+  const maxSurvival = Math.max(base.survivalHighScore || 0, incoming.survivalHighScore || 0);
+
+  const dynamic = calculateDynamicTelemetry(mergedNodes, mergedPbqs, isPro);
+  const readiness = Math.max(
+    base.readinessScore || 0, 
+    incoming.readinessScore || 0, 
+    dynamic.readinessScore
+  );
+
+  return sanitizeUserState({
+    ...base,
+    userEmail: cleanEmail,
+    isLoggedIn: true,
+    isPro,
+    licenseKey,
+    streakShieldActive: isPro || base.streakShieldActive || incoming.streakShieldActive,
+    completedNodeIds: mergedNodes,
+    completedPbqIds: mergedPbqs,
+    xp: maxXp,
+    elo: maxElo,
+    streakDays: maxStreak,
+    survivalHighScore: maxSurvival,
+    readinessScore: readiness,
+    radarScores: dynamic.radarScores,
+    goal: base.goal && base.goal !== 'Pass CompTIA Security+ / CCNA' ? base.goal : (incoming.goal || base.goal),
+    profession: base.profession || incoming.profession,
+    experienceLevel: base.experienceLevel && base.experienceLevel !== 'Beginner' ? base.experienceLevel : (incoming.experienceLevel || base.experienceLevel),
+    dailyCommitment: Math.max(base.dailyCommitment || 15, incoming.dailyCommitment || 15),
+    onboardingCompleted: Boolean(base.onboardingCompleted || incoming.onboardingCompleted),
+    hasSeenTrial: Boolean(base.hasSeenTrial || incoming.hasSeenTrial),
+    activeTheme: base.activeTheme || incoming.activeTheme,
+    customTitle: base.customTitle || incoming.customTitle,
+    dailyBreachStreak: Math.max(base.dailyBreachStreak || 0, incoming.dailyBreachStreak || 0),
+    lastDailyBreachDate: base.lastDailyBreachDate || incoming.lastDailyBreachDate,
+    lastUsernameChangeTimestamp: base.lastUsernameChangeTimestamp || incoming.lastUsernameChangeTimestamp,
+    language: base.language || incoming.language
+  });
 }
 
 /**
@@ -274,7 +370,8 @@ export function verify2FACode(email: string, inputCode: string): { valid: boolea
 export function completeEmailRegistration(
   email: string,
   username: string,
-  passwordPlain: string
+  passwordPlain: string,
+  currentProgress?: UserState | null
 ): { success: boolean; account?: UserAccount; error?: string } {
   const safeName = sanitizeCallsign(username);
   if (!safeName || safeName.length < 3) {
@@ -300,6 +397,8 @@ export function completeEmailRegistration(
   }
 
   const cleanState = createCleanAccountState(safeName, cleanEmail, true);
+  const guestFallback = currentProgress || getCachedGuestState();
+  const finalState = guestFallback ? mergeUserStates(cleanState, guestFallback) : cleanState;
 
   const newAccount: UserAccount = {
     id: 'usr_mail_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
@@ -309,7 +408,7 @@ export function completeEmailRegistration(
     provider: 'email',
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
-    userState: cleanState
+    userState: finalState
   };
 
   accounts.push(newAccount);
@@ -324,7 +423,8 @@ export function completeEmailRegistration(
  */
 export function loginEmailAccount(
   identifier: string,
-  passwordPlain: string
+  passwordPlain: string,
+  currentProgress?: UserState | null
 ): { success: boolean; account?: UserAccount; error?: string } {
   const cleanId = identifier.trim().toLowerCase();
   const accounts = getRegisteredAccounts();
@@ -339,6 +439,12 @@ export function loginEmailAccount(
 
   if (found.passwordHash && found.passwordHash !== btoa(passwordPlain)) {
     return { success: false, error: 'Incorrect password.' };
+  }
+
+  // Merge any active progress or guest payments with saved account data
+  const guestFallback = currentProgress || getCachedGuestState();
+  if (guestFallback) {
+    found.userState = mergeUserStates(found.userState, guestFallback);
   }
 
   // Ensure contributors automatically have PRO
@@ -360,12 +466,13 @@ export const loginAccount = loginEmailAccount;
 
 /**
  * Authenticates or creates an account using OAuth (Google or GitHub).
- * If new account, creates fresh clean state ("nulla di nulla").
+ * If new account, creates fresh state or adopts active guest progress.
  * If existing account, logs in and restores user progress seamlessly!
  */
 export function loginWithOAuth(
   provider: 'google' | 'github',
-  profile: { name: string; email: string; customUsername?: string }
+  profile: { name: string; email: string; customUsername?: string },
+  currentProgress?: UserState | null
 ): { success: boolean; account: UserAccount } {
   const cleanEmail = profile.email.trim().toLowerCase();
   const rawChosenName = (profile.customUsername && profile.customUsername.trim()) || profile.name;
@@ -377,7 +484,12 @@ export function loginWithOAuth(
     a.username.toLowerCase() === baseName.toLowerCase()
   );
 
+  const guestFallback = currentProgress || getCachedGuestState();
+
   if (existing) {
+    if (guestFallback) {
+      existing.userState = mergeUserStates(existing.userState, guestFallback);
+    }
     if (isContributor(existing.email) || isContributor(existing.username) || isContributor(cleanEmail)) {
       existing.userState.isPro = true;
       existing.userState.licenseKey = existing.userState.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME';
@@ -389,7 +501,7 @@ export function loginWithOAuth(
     return { success: true, account: existing };
   }
 
-  // Create brand new OAuth account with completely fresh clean state
+  // Create brand new OAuth account
   let uniqueName = baseName;
   let counter = 1;
   while (accounts.some(a => a.username.toLowerCase() === uniqueName.toLowerCase())) {
@@ -398,6 +510,7 @@ export function loginWithOAuth(
   }
 
   const cleanState = createCleanAccountState(uniqueName, cleanEmail, true);
+  const finalState = guestFallback ? mergeUserStates(cleanState, guestFallback) : cleanState;
 
   const newAccount: UserAccount = {
     id: `usr_${provider}_${Date.now()}`,
@@ -406,7 +519,7 @@ export function loginWithOAuth(
     provider,
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
-    userState: cleanState
+    userState: finalState
   };
 
   accounts.push(newAccount);
@@ -420,7 +533,8 @@ export function loginWithOAuth(
  * Fast passwordless 2FA login via email code.
  */
 export function loginWithEmailOtp(
-  email: string
+  email: string,
+  currentProgress?: UserState | null
 ): { success: boolean; account?: UserAccount; error?: string } {
   const cleanEmail = email.trim().toLowerCase();
   const accounts = getRegisteredAccounts();
@@ -428,6 +542,11 @@ export function loginWithEmailOtp(
 
   if (!existing) {
     return { success: false, error: `No operator registered with email ${cleanEmail}. Please sign up first!` };
+  }
+
+  const guestFallback = currentProgress || getCachedGuestState();
+  if (guestFallback) {
+    existing.userState = mergeUserStates(existing.userState, guestFallback);
   }
 
   existing.lastLoginAt = new Date().toISOString();
@@ -480,17 +599,20 @@ export function setCurrentSession(account: UserAccount | null): void {
  */
 export function persistActiveAccountState(state: UserState): void {
   try {
-    const session = getCurrentSession();
-    if (!session) return;
-
     const cleanState = sanitizeUserState(state);
-    const accounts = getRegisteredAccounts();
-    const idx = accounts.findIndex(a => a.id === session.id);
-    if (idx !== -1) {
-      accounts[idx].userState = cleanState;
-      saveAccounts(accounts);
+    const session = getCurrentSession();
+    if (session) {
+      const accounts = getRegisteredAccounts();
+      const idx = accounts.findIndex(a => a.id === session.id);
+      if (idx !== -1) {
+        accounts[idx].userState = cleanState;
+        accounts[idx].lastLoginAt = new Date().toISOString();
+        saveAccounts(accounts);
+      }
       session.userState = cleanState;
       setCurrentSession(session);
+    } else {
+      saveCachedGuestState(cleanState);
     }
   } catch (e) {
     console.error('Failed to persist active account state to database', e);
