@@ -65,7 +65,7 @@ export function createCleanAccountState(
 ): UserState {
   const dynamic = calculateDynamicTelemetry([], [], false);
   return sanitizeUserState({
-    username: sanitizeCallsign(username, 'Operatore'),
+    username: sanitizeCallsign(username, 'Operator'),
     userEmail: email ? email.trim().toLowerCase() : undefined,
     isLoggedIn,
     isPro: false,
@@ -87,7 +87,7 @@ export function createCleanAccountState(
       freeClaimed: false,
       proClaimed: false
     })),
-    goal: 'Passare CompTIA Security+ / CCNA',
+    goal: 'Pass CompTIA Security+ / CCNA',
     experienceLevel: 'Beginner',
     dailyCommitment: 15,
     onboardingCompleted: false,
@@ -101,7 +101,7 @@ export function createCleanAccountState(
  * Has isLoggedIn = false so the Login/Signup page is shown.
  */
 export function createDefaultGuestState(): UserState {
-  return createCleanAccountState('0x_Anonimo', undefined, false);
+  return createCleanAccountState('0x_Anonymous', undefined, false);
 }
 
 /**
@@ -236,28 +236,28 @@ export function verify2FACode(email: string, inputCode: string): { valid: boolea
   try {
     const raw = sessionStorage.getItem(PENDING_2FA_STORAGE_KEY);
     if (!raw) {
-      return { valid: false, error: 'Nessun codice 2FA in attesa. Richiedi un nuovo codice.' };
+      return { valid: false, error: 'No pending 2FA code. Please request a new code.' };
     }
     const pending: Pending2FA = JSON.parse(raw);
     const cleanEmail = email.trim().toLowerCase();
 
     if (pending.email !== cleanEmail) {
-      return { valid: false, error: 'L\'email non corrisponde alla richiesta 2FA.' };
+      return { valid: false, error: 'Email does not match the 2FA request.' };
     }
 
     if (Date.now() > pending.expiresAt) {
-      return { valid: false, error: 'Il codice 2FA è scaduto. Richiedine uno nuovo.' };
+      return { valid: false, error: 'The 2FA code has expired. Please request a new one.' };
     }
 
     if (pending.code !== inputCode.trim()) {
-      return { valid: false, error: 'Codice 2FA non corretto. Riprova.' };
+      return { valid: false, error: 'Incorrect 2FA code. Please try again.' };
     }
 
     // Code verified! Remove pending entry
     sessionStorage.removeItem(PENDING_2FA_STORAGE_KEY);
     return { valid: true };
   } catch {
-    return { valid: false, error: 'Errore di validazione del codice 2FA.' };
+    return { valid: false, error: '2FA code validation error.' };
   }
 }
 
@@ -272,16 +272,16 @@ export function completeEmailRegistration(
 ): { success: boolean; account?: UserAccount; error?: string } {
   const safeName = sanitizeCallsign(username);
   if (!safeName || safeName.length < 3) {
-    return { success: false, error: 'Il Callsign deve contenere almeno 3 caratteri alfanumerici.' };
+    return { success: false, error: 'Callsign must contain at least 3 alphanumeric characters.' };
   }
 
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-    return { success: false, error: 'Indirizzo email non valido.' };
+    return { success: false, error: 'Invalid email address.' };
   }
 
   if (!passwordPlain || passwordPlain.length < 6) {
-    return { success: false, error: 'La password deve contenere almeno 6 caratteri.' };
+    return { success: false, error: 'Password must contain at least 6 characters.' };
   }
 
   const accounts = getRegisteredAccounts();
@@ -290,7 +290,7 @@ export function completeEmailRegistration(
   );
 
   if (duplicate) {
-    return { success: false, error: 'Un account con questo Callsign o Email esiste già nel database.' };
+    return { success: false, error: 'An account with this Callsign or Email already exists in the database.' };
   }
 
   const cleanState = createCleanAccountState(safeName, cleanEmail, true);
@@ -328,11 +328,11 @@ export function loginEmailAccount(
   );
 
   if (!found) {
-    return { success: false, error: 'Nessun account trovato con questo Callsign o Email.' };
+    return { success: false, error: 'No account found with this Callsign or Email.' };
   }
 
   if (found.passwordHash && found.passwordHash !== btoa(passwordPlain)) {
-    return { success: false, error: 'Password non corretta.' };
+    return { success: false, error: 'Incorrect password.' };
   }
 
   found.lastLoginAt = new Date().toISOString();
@@ -410,7 +410,7 @@ export function loginWithEmailOtp(
   const existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
 
   if (!existing) {
-    return { success: false, error: `Nessun operatore registrato con l'email ${cleanEmail}. Registrati prima!` };
+    return { success: false, error: `No operator registered with email ${cleanEmail}. Please sign up first!` };
   }
 
   existing.lastLoginAt = new Date().toISOString();
@@ -481,7 +481,7 @@ export function persistActiveAccountState(state: UserState): void {
 }
 
 /**
- * Permanently deletes a user account and wipes all their associated data (GDPR Art. 17 - Right to Erasure)
+ * Permanently deletes a user account and wipes all their associated data (Right to Erasure)
  */
 export function deleteUserAccount(accountId: string): boolean {
   try {

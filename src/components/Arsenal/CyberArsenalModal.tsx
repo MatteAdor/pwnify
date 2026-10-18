@@ -34,17 +34,17 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
     bgStyle: 'from-emerald-950/40 to-slate-900',
     isProOnly: false,
     minElo: 0,
-    description: 'Il classico tema tattico ZeroDay: contrasto scuro e fosfori smeraldo.'
+    description: 'The classic ZeroDay tactical theme: high dark contrast and emerald phosphor glow.'
   },
   {
     id: 'matrix_phosphor',
-    name: 'Matrix Monocromo 1999',
+    name: 'Matrix Monochrome 1999',
     previewColor: '#22C55E',
     accentColor: 'text-green-400',
     bgStyle: 'from-green-950/50 to-black',
     isProOnly: false,
     minElo: 1100,
-    description: 'Ispirato alle console mainframe verdi con CRT phosphor glow.'
+    description: 'Inspired by green mainframe consoles with CRT phosphor glow.'
   },
   {
     id: 'cyberpunk_neon',
@@ -54,7 +54,7 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
     bgStyle: 'from-purple-950/40 via-cyan-950/30 to-slate-950',
     isProOnly: false,
     minElo: 1300,
-    description: 'Neon blu ciano e accenti magenta per gli amanti del Red Teaming ad alto contrasto.'
+    description: 'Cyan blue neon and magenta accents for high-contrast Red Teaming.'
   },
   {
     id: 'amber_crt',
@@ -64,7 +64,7 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
     bgStyle: 'from-amber-950/40 to-black',
     isProOnly: true,
     minElo: 0,
-    description: 'Tonalità ambra calda dei terminali VT220 e DEC mainframe. Zero affaticamento visivo.'
+    description: 'Warm amber glow of DEC VT220 mainframe terminals. Zero eye fatigue.'
   },
   {
     id: 'stealth_oled',
@@ -74,7 +74,7 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
     bgStyle: 'from-black to-slate-950',
     isProOnly: true,
     minElo: 1600,
-    description: 'Nero assoluto #000000 per display OLED e massima discrezione durante le ore notturne.'
+    description: 'True #000000 black for OLED displays and stealth low-light operations.'
   }
 ];
 
@@ -125,7 +125,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                 CUSTOMIZER HUD & ARSENAL
               </span>
               <h3 className="font-extrabold text-base text-white">
-                Personalizza il tuo Terminale Tattico
+                Customize Your Tactical Terminal
               </h3>
             </div>
           </div>
@@ -155,7 +155,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
             }`}
           >
             <Terminal className="w-3.5 h-3.5" />
-            <span>Temi Terminale HUD</span>
+            <span>Terminal HUD Themes</span>
           </button>
           <button
             onClick={() => {
@@ -169,7 +169,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
             }`}
           >
             <Award className="w-3.5 h-3.5" />
-            <span>Titoli & Callsign Badge</span>
+            <span>Titles & Callsign Badges</span>
           </button>
         </div>
 
@@ -239,7 +239,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                     {isLocked ? (
                       <div className="flex items-center gap-1 text-slate-500 font-mono text-xs">
                         <Lock className="w-4 h-4 text-amber-400" />
-                        <span className="text-[10px] text-amber-400 hidden sm:inline">BLOCCATO</span>
+                        <span className="text-[10px] text-amber-400 hidden sm:inline">LOCKED</span>
                       </div>
                     ) : isSelected ? (
                       <div className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-400 flex items-center justify-center">
@@ -247,7 +247,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                       </div>
                     ) : (
                       <span className="text-xs font-mono text-slate-400 hover:text-white">
-                        Equipaggia
+                        Equip
                       </span>
                     )}
                   </div>
@@ -308,7 +308,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                         )}
                       </div>
                       <span className="text-[11px] font-mono text-slate-400">
-                        Visualizzato sulla Hacker ID Card e in Arena PvP
+                        Displayed on Hacker ID Card and in Arena PvP
                       </span>
                     </div>
                   </div>
@@ -322,7 +322,7 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
                       </div>
                     ) : (
                       <span className="text-xs font-mono text-slate-400 hover:text-white">
-                        Seleziona
+                        Select
                       </span>
                     )}
                   </div>

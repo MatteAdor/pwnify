@@ -8,7 +8,7 @@ export const ELO_RANKS: EloRankInfo[] = [
     badgeColor: '#94A3B8', // Slate grey
     glowColor: 'rgba(148, 163, 184, 0.3)',
     iconName: 'Terminal',
-    description: 'Esegue script automatizzati e scanner generici. Sta imparando le basi del terminale e della sintassi dei payload.'
+    description: 'Executes automated scripts and generic vulnerability scanners. Learning command-line basics and payload syntax.'
   },
   {
     tier: 'Packet Sniffer',
@@ -17,7 +17,7 @@ export const ELO_RANKS: EloRankInfo[] = [
     badgeColor: '#06B6D4', // Cyan
     glowColor: 'rgba(6, 182, 212, 0.4)',
     iconName: 'Radio',
-    description: 'Analizza frame Ethernet e handshake TCP con Wireshark. Comprende la manipolazione delle intestazioni e il subnetting.'
+    description: 'Analyzes Ethernet frames and TCP handshakes using Wireshark. Understands header manipulation and CIDR subnetting.'
   },
   {
     tier: 'Red Teamer',
@@ -26,7 +26,7 @@ export const ELO_RANKS: EloRankInfo[] = [
     badgeColor: '#6366F1', // Electric Indigo
     glowColor: 'rgba(99, 102, 241, 0.5)',
     iconName: 'Crosshair',
-    description: 'Esegue privilege escalation su Linux/Windows, bypass WAF e sfrutta vulnerabilità applicative OWASP Top 10.'
+    description: 'Executes Linux/Windows privilege escalation, WAF bypasses, and exploits OWASP Top 10 web application vulnerabilities.'
   },
   {
     tier: 'APT Operator',
@@ -35,7 +35,7 @@ export const ELO_RANKS: EloRankInfo[] = [
     badgeColor: '#F59E0B', // Amber Gold
     glowColor: 'rgba(245, 158, 11, 0.5)',
     iconName: 'ShieldAlert',
-    description: 'Movimenti laterali avanzati, C2 beaconing personalizzato, memory injection e bypass di EDR in ambienti Active Directory.'
+    description: 'Advanced lateral movement, custom C2 beaconing, memory injection, and EDR evasion in Active Directory environments.'
   },
   {
     tier: 'ZeroDay Hunter',
@@ -44,7 +44,7 @@ export const ELO_RANKS: EloRankInfo[] = [
     badgeColor: '#10B981', // Emerald Neon
     glowColor: 'rgba(16, 185, 129, 0.6)',
     iconName: 'Zap',
-    description: 'Top Tier League. Ricercatore di vulnerabilità 0-day, reverse engineering di binari x86_64 e scrittura di exploit PoC.'
+    description: 'Apex Competitive League. Zero-day vulnerability researcher, x86_64 binary reverse engineer, and weaponized exploit author.'
   }
 ];
 

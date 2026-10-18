@@ -147,7 +147,7 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
           </div>
           <div className="bg-[#090D16] p-2.5 rounded-xl border border-white/5">
             <span className="text-[10px] text-slate-500 block">REWARD STREAK</span>
-            <span className="font-bold text-emerald-400 text-sm">+{incident.eloReward} ELO · 🔥 +1d</span>
+            <span className="font-bold text-emerald-400 text-sm">+{incident.eloReward} ELO · +1d Streak</span>
           </div>
         </div>
 
@@ -221,33 +221,33 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                 {isCorrect ? (
                   <>
                     <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                    <span>ZERO-DAY MITIGATO CON SUCCESSO! (+{incident.eloReward} ELO)</span>
+                    <span>ZERO-DAY SUCCESSFULLY MITIGATED! (+{incident.eloReward} ELO)</span>
                   </>
                 ) : (
                   <>
                     <AlertTriangle className="w-5 h-5 text-red-400" />
-                    <span>TRIAGE FALLITO · IL MALWARE HA COMPROMESSO IL TARGET</span>
+                    <span>TRIAGE FAILED · MALWARE COMPROMISED TARGET</span>
                   </>
                 )}
               </div>
               <span className="font-mono text-xs text-slate-300">
-                Tempo: {timeTaken.toFixed(1)}s
+                Time: {timeTaken.toFixed(1)}s
               </span>
             </div>
 
             {/* Root Cause Technical Deep Dive */}
             <div className="rounded-xl border border-white/10 bg-[#090D16] p-4 text-xs font-mono space-y-2">
               <div className="text-amber-400 font-bold border-b border-white/10 pb-1">
-                ANALISI ROOT CAUSE // {incident.rootCauseAnalysis.cwe}
+                ROOT CAUSE ANALYSIS // {incident.rootCauseAnalysis.cwe}
               </div>
               <p className="text-slate-300 leading-relaxed">
-                <strong>Vettore d'Attacco:</strong> {incident.rootCauseAnalysis.attackVector}
+                <strong>Attack Vector:</strong> {incident.rootCauseAnalysis.attackVector}
               </p>
               <p className="text-slate-300 leading-relaxed">
-                <strong>Impatto Storico:</strong> {incident.rootCauseAnalysis.historicalImpact}
+                <strong>Historical Impact:</strong> {incident.rootCauseAnalysis.historicalImpact}
               </p>
               <div className="bg-black/60 p-2.5 rounded-lg border border-emerald-500/30 text-emerald-300">
-                <span className="text-slate-500 block text-[10px] mb-1">PROVA OPERATIVA DI TERMINALE:</span>
+                <span className="text-slate-500 block text-[10px] mb-1">OPERATIONAL TERMINAL PROOF:</span>
                 <pre className="whitespace-pre-wrap">{incident.rootCauseAnalysis.terminalProof}</pre>
               </div>
             </div>
@@ -262,12 +262,12 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                 {copiedShare ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                    <span>CARD CONDIVISIONE COPIATA!</span>
+                    <span>SHARE CARD COPIED!</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="w-4 h-4 text-slate-950" />
-                    <span>CONDIVIDI TRIAGE (WORDLE STYLE)</span>
+                    <span>SHARE TRIAGE (WORDLE STYLE)</span>
                   </>
                 )}
               </button>
@@ -285,7 +285,7 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                 className="py-3 px-4 rounded-xl font-mono text-xs sm:text-sm border border-indigo-500/40 bg-indigo-950/40 hover:bg-indigo-900/50 text-indigo-300 flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4 text-indigo-400" />
-                <span>ARCHIVIO STORICO 0xBREACH (PRO)</span>
+                <span>HISTORICAL 0xBREACH ARCHIVE (PRO)</span>
               </button>
             </div>
           </div>

@@ -4,7 +4,7 @@ export const INITIAL_DAILY_BOUNTIES: DailyBounty[] = [
   {
     id: 'bounty_terminal',
     title: 'Terminal Injection Specialist',
-    description: 'Completa con successo 1 sfida a riga di comando nel Terminal Sandbox',
+    description: 'Successfully complete 1 command line challenge in the Terminal Sandbox',
     progress: 0,
     target: 1,
     isCompleted: false,
@@ -17,7 +17,7 @@ export const INITIAL_DAILY_BOUNTIES: DailyBounty[] = [
   {
     id: 'bounty_pvp',
     title: 'ZeroDay Arena Gladiator',
-    description: 'Trionfa in un match Blitz 1v1 nella Cyber Arena contro un altro operatore o bot',
+    description: 'Win 1 Blitz 1v1 match in the Cyber Arena against another operator or bot',
     progress: 0,
     target: 1,
     isCompleted: false,
@@ -30,7 +30,7 @@ export const INITIAL_DAILY_BOUNTIES: DailyBounty[] = [
   {
     id: 'bounty_zeroday',
     title: '0-Day Code Inspector',
-    description: 'Individua 2 righe di codice difettose nella modalità Spot the Zero-Day',
+    description: 'Identify 2 flawed lines of code in Spot the Zero-Day mode',
     progress: 0,
     target: 2,
     isCompleted: false,
@@ -47,13 +47,13 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
     id: 'pbq_secplus_firewall',
     title: 'PBQ Lab 1: Stateful Firewall ACL Hardening',
     certification: 'CompTIA Security+',
-    scenarioDescription: 'Un server Web pubblico (192.168.1.10) e un database interno (10.0.0.50) si trovano dietro un firewall perimetrale. Gli analisti hanno rilevato tentativi di connessione SSH e Telnet diretti dalla WAN.',
-    targetObjective: 'Configura la tabella delle Access Control List (ACL) per consentire solo HTTPS sicuro alla DMZ, permettere al Web Server di interrogare la porta MySQL del Database, e applicare la regola di Deny implicito.',
+    scenarioDescription: 'A public Web Server (192.168.1.10) and an internal Database (10.0.0.50) are positioned behind a perimeter firewall. Analysts have detected direct SSH and Telnet probe connection attempts arriving from the WAN.',
+    targetObjective: 'Configure Access Control Lists (ACLs) to allow secure HTTPS inbound to DMZ, permit the Web Server to query the Database MySQL port, and apply an explicit implicit Deny rule.',
     steps: [
       {
         id: 'rule_1',
-        instruction: 'Regola 1 (Web Inbound): Consenti traffico web crittografato dall\'esterno (Any WAN) verso il Web Server (192.168.1.10).',
-        scenario: 'Permettere agli utenti legittimi di accedere al portale via porta 443.',
+        instruction: 'Rule 1 (Web Inbound): Allow encrypted web traffic from external networks (Any WAN) to Web Server (192.168.1.10).',
+        scenario: 'Permit legitimate external users to access the portal via port 443.',
         ruleAction: 'ALLOW',
         sourceIp: '0.0.0.0/0 (ANY)',
         destinationPort: '443 (HTTPS)',
@@ -61,8 +61,8 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'rule_2',
-        instruction: 'Regola 2 (Database Backend): Consenti la replica solo tra Web Server (192.168.1.10) e DB interno (10.0.0.50).',
-        scenario: 'Bloccare qualsiasi accesso diretto dall\'esterno alla porta database 3306.',
+        instruction: 'Rule 2 (Database Backend): Allow database traffic exclusively between Web Server (192.168.1.10) and internal DB (10.0.0.50).',
+        scenario: 'Block any direct access from the external internet to database port 3306.',
         ruleAction: 'ALLOW',
         sourceIp: '192.168.1.10/32',
         destinationPort: '3306 (MySQL)',
@@ -70,8 +70,8 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'rule_3',
-        instruction: 'Regola 3 (Management Hardening): Blocca protocolli non crittografati Telnet (porta 23) da qualsiasi sorgente.',
-        scenario: 'Conformità NIST SP 800-53: divieto assoluto di credenziali in chiaro.',
+        instruction: 'Rule 3 (Management Hardening): Deny unencrypted Telnet protocols (port 23) from all sources.',
+        scenario: 'NIST SP 800-53 Compliance: absolute prohibition of plaintext remote administration credentials.',
         ruleAction: 'DENY',
         sourceIp: '0.0.0.0/0 (ANY)',
         destinationPort: '23 (Telnet)',
@@ -79,15 +79,15 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'rule_4',
-        instruction: 'Regola 4 (Default Posture): Applica la regola di chiusura implicita su tutto il traffico non specificato.',
-        scenario: 'Principio di Least Privilege e Zero Trust Architecture.',
+        instruction: 'Rule 4 (Default Posture): Apply implicit Deny rule on all remaining unspecified traffic.',
+        scenario: 'Principle of Least Privilege and Zero Trust Architecture.',
         ruleAction: 'DENY',
         sourceIp: '0.0.0.0/0 (ANY)',
         destinationPort: 'ANY (*)',
         protocol: 'TCP'
       }
     ],
-    solutionExplanation: 'Configurazione conforme a CompTIA Security+ SY0-701 Domain 3 (Security Architecture). L\'impiego della regola deny implicito finale e la segmentazione tra DMZ e rete database interna impedisce il movimento laterale in caso di web shell.',
+    solutionExplanation: 'Compliant with CompTIA Security+ SY0-701 Domain 3 (Security Architecture). Applying an implicit deny-all rule and isolating DMZ from internal database subnets prevents lateral movement in the event of web shell compromise.',
     xpReward: 250,
     eloReward: 50
   },
@@ -95,12 +95,12 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
     id: 'pbq_ceh_killchain',
     title: 'PBQ Lab 2: Ransomware Kill-Chain Forensic Reconstruction',
     certification: 'CEH v13',
-    scenarioDescription: 'Un endpoint aziendale ha subito crittografia da parte del gruppo BlackCat/ALPHV. Devi ricostruire la sequenza cronologica corretta dell\'intrusione analizzando i tre artefatti digitali estratti.',
-    targetObjective: 'Associa ciascun artefatto alla rispettiva fase del MITRE ATT&CK Framework: Infiltrazione Iniziale -> Credential Dumping -> C2 Exfiltration.',
+    scenarioDescription: 'An enterprise endpoint was encrypted by BlackCat/ALPHV ransomware. Reconstruct the correct chronological intrusion sequence by analyzing three recovered forensic artifacts.',
+    targetObjective: 'Map each artifact to its corresponding phase of the MITRE ATT&CK Framework: Initial Access -> Credential Dumping -> C2 Exfiltration.',
     steps: [
       {
         id: 'kc_1',
-        instruction: 'Artefatto A: Word document con macro VBA invocante PowerShell con flag -ExecutionPolicy Bypass.',
+        instruction: 'Artifact A: Word document containing VBA macro invoking PowerShell with -ExecutionPolicy Bypass flag.',
         scenario: 'MITRE T1566: Phishing Attachment.',
         ruleAction: 'ALLOW',
         sourceIp: 'FIN_REPORT_Q3.docm',
@@ -109,7 +109,7 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'kc_2',
-        instruction: 'Artefatto B: Processo rundll32.exe che inietta comsvcs.dll per creare il minidump di LSASS in C:\\temp\\lsass.dmp.',
+        instruction: 'Artifact B: rundll32.exe process executing comsvcs.dll to generate an LSASS memory minidump in C:\\temp\\lsass.dmp.',
         scenario: 'MITRE T1003.001: OS Credential Dumping: LSASS Memory.',
         ruleAction: 'DENY',
         sourceIp: 'lsass.exe',
@@ -118,7 +118,7 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'kc_3',
-        instruction: 'Artefatto C: Connessione DNS con query Base64 verso *.update-auth-telemetry.xyz a intervalli di 60s con 10% Jitter.',
+        instruction: 'Artifact C: DNS beaconing connection with Base64 queries to *.update-auth-telemetry.xyz at 60s intervals with 10% Jitter.',
         scenario: 'MITRE T1071.004: C2 Communication via DNS Tunneling.',
         ruleAction: 'DENY',
         sourceIp: '192.168.10.14',
@@ -126,7 +126,7 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
         protocol: 'UDP'
       }
     ],
-    solutionExplanation: 'Ricostruzione della sequenza MITRE ATT&CK: Esecuzione iniziale tramite Macro Office malevola, estrazione delle credenziali in memoria da LSASS per escalation dei privilegi, e stabilizzazione del canale di Comando e Controllo tramite DNS tunneling.',
+    solutionExplanation: 'MITRE ATT&CK kill-chain reconstruction: Initial Execution via malicious Office Macro, memory extraction of LSASS credentials for privilege escalation, and establishing Command and Control persistence via DNS tunneling.',
     xpReward: 300,
     eloReward: 60
   },
@@ -134,13 +134,13 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
     id: 'pbq_ids_c2_mitigation',
     title: 'PBQ Lab 3: Snort / Suricata IDS Rule & C2 Beacon Mitigation',
     certification: 'CompTIA Security+',
-    scenarioDescription: 'Gli host interni di un istituto finanziario inviano richieste HTTP sospette verso endpoint sconosciuti. Devi configurare la corretta regola IDS/IPS per intercettare il beaconing C2 ed estrarre la signature corretta.',
-    targetObjective: 'Configura l\'azione della regola IDS (ALERT / DROP), il protocollo (TCP/UDP), la porta di destinazione e la subnet interna da proteggere per mitigare il malware C2.',
+    scenarioDescription: 'Corporate hosts are transmitting anomalous HTTP requests to suspicious external endpoints. Configure IDS/IPS rules to intercept C2 beaconing and enforce signature dropping.',
+    targetObjective: 'Configure IDS rule action (ALERT / DROP), protocol (TCP/UDP), destination port, and protected internal subnet to neutralize C2 malware communications.',
     steps: [
       {
         id: 'ids_rule_1',
-        instruction: 'Regola 1 (IPS Drop Signature): Configura l\'azione per bloccare immediatamente il traffico C2 in uscita verso il server C2 su porta 8443.',
-        scenario: 'Blocco automatico inline: scarta il pacchetto ed invia un TCP Reset.',
+        instruction: 'Rule 1 (IPS Drop Signature): Configure rule action to immediately drop outbound C2 traffic towards proxy port 8443.',
+        scenario: 'Inline automated blocking: drop the packet and inject TCP Reset.',
         ruleAction: 'DENY',
         sourceIp: '192.168.1.0/24 ($HOME_NET)',
         destinationPort: '8443 (C2 Proxy)',
@@ -148,8 +148,8 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'ids_rule_2',
-        instruction: 'Regola 2 (DNS Exfiltration Alert): Genera un alert SIEM prioritario per richieste DNS verso server esterni non autorizzati (porta 53).',
-        scenario: 'Rilevamento anomalie: solo il resolver aziendale 192.168.1.2 può contattare server DNS esterni.',
+        instruction: 'Rule 2 (DNS Exfiltration Alert): Generate priority SIEM alert for DNS queries directed at external unauthorized resolvers (port 53).',
+        scenario: 'Anomaly detection: only enterprise resolver 192.168.1.2 may contact external DNS root servers.',
         ruleAction: 'ALLOW',
         sourceIp: '192.168.1.2/32 (DNS Resolver)',
         destinationPort: '53 (DNS)',
@@ -157,15 +157,15 @@ export const OFFICIAL_PBQ_LABS: PbqLab[] = [
       },
       {
         id: 'ids_rule_3',
-        instruction: 'Regola 3 (Isolamento Host Compromesso): Blocca qualsiasi traffico SMB (porta 445) proveniente dalla workstation infetta (192.168.1.88) per bloccare EternalBlue / lateral movement.',
-        scenario: 'Contenimento immediato: impedisci la propagazione del worm nella subnet locale.',
+        instruction: 'Rule 3 (Compromised Host Quarantine): Block all SMB traffic (port 445) from infected workstation (192.168.1.88) to halt EternalBlue lateral movement.',
+        scenario: 'Immediate containment: prevent worm propagation across the local subnet.',
         ruleAction: 'DENY',
         sourceIp: '192.168.1.88/32',
         destinationPort: '445 (SMB)',
         protocol: 'TCP'
       }
     ],
-    solutionExplanation: 'Configurazione conforme alle best practice Cisco CCNA Security e CompTIA Security+ SY0-701. Il blocco inline del traffico verso porte non standard (8443) e l\'isolamento della porta SMB 445 fermano il movimento laterale e preservano l\'integrità della rete interna.',
+    solutionExplanation: 'Cisco CCNA Security and CompTIA Security+ SY0-701 aligned configuration. Inline blocking of non-standard port traffic (8443) and quarantining SMB 445 prevents lateral movement while preserving overall enterprise network availability.',
     xpReward: 320,
     eloReward: 65
   }

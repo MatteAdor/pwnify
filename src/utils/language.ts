@@ -73,7 +73,7 @@ export const TRANSLATIONS = {
     statusPro: 'PRO Active Member',
     logoutBtn: 'TERMINATE SESSION (LOGOUT)',
     deleteAccountBtn: 'Delete Account & Personal Data',
-    deleteConfirmWarning: '⚠️ Are you sure you want to permanently delete this account and all progress? This action is immediate and irreversible.',
+    deleteConfirmWarning: '[WARNING] Are you sure you want to permanently delete this account and all progress? This action is immediate and irreversible.',
     deleteConfirmYes: 'YES, DELETE EVERYTHING',
     deleteConfirmCancel: 'Cancel',
 
@@ -262,7 +262,7 @@ export const TRANSLATIONS = {
     statusPro: 'Membro PRO Attivo',
     logoutBtn: 'TERMINA SESSIONE (LOGOUT)',
     deleteAccountBtn: 'Elimina Account & Dati Personali',
-    deleteConfirmWarning: '⚠️ Confermi la cancellazione definitiva di questo account e di tutti i progressi? L\'operazione è immediata e irreversibile.',
+    deleteConfirmWarning: '[ATTENZIONE] Confermi la cancellazione definitiva di questo account e di tutti i progressi? L\'operazione è immediata e irreversibile.',
     deleteConfirmYes: 'SÌ, CANCELLA TUTTO',
     deleteConfirmCancel: 'Annulla',
 

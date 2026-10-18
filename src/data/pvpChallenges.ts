@@ -9,8 +9,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b1',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale comando Linux visualizza il percorso assoluto della directory di lavoro corrente?',
-    codeSnippet: '$ [COMANDO]\n/var/www/html/zeroDay_app',
+    question: 'Which Linux command displays the absolute path of the current working directory?',
+    codeSnippet: '$ [COMMAND]\n/var/www/html/zeroDay_app',
     options: [
       { id: 'b1_1', text: 'pwd', isCorrect: true },
       { id: 'b1_2', text: 'cd', isCorrect: false },
@@ -23,7 +23,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b2',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale porta TCP standard è utilizzata dal protocollo HTTPS crittografato?',
+    question: 'Which standard TCP port is utilized by the encrypted HTTPS protocol?',
     codeSnippet: 'CONNECT target.corp:[PORT] HTTP/1.1 (TLS 1.3)',
     options: [
       { id: 'b2_1', text: '443', isCorrect: true },
@@ -37,7 +37,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b3',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale codice di stato HTTP indica che la risorsa richiesta non è stata trovata sul server?',
+    question: 'Which HTTP status code indicates that the requested resource was not found on the server?',
     codeSnippet: 'HTTP/1.1 [STATUS] Not Found\nContent-Length: 0',
     options: [
       { id: 'b3_1', text: '404', isCorrect: true },
@@ -51,7 +51,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b4',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale porta standard è assegnata al servizio SSH (Secure Shell) per l\'amministrazione remota sicura?',
+    question: 'Which standard port is assigned to SSH (Secure Shell) for secure remote system administration?',
     codeSnippet: '$ ssh operator@192.168.1.50 -p [PORT]',
     options: [
       { id: 'b4_1', text: '22', isCorrect: true },
@@ -65,8 +65,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b5',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale comando Linux elenca tutti i file di una directory inclusi i file nascosti (dotfiles)?',
-    codeSnippet: '$ [COMANDO]\n.  ..  .bash_history  .env  main.py',
+    question: 'Which Linux command lists all files in a directory including hidden dotfiles (.bash_history)?',
+    codeSnippet: '$ [COMMAND]\n.  ..  .bash_history  .env  main.py',
     options: [
       { id: 'b5_1', text: 'ls -la', isCorrect: true },
       { id: 'b5_2', text: 'dir -h', isCorrect: false },
@@ -79,8 +79,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b6',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale range di indirizzi IPv4 appartiene alle reti private non instradabili su Internet (RFC 1918)?',
-    codeSnippet: 'Subnet privata ad uso locale LAN:',
+    question: 'Which IPv4 address range is designated for private non-routable local networks (RFC 1918)?',
+    codeSnippet: 'Private subnet for local LAN usage:',
     options: [
       { id: 'b6_1', text: '192.168.0.0/16', isCorrect: true },
       { id: 'b6_2', text: '8.8.8.0/24', isCorrect: false },
@@ -93,13 +93,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b7',
     tier: 'beginner',
     minElo: 0,
-    question: 'Nel modello di sicurezza CIA Triad, quale pilastro garantisce che i dati non vengano alterati o manomessi?',
+    question: 'In the CIA Triad security model, which pillar guarantees that data has not been altered or tampered with?',
     codeSnippet: 'C (Confidentiality) - I ([???]) - A (Availability)',
     options: [
-      { id: 'b7_1', text: 'Integrity (Integrità)', isCorrect: true },
-      { id: 'b7_2', text: 'Identification (Identificazione)', isCorrect: false },
-      { id: 'b7_3', text: 'Isolation (Isolamento)', isCorrect: false },
-      { id: 'b7_4', text: 'Interception (Intercettazione)', isCorrect: false }
+      { id: 'b7_1', text: 'Integrity', isCorrect: true },
+      { id: 'b7_2', text: 'Identification', isCorrect: false },
+      { id: 'b7_3', text: 'Isolation', isCorrect: false },
+      { id: 'b7_4', text: 'Interception', isCorrect: false }
     ],
     timeLimitSec: 10
   },
@@ -107,7 +107,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b8',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale utility a riga di comando verifica la raggiungibilità di rete di un host remoto tramite pacchetti ICMP Echo Request?',
+    question: 'Which command-line utility tests network reachability to a remote host using ICMP Echo Request packets?',
     codeSnippet: '$ [UTILITY] 8.8.8.8\n64 bytes from 8.8.8.8: icmp_seq=1 ttl=118 time=14.2 ms',
     options: [
       { id: 'b8_1', text: 'ping', isCorrect: true },
@@ -121,12 +121,12 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b9',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale attacco di Social Engineering prende di mira un individuo o dirigente specifico con email personalizzate credibili?',
-    codeSnippet: 'Target: CFO dell\'azienda · Oggetto: "Fattura urgente da autorizzare"',
+    question: 'Which Social Engineering attack targets a specific executive or individual with highly customized emails?',
+    codeSnippet: 'Target: Corporate CFO · Subject: "Urgent vendor wire transfer authorization"',
     options: [
-      { id: 'b9_1', text: 'Spear Phishing (o Whaling)', isCorrect: true },
-      { id: 'b9_2', text: 'DDoS Volumetrico', isCorrect: false },
-      { id: 'b9_3', text: 'Port Scanning passivo', isCorrect: false },
+      { id: 'b9_1', text: 'Spear Phishing (or Whaling)', isCorrect: true },
+      { id: 'b9_2', text: 'Volumetric DDoS', isCorrect: false },
+      { id: 'b9_3', text: 'Passive Port Scanning', isCorrect: false },
       { id: 'b9_4', text: 'SYN Flooding', isCorrect: false }
     ],
     timeLimitSec: 10
@@ -135,8 +135,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b10',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale comando Linux cambia i permessi di un file impostando lettura, scrittura ed esecuzione per il proprietario (rwx)?',
-    codeSnippet: '$ [COMANDO] 700 /home/operator/exploit.sh',
+    question: 'Which Linux command modifies file permissions to grant read, write, and execute permissions to the owner (rwx)?',
+    codeSnippet: '$ [COMMAND] 700 /home/operator/exploit.sh',
     options: [
       { id: 'b10_1', text: 'chmod', isCorrect: true },
       { id: 'b10_2', text: 'chown', isCorrect: false },
@@ -149,7 +149,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b11',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale protocollo risolve i nomi a dominio (es. google.com) nei rispettivi indirizzi IP numerici (porta UDP 53)?',
+    question: 'Which protocol resolves human-friendly domain names (e.g. google.com) into numerical IP addresses (UDP 53)?',
     codeSnippet: 'Query: zeroday.gg -> 104.21.48.12',
     options: [
       { id: 'b11_1', text: 'DNS (Domain Name System)', isCorrect: true },
@@ -163,8 +163,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_b12',
     tier: 'beginner',
     minElo: 0,
-    question: 'Quale comando Linux stampa l\'identità dell\'utente attualmente connesso nella sessione corrente?',
-    codeSnippet: '$ [COMANDO]\nroot',
+    question: 'Which Linux command prints the effective username of the currently active terminal session?',
+    codeSnippet: '$ [COMMAND]\nroot',
     options: [
       { id: 'b12_1', text: 'whoami', isCorrect: true },
       { id: 'b12_2', text: 'hostname', isCorrect: false },
@@ -181,7 +181,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m1',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale comando Nmap esegue una scansione TCP SYN stealth senza completare l\'handshake a 3 vie?',
+    question: 'Which Nmap flag executes a stealth TCP SYN scan without completing the full 3-way handshake?',
     codeSnippet: '$ nmap [FLAG] -p 1-65535 10.10.10.24',
     options: [
       { id: 'm1_1', text: '-sS', isCorrect: true },
@@ -195,7 +195,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m2',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale header HTTP protegge da attacchi Clickjacking impedendo il rendering all\'interno di iframe?',
+    question: 'Which HTTP response header mitigates Clickjacking attacks by prohibiting rendering inside an iframe?',
     codeSnippet: 'HTTP/1.1 200 OK\n[SECURITY-HEADER]: DENY\nContent-Type: text/html',
     options: [
       { id: 'm2_1', text: 'X-Frame-Options', isCorrect: true },
@@ -209,7 +209,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m3',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale sequenza di pacchetti completa il Three-Way Handshake per stabilire una connessione TCP affidabile?',
+    question: 'Which sequence of packets completes the TCP Three-Way Handshake to establish a reliable connection?',
     codeSnippet: 'Client -> Server -> Client',
     options: [
       { id: 'm3_1', text: 'SYN -> SYN-ACK -> ACK', isCorrect: true },
@@ -223,11 +223,11 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m4',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale permesso speciale Linux consente a un utente non-root di eseguire un file con i privilegi del proprietario?',
+    question: 'Which special Linux permission allows a non-root user to execute a binary with the permissions of its owner?',
     codeSnippet: '-rwsr-xr-x 1 root root 88240 /usr/bin/passwd',
     options: [
-      { id: 'm4_1', text: 'Bit SUID (Set User ID)', isCorrect: true },
-      { id: 'm4_2', text: 'Bit SGID (Set Group ID)', isCorrect: false },
+      { id: 'm4_1', text: 'SUID Bit (Set User ID)', isCorrect: true },
+      { id: 'm4_2', text: 'SGID Bit (Set Group ID)', isCorrect: false },
       { id: 'm4_3', text: 'Sticky Bit', isCorrect: false },
       { id: 'm4_4', text: 'Immutable Attribute (+i)', isCorrect: false }
     ],
@@ -237,7 +237,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m5',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Durante un attacco Man-in-the-Middle sulla LAN, quale protocollo viene avvelenato per legare l\'IP gateway al MAC dell\'attaccante?',
+    question: 'During a local LAN Man-in-the-Middle attack, which protocol cache is poisoned to map the router IP to the attacker MAC?',
     codeSnippet: 'Gratuitous [PROTOCOL] Reply: 192.168.1.1 is-at 00:0c:29:4f:8e:12',
     options: [
       { id: 'm5_1', text: 'ARP (Address Resolution Protocol)', isCorrect: true },
@@ -251,7 +251,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m6',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale payload di injection provoca un comment-out dei controlli successivi in una query MySQL/PostgreSQL?',
+    question: 'Which injection payload comments out remainder clauses in a vulnerable SQL query?',
     codeSnippet: 'SELECT * FROM users WHERE user=\'admin\' [PAYLOAD]',
     options: [
       { id: 'm6_1', text: '\' OR 1=1 -- -', isCorrect: true },
@@ -265,13 +265,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m7',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'In un token JWT (JSON Web Token), quante parti separate da punti formano la struttura standard?',
+    question: 'How many period-separated parts comprise a standard JSON Web Token (JWT) structure?',
     codeSnippet: 'eyJhbGci... . eyJzdWIi... . SflKxwRJ...',
     options: [
-      { id: 'm7_1', text: '3 parti: Header, Payload, Signature', isCorrect: true },
-      { id: 'm7_2', text: '2 parti: Payload, Hash', isCorrect: false },
-      { id: 'm7_3', text: '4 parti: Header, Body, IV, Key', isCorrect: false },
-      { id: 'm7_4', text: '1 blocco cifrato AES-CBC', isCorrect: false }
+      { id: 'm7_1', text: '3 parts: Header, Payload, Signature', isCorrect: true },
+      { id: 'm7_2', text: '2 parts: Payload, Hash', isCorrect: false },
+      { id: 'm7_3', text: '4 parts: Header, Body, IV, Key', isCorrect: false },
+      { id: 'm7_4', text: '1 AES-CBC encrypted block', isCorrect: false }
     ],
     timeLimitSec: 10
   },
@@ -279,7 +279,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m8',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale flag del cookie impedisce l\'accesso al valore del cookie tramite script JavaScript lato client (`document.cookie`)?',
+    question: 'Which cookie attribute prevents client-side JavaScript scripts from accessing the cookie via `document.cookie`?',
     codeSnippet: 'Set-Cookie: session_id=0x98AF; Secure; [FLAG]',
     options: [
       { id: 'm8_1', text: 'HttpOnly', isCorrect: true },
@@ -293,13 +293,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m9',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale parametro del kernel Linux garantisce la difesa contro attacchi SYN Flood generando token nel Sequence Number?',
+    question: 'Which Linux kernel feature mitigates SYN Flood attacks by encoding cryptographic tokens into the Initial Sequence Number (ISN)?',
     codeSnippet: 'sysctl -w net.ipv4.tcp_syncookies = 1',
     options: [
-      { id: 'm9_1', text: 'SYN Cookies crittografici nel Sequence Number iniziale (ISN)', isCorrect: true },
+      { id: 'm9_1', text: 'Cryptographic SYN Cookies in Initial Sequence Number (ISN)', isCorrect: true },
       { id: 'm9_2', text: 'TCP Window Scaling', isCorrect: false },
       { id: 'm9_3', text: 'Selective Acknowledgment (SACK)', isCorrect: false },
-      { id: 'm9_4', text: 'Jumbo Frames a 9000 MTU', isCorrect: false }
+      { id: 'm9_4', text: 'Jumbo Frames at 9000 MTU', isCorrect: false }
     ],
     timeLimitSec: 10
   },
@@ -307,13 +307,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m10',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'In una connessione Reverse Shell, quale entità avvia attivamente la connessione di rete?',
+    question: 'In a Reverse Shell connection, which entity actively initiates the outbound network connection?',
     codeSnippet: 'Target Machine -> Attacker Listening Port',
     options: [
-      { id: 'm10_1', text: 'Il target compromesso avvia la connessione verso l\'ascoltatore dell\'attaccante', isCorrect: true },
-      { id: 'm10_2', text: 'L\'attaccante si connette direttamente a una porta aperta sul firewall del target', isCorrect: false },
-      { id: 'm10_3', text: 'Il router gateway esegue una redirezione ICMP', isCorrect: false },
-      { id: 'm10_4', text: 'Un server DNS intermedio instrada i pacchetti di shell', isCorrect: false }
+      { id: 'm10_1', text: 'The compromised target machine initiates outbound connection to the attacker listener', isCorrect: true },
+      { id: 'm10_2', text: 'The attacker connects directly to an open port on the target firewall', isCorrect: false },
+      { id: 'm10_3', text: 'The default gateway router triggers an ICMP redirection', isCorrect: false },
+      { id: 'm10_4', text: 'An intermediate DNS resolver forwards shell packets', isCorrect: false }
     ],
     timeLimitSec: 10
   },
@@ -321,7 +321,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m11',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale payload di Directory Traversal permette di risalire l\'albero delle cartelle per leggere il database locale degli account Linux?',
+    question: 'Which Directory Traversal payload climbs the folder hierarchy to inspect the local Linux user account file?',
     codeSnippet: 'GET /download.php?file=[PAYLOAD]',
     options: [
       { id: 'm11_1', text: '../../../../etc/passwd', isCorrect: true },
@@ -335,8 +335,8 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_m12',
     tier: 'intermediate',
     minElo: 1200,
-    question: 'Quale comando Wireshark / TShark filtra esclusivamente il traffico HTTP con metodo POST verso server remoti?',
-    codeSnippet: 'Filtro di visualizzazione pacchetti:',
+    question: 'Which Wireshark / TShark display filter isolates outgoing HTTP POST requests to remote servers?',
+    codeSnippet: 'Packet capture display filter:',
     options: [
       { id: 'm12_1', text: 'http.request.method == "POST"', isCorrect: true },
       { id: 'm12_2', text: 'tcp.port == 80 && ip.post', isCorrect: false },
@@ -353,7 +353,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a1',
     tier: 'advanced',
     minElo: 1600,
-    question: 'In architettura x86_64, quale registro CPU memorizza l\'indirizzo della prossima istruzione da eseguire?',
+    question: 'In x86_64 CPU architecture, which register stores the memory address of the next instruction to execute?',
     codeSnippet: 'RIP (Instruction Pointer) vs RSP (Stack Pointer) vs RBP (Base Pointer)',
     options: [
       { id: 'a1_1', text: 'RIP (Instruction Pointer)', isCorrect: true },
@@ -367,13 +367,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a2',
     tier: 'advanced',
     minElo: 1600,
-    question: 'In crittografia asimmetrica RSA, quale problema matematico garantisce la sicurezza della funzione botola?',
-    codeSnippet: 'C = (M ^ e) mod n · Trovare d tale che (e * d) ≡ 1 (mod φ(n))',
+    question: 'In RSA asymmetric public-key cryptography, which mathematical problem underpins the one-way trapdoor security?',
+    codeSnippet: 'C = (M ^ e) mod n · Find d such that (e * d) ≡ 1 (mod φ(n))',
     options: [
-      { id: 'a2_1', text: 'La complessità di fattorizzazione del prodotto di numeri primi elevati', isCorrect: true },
-      { id: 'a2_2', text: 'Il calcolo del logaritmo in base e', isCorrect: false },
-      { id: 'a2_3', text: 'La computazione di XOR a 256 bit', isCorrect: false },
-      { id: 'a2_4', text: 'La moltiplicazione matriciale non commutativa', isCorrect: false }
+      { id: 'a2_1', text: 'Computational difficulty of prime factorization for large semi-prime moduli', isCorrect: true },
+      { id: 'a2_2', text: 'Calculating natural logarithms in base e', isCorrect: false },
+      { id: 'a2_3', text: '256-bit XOR matrix computation', isCorrect: false },
+      { id: 'a2_4', text: 'Non-commutative matrix multiplication', isCorrect: false }
     ],
     timeLimitSec: 12
   },
@@ -381,7 +381,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a3',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale indirizzo link-local AWS EC2 viene bersagliato tramite SSRF per estrarre chiavi IAM temporanee da IMDSv1?',
+    question: 'Which AWS EC2 link-local address is targeted via SSRF to exfiltrate temporary IAM role tokens from IMDSv1?',
     codeSnippet: 'POST /fetch?url=http://[IP_METADATA]/latest/meta-data/iam/security-credentials/',
     options: [
       { id: 'a3_1', text: '169.254.169.254', isCorrect: true },
@@ -395,7 +395,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a4',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale mitigazione moderna del sistema operativo randomizza le posizioni di Stack, Heap e Librerie in memoria?',
+    question: 'Which modern OS security mitigation randomizes the virtual memory addresses of Stack, Heap, and shared libraries?',
     codeSnippet: 'Kernel Security Mitigation: Randomized Virtual Address Space',
     options: [
       { id: 'a4_1', text: 'ASLR (Address Space Layout Randomization)', isCorrect: true },
@@ -409,13 +409,13 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a5',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Nella tecnica ROP (Return-Oriented Programming), cosa rappresenta un "Gadget"?',
+    question: 'In Return-Oriented Programming (ROP), what constitutes a "Gadget"?',
     codeSnippet: '0x000000000040115e: pop rdi ; ret',
     options: [
-      { id: 'a5_1', text: 'Una sequenza breve di istruzioni terminante con RET situata in codice già eseguibile', isCorrect: true },
-      { id: 'a5_2', text: 'Uno shellcode iniettato nello stack con permessi RWX', isCorrect: false },
-      { id: 'a5_3', text: 'Una funzione del kernel richiamata tramite int 0x80', isCorrect: false },
-      { id: 'a5_4', text: 'Un payload di crittografia polimorfica', isCorrect: false }
+      { id: 'a5_1', text: 'A short sequence of machine instructions ending with RET located in executable memory', isCorrect: true },
+      { id: 'a5_2', text: 'Shellcode injected directly into an RWX stack frame', isCorrect: false },
+      { id: 'a5_3', text: 'A kernel syscall invoked via int 0x80', isCorrect: false },
+      { id: 'a5_4', text: 'A polymorphic encryption stub', isCorrect: false }
     ],
     timeLimitSec: 12
   },
@@ -423,7 +423,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a6',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale tipo di vulnerabilità temporale si verifica quando il controllo di autorizzazione precede l\'operazione senza lock atomico?',
+    question: 'Which race condition vulnerability occurs when authorization validation precedes resource consumption without an atomic lock?',
     codeSnippet: 'if (access(file, W_OK) == 0) { fd = open(file, O_WRONLY); }',
     options: [
       { id: 'a6_1', text: 'TOCTOU (Time-of-Check to Time-of-Use Race Condition)', isCorrect: true },
@@ -437,7 +437,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a7',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale binario standard Linux catalogato su GTFOBins consente l\'esecuzione diretta di comandi root quando configurato con SUID?',
+    question: 'Which standard Linux binary listed on GTFOBins enables root command execution when configured with the SUID bit?',
     codeSnippet: '$ find . -exec /bin/sh -p \\; -quit',
     options: [
       { id: 'a7_1', text: '/usr/bin/find', isCorrect: true },
@@ -451,7 +451,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a8',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale attacco crittografico sfrutta messaggi di errore differenziati sul padding PKCS#7 in modalità AES-CBC?',
+    question: 'Which cryptographic oracle attack exploits differing padding error messages under PKCS#7 in AES-CBC mode?',
     codeSnippet: 'Decryption Error: Invalid Padding vs Decryption OK',
     options: [
       { id: 'a8_1', text: 'Padding Oracle Attack', isCorrect: true },
@@ -465,7 +465,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a9',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale tecnica di lateral movement inoltra una sessione di autenticazione NTLMv2 catturata via SMB verso un secondo host privo di SMB Signing?',
+    question: 'Which lateral movement technique forwards captured NTLMv2 SMB authentication to a secondary server lacking SMB Signing?',
     codeSnippet: 'Victim -> MitM Responder -> Target Server (psexec/impacket)',
     options: [
       { id: 'a9_1', text: 'SMB Relay Attack', isCorrect: true },
@@ -479,7 +479,7 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
     id: 'pvp_a10',
     tier: 'advanced',
     minElo: 1600,
-    question: 'Quale protocollo di routing inter-dominio può essere alterato tramite annunci BGP malevoli (AS Path Poisoning) per intercettare traffico globale?',
+    question: 'Which inter-domain routing protocol is vulnerable to malicious route announcements (AS Path Poisoning) to hijack global traffic?',
     codeSnippet: 'BGP Autonomous System (AS) Path Hijacking',
     options: [
       { id: 'a10_1', text: 'BGP (Border Gateway Protocol)', isCorrect: true },
@@ -495,7 +495,7 @@ export const SMART_BOTS: PvPPlayer[] = [
   {
     id: 'bot_spectre',
     name: '0x_Spectre',
-    avatar: '👾',
+    avatar: 'SP',
     elo: 1040,
     rank: 'Script Kiddie',
     winStreak: 2,
@@ -504,7 +504,7 @@ export const SMART_BOTS: PvPPlayer[] = [
   {
     id: 'bot_null',
     name: 'null_ptr_exception',
-    avatar: '💀',
+    avatar: 'NP',
     elo: 1275,
     rank: 'Red Teamer',
     winStreak: 4,
@@ -513,7 +513,7 @@ export const SMART_BOTS: PvPPlayer[] = [
   {
     id: 'bot_kernel',
     name: 'Kernel_Pan1c',
-    avatar: '⚡',
+    avatar: 'KP',
     elo: 1390,
     rank: 'Red Teamer',
     winStreak: 3,
@@ -522,7 +522,7 @@ export const SMART_BOTS: PvPPlayer[] = [
   {
     id: 'bot_cipher',
     name: 'Gh0st_APT',
-    avatar: '🕶️',
+    avatar: 'GH',
     elo: 1680,
     rank: 'APT Operator',
     winStreak: 6,
@@ -531,7 +531,7 @@ export const SMART_BOTS: PvPPlayer[] = [
   {
     id: 'bot_zero',
     name: '0xDAY_Striker',
-    avatar: '🎯',
+    avatar: 'ZD',
     elo: 2040,
     rank: 'ZeroDay Hunter',
     winStreak: 8,

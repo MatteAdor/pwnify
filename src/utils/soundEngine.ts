@@ -40,8 +40,20 @@ class SoundEngine {
     return this.isMuted;
   }
 
+  // Native Haptic Vibration for Mobile Devices & Android Webview
+  public vibrate(pattern: number | number[] = 15) {
+    try {
+      if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
+        navigator.vibrate(pattern);
+      }
+    } catch {
+      // Ignore vibration errors if disabled or unsupported
+    }
+  }
+
   // 1. High-frequency crisp mechanical click for line selection & button taps
   public playTap() {
+    this.vibrate(12);
     if (this.isMuted) return;
     const ctx = this.initContext();
     if (!ctx) return;
@@ -70,6 +82,7 @@ class SoundEngine {
 
   // 2. Ascending Cyber-Synth Chord (Exploit Successful / Dopamine Reward)
   public playExploitSuccess() {
+    this.vibrate([30, 40, 50]);
     if (this.isMuted) return;
     const ctx = this.initContext();
     if (!ctx) return;
@@ -105,6 +118,7 @@ class SoundEngine {
 
   // 3. Descending Distorted Bass (Payload Blocked / Attack Intercepted)
   public playPayloadBlocked() {
+    this.vibrate([50, 40, 50]);
     if (this.isMuted) return;
     const ctx = this.initContext();
     if (!ctx) return;

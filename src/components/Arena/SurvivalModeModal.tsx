@@ -159,15 +159,15 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
                 Survival Mode
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-md mx-auto leading-relaxed">
-                Il timer scende inesorabilmente. <strong className="text-rose-400">Un singolo errore e sei fuori.</strong> Ogni exploit corretto aggiunge <span className="text-emerald-400 font-bold">+4 secondi</span> al tuo orologio.
+                The timer counts down relentlessly. <strong className="text-rose-400">A single mistake and you're out.</strong> Each correct exploit adds <span className="text-emerald-400 font-bold">+4 seconds</span> to your clock.
               </p>
             </div>
 
             {/* High Score Banner */}
             <div className="p-4 rounded-2xl bg-[#06090F] border border-white/10 max-w-xs mx-auto flex items-center justify-between font-mono">
               <div className="text-left">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">RECORD PERSONALE</span>
-                <span className="text-2xl font-black text-amber-400">{highScore} Exploit</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">PERSONAL BEST</span>
+                <span className="text-2xl font-black text-amber-400">{highScore} Exploits</span>
               </div>
               <Trophy className="w-8 h-8 text-amber-400" />
             </div>
@@ -177,7 +177,7 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
               className="w-full py-4 px-6 rounded-xl font-mono font-black text-base text-slate-950 bg-gradient-to-r from-rose-500 via-amber-400 to-rose-400 hover:from-rose-400 hover:to-amber-300 transition-all shadow-neon-amber flex items-center justify-center gap-2 transform active:scale-98"
             >
               <Zap className="w-5 h-5 fill-slate-950" />
-              <span>INIZIA SUDDEN DEATH</span>
+              <span>START SUDDEN DEATH</span>
             </button>
           </div>
         )}
@@ -263,13 +263,13 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
 
             <div>
               <div className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-400 mb-1.5">
-                SUDDEN DEATH // RUN TERMINATA
+                SUDDEN DEATH // RUN TERMINATED
               </div>
               <h3 className="text-2xl font-black text-white">
-                {isNewHighScore ? 'NUOVO RECORD STRABILIANTE!' : 'Game Over, Operatore!'}
+                {isNewHighScore ? 'NEW PERSONAL RECORD!' : 'Game Over, Operator!'}
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Hai concatenato <strong className="text-amber-400 font-mono text-sm">{score} exploit</strong> consecutivi prima del collasso.
+                You chained <strong className="text-amber-400 font-mono text-sm">{score} consecutive exploits</strong> before system collapse.
               </p>
             </div>
 
@@ -291,14 +291,14 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
                 className="flex-1 py-3 px-4 rounded-xl font-mono font-extrabold text-sm text-slate-950 bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 transition-all shadow-neon-amber flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4 stroke-[3]" />
-                <span>RIPROVA SUBITO</span>
+                <span>RETRY NOW</span>
               </button>
 
               <button
                 onClick={onClose}
                 className="py-3 px-4 rounded-xl font-mono text-xs text-slate-400 hover:text-white bg-surface border border-white/10 hover:border-white/20 transition-colors"
               >
-                Esci
+                Exit
               </button>
             </div>
           </div>

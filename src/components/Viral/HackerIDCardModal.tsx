@@ -39,7 +39,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
 
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
   const challengeUrl = `${origin}/?seed=${customChallengeSeed}&elo=${userState.elo}&challenger=${encodeURIComponent(userState.username)}&score=4`;
-  const challengeText = `⚡ Ho appena dominato un Blitz su ZeroDay (ELO: ${userState.elo} · Win Streak: x${userState.winStreak} 🔥). Riesci a battere il mio tempo su questo exploit? 👉 ${challengeUrl}`;
+  const challengeText = `[ZERODAY PROTOCOL] Match Blitz Concluded · ELO: ${userState.elo} · Streak: x${userState.winStreak}. Can you beat my time on this exploit? >> ${challengeUrl}`;
 
   const handleCopyChallenge = () => {
     sound.playExploitSuccess();
@@ -109,13 +109,13 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
           {/* Hacker Avatar & Identity */}
           <div className="flex flex-col items-center text-center my-2">
             <div className="relative mb-3">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-3xl shadow-neon-emerald">
-                ⚡
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center shadow-neon-emerald">
+                <Zap className="w-10 h-10 text-emerald-400" />
               </div>
               {userState.streakShieldActive && (
                 <div 
                   className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 text-[9px] font-mono font-bold shadow-sm flex items-center gap-0.5"
-                  title="Streak Shield Pro attivo"
+                  title="Streak Shield Pro Active"
                 >
                   <Shield className="w-2.5 h-2.5 text-cyan-400" />
                   SHIELD
@@ -169,7 +169,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             <div className="flex items-center gap-2">
               <Cpu className="w-4 h-4 text-emerald-400" />
               <div>
-                <span className="text-[9px] text-slate-400 font-mono block">SPECIALIZZAZIONE PRIMARIA</span>
+                <span className="text-[9px] text-slate-400 font-mono block">PRIMARY SPECIALIZATION</span>
                 <span className="font-mono font-bold text-xs text-white">{topSkillName}</span>
               </div>
             </div>
@@ -201,12 +201,12 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             {copiedLink ? (
               <>
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>LINK DI SFIDA COPIATO NEGLI APPUNTI!</span>
+                <span>CHALLENGE LINK COPIED TO CLIPBOARD!</span>
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4 fill-slate-950" />
-                <span>SFIDA UN AMICO SU QUESTO MATCH (COPY LINK)</span>
+                <span>CHALLENGE A FRIEND TO THIS MATCH (COPY LINK)</span>
               </>
             )}
           </button>
@@ -218,7 +218,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             className="w-full py-2.5 px-3 rounded-xl font-mono text-xs text-slate-200 hover:text-white bg-surface border border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-center gap-1.5 active:scale-98"
           >
             <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isExporting ? 'Generazione PNG 9:16 in corso...' : 'Scarica Operator Card (.PNG per Stories/Discord)'}</span>
+            <span>{isExporting ? 'Generating 9:16 PNG...' : 'Download Operator Card (.PNG for Stories/Discord)'}</span>
           </button>
         </div>
       </div>

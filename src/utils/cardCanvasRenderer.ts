@@ -80,11 +80,11 @@ export function renderHackerCardToCanvas(
   ctx.restore();
 
   // 5. Header Banner
-  ctx.font = 'bold 36px "JetBrains Mono", monospace';
+  ctx.font = 'bold 36px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
   ctx.fillText('0xDAY // CYBER WARFARE ACADEMY', margin + 60, margin + 110);
 
-  ctx.font = '600 24px "JetBrains Mono", monospace';
+  ctx.font = '600 24px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('TACTICAL RED TEAM OPERATOR DOSSIER', margin + 60, margin + 155);
 
@@ -95,7 +95,7 @@ export function renderHackerCardToCanvas(
   ctx.lineWidth = 2;
   ctx.strokeRect(width - margin - 260, margin + 80, 200, 60);
 
-  ctx.font = 'bold 26px "JetBrains Mono", monospace';
+  ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#34d399';
   ctx.fillText('AUTHENTIC', width - margin - 235, margin + 120);
 
@@ -124,18 +124,31 @@ export function renderHackerCardToCanvas(
   ctx.stroke();
   ctx.restore();
 
-  // Avatar Icon ⚡
-  ctx.font = '120px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('⚡', width / 2, avatarY + 165);
+  // Tactical Avatar Insignia (Vector Lightning)
+  ctx.save();
+  ctx.fillStyle = '#10b981';
+  ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
+  ctx.shadowBlur = 25;
+  ctx.beginPath();
+  const boltCx = width / 2;
+  const boltCy = avatarY + avatarSize / 2;
+  ctx.moveTo(boltCx + 8, boltCy - 65);
+  ctx.lineTo(boltCx - 36, boltCy + 5);
+  ctx.lineTo(boltCx - 2, boltCy + 5);
+  ctx.lineTo(boltCx - 16, boltCy + 65);
+  ctx.lineTo(boltCx + 38, boltCy - 8);
+  ctx.lineTo(boltCx + 6, boltCy - 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 
   // 7. Operator Callsign / Username
-  ctx.font = 'bold 72px "JetBrains Mono", monospace';
+  ctx.font = 'bold 72px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(sanitizeCallsign(userState.username), width / 2, avatarY + 340);
 
   // Rank Pill
-  ctx.font = 'bold 36px "JetBrains Mono", monospace';
+  ctx.font = 'bold 36px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   const rankText = `${rank.tier} · ${userState.elo} ELO`;
   const rankPillW = 460;
   const rankPillH = 70;
@@ -168,11 +181,11 @@ export function renderHackerCardToCanvas(
   ctx.fill();
   ctx.stroke();
 
-  ctx.font = 'bold 64px "JetBrains Mono", monospace';
+  ctx.font = 'bold 64px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#fbbf24';
-  ctx.fillText(`🔥 x${userState.winStreak}`, box1X + statBoxW / 2, statBoxY + 110);
+  ctx.fillText(`x${userState.winStreak}`, box1X + statBoxW / 2, statBoxY + 110);
 
-  ctx.font = '600 26px "JetBrains Mono", monospace';
+  ctx.font = '600 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('WIN STREAK BLITZ', box1X + statBoxW / 2, statBoxY + 165);
 
@@ -186,11 +199,11 @@ export function renderHackerCardToCanvas(
   ctx.fill();
   ctx.stroke();
 
-  ctx.font = 'bold 64px "JetBrains Mono", monospace';
+  ctx.font = 'bold 64px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#34d399';
   ctx.fillText(`${userState.readinessScore}%`, box2X + statBoxW / 2, statBoxY + 110);
 
-  ctx.font = '600 26px "JetBrains Mono", monospace';
+  ctx.font = '600 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('EXAM READINESS', box2X + statBoxW / 2, statBoxY + 165);
 
@@ -209,36 +222,36 @@ export function renderHackerCardToCanvas(
   ctx.stroke();
 
   ctx.textAlign = 'left';
-  ctx.font = 'bold 24px "JetBrains Mono", monospace';
+  ctx.font = 'bold 24px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('DOMINIO OPERATIVO PRIMARIO', skillBoxX + 40, skillBoxY + 60);
+  ctx.fillText('PRIMARY OPERATIONAL DOMAIN', skillBoxX + 40, skillBoxY + 60);
 
-  ctx.font = 'bold 44px "JetBrains Mono", monospace';
+  ctx.font = 'bold 44px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(topSkillName, skillBoxX + 40, skillBoxY + 115);
 
   ctx.textAlign = 'right';
-  ctx.font = 'bold 54px "JetBrains Mono", monospace';
+  ctx.font = 'bold 54px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
   ctx.fillText(`${topSkillScore}%`, skillBoxX + skillBoxW - 40, skillBoxY + 100);
 
   // 10. Footer Cryptographic Signature & Barcode Simulation
   const footerY = height - margin - 150;
   ctx.textAlign = 'left';
-  ctx.font = 'bold 22px "JetBrains Mono", monospace';
+  ctx.font = 'bold 22px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#64748b';
   ctx.fillText('HASH_SIGNATURE:', margin + 60, footerY);
 
-  ctx.font = '22px "JetBrains Mono", monospace';
+  ctx.font = '22px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('0x7F4A-B902-E81C-0xDAY-VERIFIED-OPERATOR', margin + 60, footerY + 36);
 
   ctx.textAlign = 'right';
-  ctx.font = 'bold 26px "JetBrains Mono", monospace';
+  ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
   ctx.fillText('zeroday.gg // 0xDAY', width - margin - 60, footerY + 20);
 
-  ctx.font = '20px "JetBrains Mono", monospace';
+  ctx.font = '20px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#64748b';
   ctx.fillText('Official Cybersecurity Battleground', width - margin - 60, footerY + 50);
 

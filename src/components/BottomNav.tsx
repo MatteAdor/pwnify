@@ -32,8 +32,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       label: t.navArena,
       sublabel: t.navArenaSub,
       icon: Swords,
-      badge: winStreak > 0 ? `🔥x${winStreak}` : 'LIVE',
-      badgeColor: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
+      badge: winStreak > 0 ? `x${winStreak}` : 'LIVE',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
     },
     {
       id: 'leagues' as ActiveTab,
@@ -56,14 +56,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       label: t.navCerts,
       sublabel: t.navCertsSub,
       icon: ShieldCheck,
-      badge: null,
-      badgeColor: '',
+      badge: 'PBQ',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     }
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#090D16]/95 backdrop-blur-lg border-t border-white/[0.08] px-1.5 py-1.5 md:py-2">
-      <div className="max-w-lg mx-auto grid grid-cols-5 gap-1">
+    <nav className="fixed bottom-1.5 sm:bottom-4 inset-x-2 sm:inset-x-0 z-40 flex justify-center pointer-events-none">
+      <div 
+        className="w-full max-w-lg bg-[#080D18]/90 backdrop-blur-2xl border border-white/10 rounded-xl sm:rounded-3xl p-1 sm:p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.1)] pointer-events-auto grid grid-cols-5 gap-0.5 sm:gap-1"
+        style={{ paddingBottom: 'max(4px, env(safe-area-inset-bottom, 4px))' }}
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -75,24 +78,37 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 sound.playTap();
                 onSelectTab(tab.id);
               }}
-              className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all duration-200 ${
+              className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 sm:py-2 sm:px-1 rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer group ${
                 isActive
-                  ? 'bg-surface/90 text-emerald-400 border border-emerald-500/30 shadow-neon-emerald'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-surface/40'
+                  ? 'bg-gradient-to-b from-white/10 to-transparent text-emerald-400 font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}
             >
+              {/* Optional Notification Badge */}
               {tab.badge && (
-                <span className={`absolute -top-1.5 right-0.5 px-1 py-0.2 rounded text-[8px] font-mono font-bold border ${tab.badgeColor}`}>
+                <span className={`absolute -top-1.5 right-1 px-1.5 py-0.2 rounded-full text-[8px] font-mono font-bold border tracking-wider shadow-sm ${tab.badgeColor}`}>
                   {tab.badge}
                 </span>
               )}
-              <Icon className={`w-4 h-4 sm:w-5 sm:h-5 mb-0.5 ${isActive ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
-              <span className="font-mono text-[10px] sm:text-[11px] font-semibold leading-tight truncate">
+
+              {/* Icon with glowing active highlight */}
+              <div className="relative mb-0.5">
+                <Icon className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:scale-110 ${
+                  isActive ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'text-slate-400'
+                }`} />
+              </div>
+
+              {/* Label */}
+              <span className={`font-mono text-[10px] sm:text-[11px] leading-tight truncate transition-colors ${
+                isActive ? 'text-white font-black' : 'text-slate-400 group-hover:text-slate-300'
+              }`}>
                 {tab.label}
               </span>
-              <span className="text-[8px] sm:text-[9px] text-slate-500 hidden sm:block truncate">
-                {tab.sublabel}
-              </span>
+
+              {/* Active illuminated underline dot */}
+              {isActive && (
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10B981] mt-1 animate-pulse" />
+              )}
             </button>
           );
         })}
@@ -100,3 +116,5 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     </nav>
   );
 };
+
+export default BottomNav;

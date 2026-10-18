@@ -50,8 +50,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        sans: ['"JetBrainsMono Nerd Font Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        mono: ['"JetBrainsMono Nerd Font Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         'neon-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.45)',

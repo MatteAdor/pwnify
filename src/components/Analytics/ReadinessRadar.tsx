@@ -64,11 +64,13 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
   }).join(' ');
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-28 space-y-6">
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 pb-32 space-y-7 animate-fade-in">
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-surface to-[#1B2640] border border-white/10 p-5 shadow-cyber-glass">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
+      <div className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-6 sm:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5 shadow-sm">
             <BarChart2 className="w-3.5 h-3.5" />
             DIAGNOSTIC TELEMETRY & AUDIT
           </span>
@@ -76,17 +78,17 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
             Pocket Prep & CyberClash Architecture
           </span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           Exam Readiness Radar
         </h1>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-2 pt-2 border-t border-white/5">
-          <p className="text-xs text-slate-300">
-            Analisi delle lacune cognitive su CompTIA Security+, CCNA e CEH. Individua i tuoi punti deboli prima di sostenere l'esame ufficiale.
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-3 pt-3 border-t border-white/5">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg">
+            Cognitive gap analysis for CompTIA Security+, CCNA, and CEH. Pinpoint your weak areas before sitting for the official exam.
           </p>
           {onOpenHackerCard && (
             <button
               onClick={onOpenHackerCard}
-              className="self-start sm:self-auto py-1.5 px-3 rounded-lg border border-emerald-500/30 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-98 shrink-0"
+              className="self-start sm:self-auto py-2 px-3.5 rounded-xl border border-emerald-500/30 bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 font-mono text-xs font-bold flex items-center gap-2 transition-all shadow-sm active:scale-98 shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               <span>HACKER ID CARD (9:16)</span>
@@ -96,8 +98,8 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
       </div>
 
       {/* Global Readiness Score Card */}
-      <div className="bg-surface border border-white/10 rounded-2xl p-6 text-center space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+      <div className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-7 sm:p-8 text-center space-y-4 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-7">
           {/* Radial Readiness Gauge */}
           <div className="relative w-36 h-36 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90">
@@ -127,7 +129,7 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
               <span className={`text-3xl font-mono font-black ${readinessScore < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
                 {readinessScore}%
               </span>
-              <span className="text-[9px] font-mono text-slate-400 uppercase">
+              <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-bold">
                 READINESS
               </span>
             </div>
@@ -135,35 +137,35 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
 
           {/* Diagnosis Summary */}
           <div className="text-left space-y-2 max-w-sm">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-mono font-bold">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-mono font-bold">
               <AlertTriangle className="w-3.5 h-3.5" />
-              Sotto la soglia di superamento (75%)
+              Below passing threshold (75%)
             </div>
-            <h3 className="text-base font-bold text-white">
-              Probabilità di Superamento: <span className="text-red-400 font-mono">Bassa</span>
+            <h3 className="text-lg font-bold text-white">
+              Passing Probability: <span className="text-red-400 font-mono">Low</span>
             </h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Hai evidenziato vulnerabilità critiche nella configurazione <span className="text-white font-mono">Linux & Bash</span> e nel subnetting <span className="text-white font-mono">Networking</span>.
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Identified critical vulnerabilities in <span className="text-white font-mono">Linux & Bash</span> configuration and <span className="text-white font-mono">Networking</span> subnetting.
             </p>
           </div>
         </div>
       </div>
 
       {/* Hexagonal Radar Chart Display */}
-      <div className="bg-surface border border-white/10 rounded-2xl p-5 shadow-cyber-glass">
+      <div className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-6 sm:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-mono font-bold text-sm text-white flex items-center gap-2">
+          <h3 className="font-mono font-bold text-sm sm:text-base text-white flex items-center gap-2">
             <RadarIcon className="w-4 h-4 text-emerald-400" />
-            RADAR ESAGONALE DELLE COMPETENZE
+            HEXAGONAL SKILL RADAR
           </h3>
           <div className="flex items-center gap-3 text-[11px] font-mono">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              Tuo Livello
+            <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+              Your Level
             </span>
-            <span className="flex items-center gap-1.5 text-indigo-400">
-              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-              Target PRO (92%)
+            <span className="flex items-center gap-1.5 text-indigo-400 font-bold">
+              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+              PRO Target (92%)
             </span>
           </div>
         </div>
@@ -243,18 +245,18 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
       </div>
 
       {/* Trigger Paywall 4: Domain Details & Weakness Drill Lock */}
-      <div className="bg-surface border border-white/10 rounded-2xl p-5 shadow-cyber-glass space-y-4">
+      <div className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-6 sm:p-7 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl space-y-5">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-sm sm:text-base text-white">
-              Analisi di Dettaglio per Singolo Dominio
+              Domain-by-Domain Drilldown
             </h3>
             <p className="text-xs text-slate-400">
-              Metriche di accuratezza e vulnerabilità specifiche
+              Accuracy metrics & targeted vulnerability insights
             </p>
           </div>
           {!userState.isPro && (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 font-bold">
+            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 font-bold shadow-sm">
               <Lock className="w-3 h-3" /> PRO ONLY
             </span>
           )}
@@ -265,30 +267,30 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
           <div className="relative">
             <div className="filter blur-sm select-none opacity-40 space-y-3 pointer-events-none">
               {domains.map((d) => (
-                <div key={d.key} className="p-3 rounded-xl bg-[#090D16] border border-white/5 flex items-center justify-between">
+                <div key={d.key} className="p-3.5 rounded-2xl bg-[#060A12]/80 border border-white/5 flex items-center justify-between">
                   <span className="font-mono text-xs text-white">{d.name}</span>
-                  <span className="font-mono text-xs text-emerald-400">84% Accuratezza</span>
+                  <span className="font-mono text-xs text-emerald-400">84% Accuracy</span>
                 </div>
               ))}
             </div>
 
             {/* Lock Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-center rounded-xl">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2">
-                <Lock className="w-5 h-5" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md p-5 text-center rounded-2xl border border-white/10 shadow-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-3 shadow-neon-emerald">
+                <Lock className="w-6 h-6" />
               </div>
-              <h4 className="font-mono font-bold text-sm text-white mb-1">
-                ANALISI FORENSE & DRILL DEI PUNTI DEBOLI BLOCCATI
+              <h4 className="font-mono font-bold text-sm sm:text-base text-white mb-1.5">
+                FORENSIC AUDIT & WEAKNESS DRILL LOCKED
               </h4>
-              <p className="text-xs text-slate-300 max-w-sm mb-4">
-                Gli utenti Free visualizzano solo il punteggio globale. Passa a PRO per vedere le percentuali per singolo dominio e avviare sessioni mirate sui tuoi errori.
+              <p className="text-xs text-slate-300 max-w-sm mb-4 leading-relaxed">
+                Free tier displays aggregate score only. Upgrade to PRO to view granular domain percentages and launch targeted remediation drills.
               </p>
               <button
                 onClick={() => onOpenPaywall('weakness_drill')}
-                className="py-3 px-5 rounded-xl font-mono font-extrabold text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center gap-2 transition-all transform active:scale-95"
+                className="py-3 px-6 rounded-xl font-mono font-extrabold text-xs text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 shadow-neon-emerald flex items-center gap-2 transition-all transform active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>SBLOCCA WEAKNESS DRILL CON ZERODAY PRO</span>
+                <span>UNLOCK WEAKNESS DRILL WITH ZERODAY PRO</span>
               </button>
             </div>
           </div>
@@ -305,28 +307,28 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
               return (
                 <div 
                   key={d.key}
-                  className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
+                  className={`p-4 rounded-2xl border flex items-center justify-between transition-colors ${
                     isUntouched
-                      ? 'bg-[#090D16]/60 border-white/5 text-slate-400'
+                      ? 'bg-[#060A12]/60 border-white/5 text-slate-400'
                       : isWeak 
                       ? 'bg-amber-950/20 border-amber-500/30 text-amber-200' 
-                      : 'bg-[#090D16] border-emerald-500/30 text-slate-200'
+                      : 'bg-[#060A12]/90 border-emerald-500/30 text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3.5">
                     <div className={`w-2.5 h-2.5 rounded-full ${
-                      isUntouched ? 'bg-slate-600' : isWeak ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                      isUntouched ? 'bg-slate-600' : isWeak ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]'
                     }`} />
                     <div>
-                      <span className="font-mono font-bold text-xs text-white block">
+                      <span className="font-mono font-bold text-xs sm:text-sm text-white block">
                         {d.name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">
                         {isUntouched 
-                          ? `Non ancora avviato (0/${totalCount} quest)` 
+                          ? `Not started (0/${totalCount} quests)` 
                           : isWeak 
-                          ? `In addestramento (${completedCount}/${totalCount} quest)` 
-                          : `Competenza consolidata (${completedCount}/${totalCount} quest)`}
+                          ? `In training (${completedCount}/${totalCount} quests)` 
+                          : `Mastered (${completedCount}/${totalCount} quests)`}
                       </span>
                     </div>
                   </div>
@@ -338,8 +340,8 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
                       {score}%
                     </span>
                     {isWeak && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        ATTENZIONE
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                        WARNING
                       </span>
                     )}
                   </div>
@@ -348,11 +350,11 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
             })}
 
             <button
-              onClick={() => alert('Avvio sessione Weakness Drill tattica sui domini critici... Caricamento 5 scenari PoC!')}
-              className="w-full mt-4 py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2"
+              onClick={() => alert('Launching targeted Weakness Drill on critical domains... Loading 5 PoC scenarios!')}
+              className="w-full mt-4 py-4 px-6 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2 transform active:scale-98"
             >
               <Zap className="w-4 h-4 fill-slate-950" />
-              <span>AVVIA WEAKNESS DRILL MIRATO SUI PUNTI DEBOLI</span>
+              <span>LAUNCH TARGETED WEAKNESS DRILL</span>
             </button>
           </div>
         )}

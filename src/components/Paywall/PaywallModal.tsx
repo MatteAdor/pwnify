@@ -43,7 +43,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     sound.playTap();
     const cleanKey = restoreInput.trim().toUpperCase();
     if (!cleanKey) {
-      setRestoreError('Inserisci il codice di licenza.');
+      setRestoreError('Please enter your license key.');
       return;
     }
 
@@ -61,7 +61,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       onClose();
     } else {
       sound.playPayloadBlocked();
-      setRestoreError('Formato o checksum della licenza non valido. Esempio corretto: 0xPRO-8F9A-K2L1-77BC');
+      setRestoreError('Invalid license key format or checksum. Correct example: 0xPRO-8F9A-K2L1-77BC');
     }
   };
 
@@ -84,7 +84,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         window.location.href = checkoutUrl;
         return;
       }
-      setErrorMessage('L\'indirizzo di reindirizzamento al pagamento non è autorizzato.');
+      setErrorMessage('Unauthorized payment redirect URL.');
       return;
     }
 
@@ -92,7 +92,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     // Do NOT simulate fake purchases. Open the authentic license key input instead.
     setIsRestoreView(true);
     setRestoreError(
-      'Gateway Stripe non configurato in questo ambiente locale. Inserisci una chiave di licenza crittografica per attivare ZeroDay PRO.'
+      'Stripe gateway not configured in this local environment. Enter a cryptographic license key to activate ZeroDay PRO.'
     );
   };
 
@@ -101,53 +101,53 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     switch (context) {
       case 'win_streak_trap':
         return {
-          badge: `TICKET ARENA ESAURITI · STREAK ATTUALE: ${winStreak}`,
+          badge: `ARENA TICKETS EXHAUSTED · CURRENT STREAK: ${winStreak}`,
           badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-          title: 'Continua ad Addestrarti nell\'Arena 1v1',
-          subtitle: 'I ticket gratuiti giornalieri per i match Arena sono terminati. Passa a ZeroDay PRO per sessioni illimitate.'
+          title: 'Keep Training in the 1v1 Arena',
+          subtitle: 'Free daily Arena tickets have run out. Upgrade to ZeroDay PRO for unlimited live battles.'
         };
       case 'blurred_breakdown':
         return {
-          badge: 'ANALISI TECNICA & MITIGAZIONE',
+          badge: 'TECHNICAL ANALYSIS & MITIGATION',
           badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-          title: 'Anatomia Completa dell\'Exploit',
-          subtitle: 'Consulta i PoC, l\'analisi della memoria e il codice di mitigazione consigliato per ogni scenario.'
+          title: 'Complete Exploit Anatomy',
+          subtitle: 'Inspect PoCs, memory forensics, and remediation code for every breach scenario.'
         };
       case 'weakness_drill':
         return {
-          badge: 'DRILL MIRATO SULLE LACUNE',
+          badge: 'TARGETED WEAKNESS DRILL',
           badgeColor: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
-          title: 'Sessioni di Recupero Personalizzate',
-          subtitle: 'Esercitati in modo mirato sui domini e sulle tipologie di vulnerabilità in cui hai commesso errori.'
+          title: 'Personalized Remediation Sessions',
+          subtitle: 'Drill targeted weakness areas and mistake domains to eliminate exam blind spots.'
         };
       case 'xp_boost_shield':
         return {
-          badge: '2X XP & PROTEZIONE LEGA',
+          badge: '2X XP & LEAGUE DEMOTION SHIELD',
           badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-          title: 'Avanzamento Rapido nelle Leghe',
-          subtitle: 'Raddoppia i punti XP ottenuti da ogni laboratorio e attiva lo scudo contro la retrocessione settimanale.'
+          title: 'Accelerated League Progression',
+          subtitle: 'Double XP points earned from every lab and protect yourself against weekly demotion.'
         };
       case 'exam_simulator_lock':
         return {
-          badge: 'SIMULATORI D\'ESAME UFFICIALI',
+          badge: 'OFFICIAL EXAM SIMULATORS',
           badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-          title: 'Simulatori CompTIA Security+, CCNA & CEH',
-          subtitle: 'Esercitati su pool di domande d\'esame cronometrate e laboratori basati su scenari operativi reali.'
+          title: 'CompTIA Security+, CCNA & CEH Simulators',
+          subtitle: 'Practice on timed official question banks and hands-on PBQ scenario labs.'
         };
       case 'bounty_crate_lock':
         return {
-          badge: 'TAGLIE PRO DISPONIBILI',
+          badge: 'PRO BOUNTY CRATES AVAILABLE',
           badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-          title: 'Riscatta le Casse Bounty PRO',
-          subtitle: 'Completa le missioni giornaliere per riscattare bonus XP e ricompense avanzate.'
+          title: 'Decrypt Encrypted PRO Bounty Crates',
+          subtitle: 'Complete daily contracts to decrypt massive bonus XP and arena ticket crates.'
         };
       case 'diagnostic_funnel':
       default:
         return {
-          badge: 'ACCESSO COMPLETO ZERODAY PRO',
+          badge: 'FULL ZERODAY PRO ACCESS',
           badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-          title: 'Potenzia la Tua Preparazione con ZeroDay PRO',
-          subtitle: 'Sblocca tutti i laboratori pratici PBQ, i simulatori d\'esame e l\'accesso illimitato alle sessioni Arena.'
+          title: 'Level Up Your Preparation with ZeroDay PRO',
+          subtitle: 'Unlock all hands-on PBQ labs, official exam simulators, and unlimited Arena PvP access.'
         };
     }
   };
@@ -165,7 +165,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             onClose();
           }}
           className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition-colors z-20"
-          aria-label="Chiudi Finestra"
+          aria-label="Close Window"
         >
           <X className="w-5 h-5" />
         </button>
@@ -177,21 +177,21 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           <div className="space-y-4 animate-fade-in text-slate-100">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold w-fit">
               <KeyRound className="w-4 h-4 text-emerald-400" />
-              <span>ATTIVAZIONE CHIAVE LICENZA PRO</span>
+              <span>PRO LICENSE KEY ACTIVATION</span>
             </div>
 
             <div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-                Attiva o Ripristina Licenza PRO
+                Activate or Restore PRO License
               </h2>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Inserisci la chiave di licenza crittografica per sbloccare tutte le funzionalità PRO in locale o su qualsiasi dispositivo.
+                Enter your cryptographic license key to unlock all PRO features locally or on any device.
               </p>
             </div>
 
             <div className="space-y-2">
               <label className="text-[11px] font-mono font-bold text-slate-300 block">
-                CODICE LICENZA (FORMATO: 0xPRO-XXXX-XXXX-XXXX)
+                LICENSE CODE (FORMAT: 0xPRO-XXXX-XXXX-XXXX)
               </label>
               <input
                 type="text"
@@ -216,7 +216,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-sm text-slate-950 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 hover:from-emerald-300 hover:to-indigo-300 transition-all shadow-neon-emerald flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
-              <span>VERIFICA & ATTIVA ACCESSO PRO</span>
+              <span>VERIFY & ACTIVATE PRO ACCESS</span>
             </button>
 
             <button
@@ -227,7 +227,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               }}
               className="w-full py-2 text-xs text-slate-400 hover:text-white font-mono transition-colors"
             >
-              ← Torna ai Piani di Abbonamento
+              ← Return to Subscription Plans
             </button>
           </div>
         ) : (
@@ -253,31 +253,31 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             <div className="p-3.5 rounded-2xl bg-[#090D16] border border-white/10 space-y-2.5">
               <div className="text-xs font-mono font-bold text-emerald-400 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                <span>DETTAGLI PROVA GRATUITA DI 7 GIORNI:</span>
+                <span>7-DAY FREE TRIAL TIMELINE:</span>
               </div>
 
               <div className="relative pl-5 space-y-2.5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/15 text-xs">
                 <div className="relative">
                   <div className="absolute -left-5 top-1 w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                  <span className="font-mono font-bold text-white block">Giorno 0</span>
+                  <span className="font-mono font-bold text-white block">Day 0</span>
                   <span className="text-slate-400 text-[11px]">
-                    Accesso completo a tutti i simulatori e lab PBQ. Nessun addebito anticipato.
+                    Full instant access to all simulators and PBQ labs. No upfront charges.
                   </span>
                 </div>
 
                 <div className="relative">
                   <div className="absolute -left-5 top-1 w-2.5 h-2.5 rounded-full bg-indigo-400" />
-                  <span className="font-mono font-bold text-white block">Giorno 5</span>
+                  <span className="font-mono font-bold text-white block">Day 5</span>
                   <span className="text-slate-400 text-[11px]">
-                    Promemoria prima della scadenza della prova.
+                    Trial expiration reminder sent.
                   </span>
                 </div>
 
                 <div className="relative">
                   <div className="absolute -left-5 top-1 w-2.5 h-2.5 rounded-full bg-slate-500" />
-                  <span className="font-mono font-bold text-white block">Giorno 7</span>
+                  <span className="font-mono font-bold text-white block">Day 7</span>
                   <span className="text-slate-400 text-[11px]">
-                    Inizio dell'abbonamento scelto. Disdici in qualsiasi momento.
+                    Chosen plan begins. Cancel anytime with 1 click.
                   </span>
                 </div>
               </div>
@@ -295,10 +295,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 }`}
               >
                 <div className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 font-mono font-bold text-[9px] uppercase tracking-wider">
-                  PIÙ SCELTO
+                  MOST POPULAR
                 </div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono font-bold text-xs text-slate-200">ANNUALE</span>
+                  <span className="font-mono font-bold text-xs text-slate-200">ANNUAL</span>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     billingCycle === 'annual' ? 'border-emerald-400 bg-emerald-400 text-slate-950' : 'border-slate-500'
                   }`}>
@@ -307,10 +307,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="font-mono font-extrabold text-xl sm:text-2xl text-white">€5.75</span>
-                  <span className="text-[10px] text-slate-400">/mese</span>
+                  <span className="text-[10px] text-slate-400">/mo</span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  Fatturato a €69/anno
+                  Billed annually at €69/yr
                 </p>
               </div>
 
@@ -324,7 +324,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono font-bold text-xs text-slate-200">MENSILE</span>
+                  <span className="font-mono font-bold text-xs text-slate-200">MONTHLY</span>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     billingCycle === 'monthly' ? 'border-indigo-400 bg-indigo-500 text-slate-950' : 'border-slate-500'
                   }`}>
@@ -333,10 +333,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="font-mono font-extrabold text-xl sm:text-2xl text-white">€14.99</span>
-                  <span className="text-[10px] text-slate-400">/mese</span>
+                  <span className="text-[10px] text-slate-400">/mo</span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  Fatturato ogni 30 giorni
+                  Billed monthly at €14.99/mo
                 </p>
               </div>
             </div>
@@ -345,19 +345,19 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
               <div className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Ticket Arena 1v1 illimitati</span>
+                <span>Unlimited 1v1 Arena tickets</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Tutti i lab PBQ & simulatori</span>
+                <span>All PBQ labs & official simulators</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Analisi PoC & mitigazioni</span>
+                <span>PoC root cause analysis & code</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Bounty Crates PRO decrittate</span>
+                <span>Decrypted PRO Bounty Crates</span>
               </div>
             </div>
 
@@ -377,12 +377,12 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               {isProcessing ? (
                 <span className="flex items-center gap-2 text-xs font-bold">
                   <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                  <span>Connessione a Stripe in corso...</span>
+                  <span>Connecting to Stripe...</span>
                 </span>
               ) : (
                 <>
                   <Zap className="w-4 h-4 fill-slate-950" />
-                  <span>INIZIA LA PROVA GRATUITA DI 7 GIORNI</span>
+                  <span>START 7-DAY FREE TRIAL</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -397,7 +397,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 }}
                 className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-4 font-mono transition-colors"
               >
-                Continua con la versione Free
+                Continue with Free version
               </button>
 
               <div className="pt-2 border-t border-white/5">
@@ -409,7 +409,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   className="text-[11px] text-emerald-400 hover:text-emerald-300 font-mono flex items-center justify-center gap-1.5 mx-auto transition-colors"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Possiedi già una licenza? Inserisci il codice di attivazione</span>
+                  <span>Already have a license? Enter activation key</span>
                 </button>
               </div>
             </div>

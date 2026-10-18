@@ -94,7 +94,7 @@ export const CookieConsentBanner: React.FC<CookieConsentBannerProps> = ({
     <div 
       className="fixed bottom-0 inset-x-0 z-50 p-3 sm:p-4 animate-fade-in pointer-events-none"
       role="region"
-      aria-label="Gestione del consenso sui cookie"
+      aria-label={t.cookieBannerTitle || "Cookie Consent Management"}
     >
       <div className="max-w-3xl mx-auto rounded-3xl p-4 sm:p-5 shadow-2xl bg-[#0D1424]/95 border border-white/15 backdrop-blur-xl text-slate-100 pointer-events-auto space-y-3">
         

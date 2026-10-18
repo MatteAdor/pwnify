@@ -133,7 +133,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             .then(r => r.json())
             .then(data => {
               if (data && (data.email || data.sub)) {
-                const mail = data.email || 'operatore.google@gmail.com';
+                const mail = data.email || 'operator.google@gmail.com';
                 const name = data.name || mail.split('@')[0];
                 const res = loginWithOAuth('google', { name, email: mail });
                 sound.playVictoryFanfare();
@@ -146,7 +146,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             })
             .catch(err => {
               console.error('Google OAuth token fetch error:', err);
-              setErrorMsg('Errore durante la convalida del token Google.');
+              setErrorMsg(isEn ? 'Error validating Google token.' : 'Errore durante la convalida del token Google.');
             })
             .finally(() => setIsProcessing(false));
           return;
@@ -155,7 +155,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     } catch {
       setSavedAccounts([]);
     }
-  }, [onLoginSuccess]);
+  }, [onLoginSuccess, isEn]);
 
   // Timer for 2FA resend cooldown
   useEffect(() => {
@@ -178,7 +178,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
-      setErrorMsg('Inserisci un indirizzo email valido.');
+      setErrorMsg(isEn ? 'Please enter a valid email address.' : 'Inserisci un indirizzo email valido.');
       sound.playPayloadBlocked();
       return;
     }
@@ -193,7 +193,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setResendCooldown(60);
       setSignupStep('2fa');
       sound.playRadarPing();
-      setSuccessMsg(`Codice 2FA generato e trasmesso all'indirizzo ${cleanEmail}.`);
+      setSuccessMsg(isEn ? `2FA code generated and transmitted to ${cleanEmail}.` : `Codice 2FA generato e trasmesso all'indirizzo ${cleanEmail}.`);
     }, 500);
   };
 
@@ -206,20 +206,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setSuccessMsg(null);
 
     if (twoFactorCode.trim().length !== 6) {
-      setErrorMsg('Inserisci il codice di sicurezza a 6 cifre.');
+      setErrorMsg(isEn ? 'Please enter the 6-digit security code.' : 'Inserisci il codice di sicurezza a 6 cifre.');
       sound.playPayloadBlocked();
       return;
     }
 
     const result = verify2FACode(email, twoFactorCode);
     if (!result.valid) {
-      setErrorMsg(result.error || 'Codice 2FA errato o scaduto.');
+      setErrorMsg(result.error || (isEn ? 'Invalid or expired 2FA code.' : 'Codice 2FA errato o scaduto.'));
       sound.playPayloadBlocked();
       return;
     }
 
     sound.playExploitSuccess();
-    setSuccessMsg('Autenticazione a due fattori (2FA) completata con successo!');
+    setSuccessMsg(isEn ? 'Two-Factor Authentication (2FA) completed successfully!' : 'Autenticazione a due fattori (2FA) completata con successo!');
     setSimulatedRelayCode(null);
     setSignupStep('password');
   };
@@ -233,31 +233,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setSuccessMsg(null);
 
     if (!termsAccepted) {
-      setErrorMsg('Devi accettare i Termini di Servizio e la Privacy Policy per continuare.');
+      setErrorMsg(isEn ? 'You must accept the Terms of Service and Privacy Policy to continue.' : 'Devi accettare i Termini di Servizio e la Privacy Policy per continuare.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (!ageAccepted) {
-      setErrorMsg('Devi confermare di avere almeno 16 anni per l\'elaborazione dei dati.');
+      setErrorMsg(isEn ? 'You must confirm that you are at least 16 years old.' : 'Devi confermare di avere almeno 16 anni per l\'elaborazione dei dati.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (callsign.trim().length < 3) {
-      setErrorMsg('Il Callsign deve contenere almeno 3 caratteri.');
+      setErrorMsg(isEn ? 'Callsign must contain at least 3 characters.' : 'Il Callsign deve contenere almeno 3 caratteri.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (password.length < 6) {
-      setErrorMsg('La password deve contenere almeno 6 caratteri.');
+      setErrorMsg(isEn ? 'Password must contain at least 6 characters.' : 'La password deve contenere almeno 6 caratteri.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMsg('Le password non coincidono.');
+      setErrorMsg(isEn ? 'Passwords do not match.' : 'Le password non coincidono.');
       sound.playPayloadBlocked();
       return;
     }
@@ -270,14 +270,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setIsProcessing(false);
 
       if (!res.success || !res.account) {
-        setErrorMsg(res.error || 'Errore durante la creazione dell\'account.');
+        setErrorMsg(res.error || (isEn ? 'Error creating account.' : 'Errore durante la creazione dell\'account.'));
         sound.playPayloadBlocked();
         return;
       }
 
       sound.playVictoryFanfare();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setSuccessMsg(`Account per l'operatore ${res.account.username} creato con successo!`);
+      setSuccessMsg(isEn ? `Account for operator ${res.account.username} created successfully!` : `Account per l'operatore ${res.account.username} creato con successo!`);
       
       setTimeout(() => {
         onLoginSuccess(res.account!);
@@ -295,19 +295,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     // Rate Limiting Defense
     if (lockoutTimer > 0) {
-      setErrorMsg(`Accesso temporaneamente bloccato per sicurezza. Riprova tra ${lockoutTimer} secondi.`);
+      setErrorMsg(isEn ? `Login temporarily locked for security. Try again in ${lockoutTimer} seconds.` : `Accesso temporaneamente bloccato per sicurezza. Riprova tra ${lockoutTimer} secondi.`);
       sound.playPayloadBlocked();
       return;
     }
 
     if (!loginIdentifier.trim()) {
-      setErrorMsg('Inserisci la tua email o il tuo callsign.');
+      setErrorMsg(isEn ? 'Please enter your email or callsign.' : 'Inserisci la tua email o il tuo callsign.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (!loginPassword) {
-      setErrorMsg('Inserisci la tua password.');
+      setErrorMsg(isEn ? 'Please enter your password.' : 'Inserisci la tua password.');
       sound.playPayloadBlocked();
       return;
     }
@@ -325,9 +325,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
         if (nextAttempts >= 5) {
           setLockoutTimer(60);
-          setErrorMsg('Troppi tentativi falliti consecutivi. Accesso bloccato per 60 secondi.');
+          setErrorMsg(isEn ? 'Too many consecutive failed attempts. Login locked for 60 seconds.' : 'Troppi tentativi falliti consecutivi. Accesso bloccato per 60 secondi.');
         } else {
-          setErrorMsg(`Credenziali non valide (${nextAttempts}/5 tentativi rimasti).`);
+          setErrorMsg(isEn ? `Invalid credentials (${nextAttempts}/5 attempts remaining).` : `Credenziali non valide (${nextAttempts}/5 tentativi rimasti).`);
         }
         sound.playPayloadBlocked();
         return;
@@ -337,7 +337,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setFailedAttempts(0);
       setLockoutTimer(0);
       sound.playExploitSuccess();
-      setSuccessMsg(`Bentornato, operatore ${res.account.username}. Accesso eseguito.`);
+      setSuccessMsg(isEn ? `Welcome back, operator ${res.account.username}. Access granted.` : `Bentornato, operatore ${res.account.username}. Accesso eseguito.`);
       setTimeout(() => {
         onLoginSuccess(res.account!);
       }, 600);
@@ -364,28 +364,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsGoogleModalOpen(true);
   };
 
-  const handleGoogleInstantLogin = (name?: string, email?: string) => {
-    setIsProcessing(true);
-    sound.playTap();
-    setErrorMsg(null);
-
-    setTimeout(() => {
-      const mail = email || 'operatore.zeroday@gmail.com';
-      const defaultName = name || 'Google_Operatore';
-      const res = loginWithOAuth('google', { name: defaultName, email: mail });
-      setIsProcessing(false);
-      setIsGoogleModalOpen(false);
-      sound.playVictoryFanfare();
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
-      onLoginSuccess(res.account);
-    }, 400);
-  };
-
   const handleGoogleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanMail = googleInputEmail.trim().toLowerCase();
-    if (!cleanMail || !cleanMail.includes('@')) {
-      setErrorMsg('Inserisci un indirizzo Gmail valido.');
+    if (!cleanMail || !cleanMail.includes('@') || !cleanMail.includes('.')) {
+      setErrorMsg(isEn ? 'Please enter a valid Gmail address.' : 'Inserisci un indirizzo Gmail valido.');
       sound.playPayloadBlocked();
       return;
     }
@@ -425,28 +408,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsGitHubModalOpen(true);
   };
 
-  const handleGitHubInstantLogin = (handle?: string) => {
-    setIsProcessing(true);
-    sound.playTap();
-    setErrorMsg(null);
-
-    setTimeout(() => {
-      const name = handle || 'GitHub_Hacker';
-      const mail = `${name.toLowerCase()}@users.noreply.github.com`;
-      const res = loginWithOAuth('github', { name, email: mail });
-      setIsProcessing(false);
-      setIsGitHubModalOpen(false);
-      sound.playVictoryFanfare();
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
-      onLoginSuccess(res.account);
-    }, 400);
-  };
-
   const handleGitHubSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanHandle = githubInputHandle.trim().replace(/^@/, '');
     if (!cleanHandle || cleanHandle.length < 2) {
-      setErrorMsg('Inserisci un username GitHub valido.');
+      setErrorMsg(isEn ? 'Please enter a valid GitHub username.' : 'Inserisci un username GitHub valido.');
       sound.playPayloadBlocked();
       return;
     }
@@ -474,7 +440,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     e.preventDefault();
     const cleanMail = otpLoginEmail.trim().toLowerCase();
     if (!cleanMail || !cleanMail.includes('@')) {
-      setErrorMsg('Inserisci un indirizzo email valido.');
+      setErrorMsg(isEn ? 'Please enter a valid email address.' : 'Inserisci un indirizzo email valido.');
       sound.playPayloadBlocked();
       return;
     }
@@ -488,21 +454,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setSimulatedRelayCode(code);
       setOtpStep('verify');
       sound.playRadarPing();
-      setSuccessMsg(`Codice 2FA temporaneo inviato a ${cleanMail}.`);
+      setSuccessMsg(isEn ? `Temporary 2FA code sent to ${cleanMail}.` : `Codice 2FA temporaneo inviato a ${cleanMail}.`);
     }, 500);
   };
 
   const handleOtpLoginVerify = (e: React.FormEvent) => {
     e.preventDefault();
     if (otpLoginCode.trim().length !== 6) {
-      setErrorMsg('Inserisci il codice di sicurezza a 6 cifre.');
+      setErrorMsg(isEn ? 'Please enter the 6-digit security code.' : 'Inserisci il codice di sicurezza a 6 cifre.');
       sound.playPayloadBlocked();
       return;
     }
 
     const verification = verify2FACode(otpLoginEmail, otpLoginCode);
     if (!verification.valid) {
-      setErrorMsg(verification.error || 'Codice 2FA non valido.');
+      setErrorMsg(verification.error || (isEn ? 'Invalid 2FA code.' : 'Codice 2FA non valido.'));
       sound.playPayloadBlocked();
       return;
     }
@@ -525,7 +491,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           onLoginSuccess(created.account);
           return;
         }
-        setErrorMsg(res.error || 'Errore durante l\'accesso.');
+        setErrorMsg(res.error || (isEn ? 'Error during login.' : 'Errore durante l\'accesso.'));
         sound.playPayloadBlocked();
         return;
       }
@@ -545,24 +511,24 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#080C15] text-slate-100 flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden font-sans select-none">
-      {/* Background Cyber Ambient Grid & Glows */}
-      <div className="absolute inset-0 bg-[radial-gradient(#142036_1px,transparent_1px)] [background-size:24px_24px] opacity-40 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-emerald-500/10 via-cyan-500/10 to-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen w-full bg-[#060A12] text-slate-100 flex flex-col justify-center items-center px-2.5 py-4 sm:px-4 sm:py-8 relative overflow-hidden font-sans select-none safe-top safe-bottom">
+      {/* Background Cyber Ambient Mesh & Lighting */}
+      <div className="absolute inset-0 bg-[radial-gradient(#1E293B_1px,transparent_1px)] [background-size:28px_28px] opacity-35 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-emerald-500/10 via-cyan-500/10 to-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Main Authentication Card */}
       <div 
-        className="w-full max-w-md bg-[#0D1424] border border-white/10 rounded-3xl p-6 sm:p-7 shadow-2xl relative z-10 space-y-5"
-        style={{ boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px -5px rgba(16, 185, 129, 0.12)' }}
+        className="w-full max-w-md bg-[#0A101D]/90 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.12)] relative z-10 space-y-3.5 sm:space-y-5"
       >
         {/* Header with Language Switcher */}
-        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">
+        <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.08]">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] font-bold uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <Terminal className="w-3 h-3" />
             <span>{t.authGateway}</span>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#090D17] p-1 rounded-lg border border-white/10">
+          <div className="flex items-center gap-1 bg-[#090D17] p-0.5 rounded-lg border border-white/10">
             <button
               type="button"
               onClick={() => {
@@ -575,7 +541,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🇬🇧 EN
+              EN
             </button>
             <button
               type="button"
@@ -589,38 +555,38 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              🇮🇹 IT
+              IT
             </button>
           </div>
         </div>
 
         {/* Branding Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <div className="text-center space-y-0.5">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             {t.academyTitle}
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-[11px] sm:text-xs text-slate-400">
             {t.academySubtitle}
           </p>
         </div>
 
         {/* Global Notifications */}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-mono flex items-start gap-2.5 animate-shake">
-            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div className="p-2.5 sm:p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-[11px] font-mono flex items-start gap-2 animate-shake">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="p-2.5 sm:p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-[11px] font-mono flex items-start gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Mode Selector Tabs: Accedi vs Registrati */}
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-[#090D17] border border-white/10 font-mono text-xs font-bold">
+        <div className="grid grid-cols-2 p-0.5 rounded-xl bg-[#090D17] border border-white/10 font-mono text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -629,7 +595,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authMode === 'login'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-black'
                 : 'text-slate-400 hover:text-white'
@@ -645,7 +611,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               authMode === 'signup'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm font-black'
                 : 'text-slate-400 hover:text-white'
@@ -658,15 +624,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* ============================================================== */}
         {/* FAST 1-CLICK AUTHENTICATION BUTTONS: GOOGLE & GITHUB */}
         {/* ============================================================== */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleClick}
             disabled={isProcessing}
-            className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
+            className="w-full py-2.5 px-3 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
-            <GoogleIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <GoogleIcon className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
             <span>{t.loginWithGoogle}</span>
           </button>
 
@@ -675,9 +641,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             type="button"
             onClick={handleGitHubClick}
             disabled={isProcessing}
-            className="w-full py-3 px-4 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-3 transition-all active:scale-98 shadow-sm cursor-pointer group"
+            className="w-full py-2.5 px-3 rounded-xl border border-white/10 bg-[#121B30] hover:bg-[#16223D] hover:border-emerald-500/40 text-slate-200 font-bold text-xs flex items-center justify-center gap-2.5 transition-all active:scale-98 shadow-sm cursor-pointer group"
           >
-            <GitHubIcon className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+            <GitHubIcon className="w-3.5 h-3.5 text-white group-hover:scale-110 transition-transform" />
             <span>{t.loginWithGithub}</span>
           </button>
         </div>
@@ -754,9 +720,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   setIsEmailOtpModalOpen(true);
                   setErrorMsg(null);
                 }}
-                className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline"
+                className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-1.5"
               >
-                🔑 {t.forgotPassword}
+                <KeyRound className="w-3 h-3" />
+                <span>{t.forgotPassword}</span>
               </button>
             </div>
           </div>
@@ -1079,27 +1046,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               {t.googleOAuthDesc}
             </p>
 
-            {/* 1-CLICK INSTANT GOOGLE LOGIN */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-500/30 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-blue-300 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-blue-400" /> {t.googleInstantAccess}
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">1-CLICK</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleGoogleInstantLogin('Google_Operator', 'operator.zeroday@gmail.com')}
-                disabled={isProcessing}
-                className="w-full py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
-              >
-                <GoogleIcon className="w-4 h-4" />
-                <span>{t.googleInstantBtn}</span>
-              </button>
-            </div>
-
             {/* Custom Google account input form */}
-            <div className="border-t border-white/5 pt-3">
+            <div className="pt-1">
               <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
                 {t.orEnterGmail}
               </span>
@@ -1115,7 +1063,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-blue-600 hover:bg-blue-500 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
                 >
                   <GoogleIcon className="w-3.5 h-3.5" />
                   <span>{t.confirmAndSignIn}</span>
@@ -1130,12 +1078,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* MODAL 2: GITHUB AUTHENTICATION MODAL */}
       {/* ============================================================== */}
       {isGitHubModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-          <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
+          <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3.5 text-slate-100">
+            <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center">
-                  <GitHubIcon className="w-5 h-5 text-white" />
+                <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center">
+                  <GitHubIcon className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-white leading-tight">{t.githubOAuthTitle}</h3>
@@ -1154,27 +1102,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               {t.githubOAuthDesc}
             </p>
 
-            {/* 1-CLICK INSTANT GITHUB LOGIN */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/30 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> {t.githubInstantAccess}
-                </span>
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1-CLICK</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleGitHubInstantLogin('GitHub_Hacker')}
-                disabled={isProcessing}
-                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer font-mono"
-              >
-                <GitHubIcon className="w-4 h-4 text-slate-950" />
-                <span>{t.githubInstantBtn}</span>
-              </button>
-            </div>
-
             {/* Custom GitHub handle form */}
-            <div className="border-t border-white/5 pt-3">
+            <div className="pt-1">
               <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
                 {t.orEnterGithubHandle}
               </span>
@@ -1190,9 +1119,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-500 hover:bg-emerald-400 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer font-mono shadow-md"
                 >
-                  <GitHubIcon className="w-3.5 h-3.5" />
+                  <GitHubIcon className="w-3.5 h-3.5 text-slate-950" />
                   <span>{t.authorizeGithubBtn}</span>
                 </button>
               </form>

@@ -20,34 +20,34 @@ interface CertPrepTabProps {
 
 const QUICK_QUESTIONS_BASE = [
   {
-    q: 'Quale modalità di cifratura IPsec fornisce autenticazione, integrità e crittografia del payload?',
+    q: 'Which IPsec encryption mode provides authentication, integrity, and payload confidentiality?',
     options: [
       { id: 'esp_1', text: 'ESP (Encapsulating Security Payload)', isCorrect: true },
       { id: 'esp_2', text: 'AH (Authentication Header)', isCorrect: false },
       { id: 'esp_3', text: 'IKEv1 Phase 1', isCorrect: false },
       { id: 'esp_4', text: 'TLS Record Layer', isCorrect: false }
     ],
-    expl: 'ESP (IP Protocol 50) cifra l\'intero payload IP garantendo confidenzialità ed integrità.'
+    expl: 'ESP (IP Protocol 50) encrypts the entire IP payload, providing confidentiality, data origin authentication, and connectionless integrity.'
   },
   {
-    q: 'Quale principio di sicurezza garantisce che un utente disponga solo delle autorizzazioni minime necessarie?',
+    q: 'Which security principle mandates that a user account has only the absolute minimum authorizations required?',
     options: [
-      { id: 'polp_1', text: 'Least Privilege (PoLP)', isCorrect: true },
+      { id: 'polp_1', text: 'Principle of Least Privilege (PoLP)', isCorrect: true },
       { id: 'polp_2', text: 'Separation of Duties', isCorrect: false },
       { id: 'polp_3', text: 'Need-to-Know', isCorrect: false },
       { id: 'polp_4', text: 'Dual Control', isCorrect: false }
     ],
-    expl: 'Il principio di Least Privilege impone la concessione esclusiva dei privilegi necessari allo svolgimento della mansione.'
+    expl: 'The Principle of Least Privilege dictates granting only those permissions essential to perform authorized duties.'
   },
   {
-    q: 'In una cattura Wireshark, quale flag TCP congiunto a SYN indica una porta aperta in uno scan stealth?',
+    q: 'In a Wireshark capture, which TCP flag combination alongside SYN indicates an open port during a stealth SYN scan?',
     options: [
       { id: 'syn_1', text: 'SYN-ACK', isCorrect: true },
       { id: 'syn_2', text: 'RST-ACK', isCorrect: false },
       { id: 'syn_3', text: 'FIN-PSH', isCorrect: false },
       { id: 'syn_4', text: 'URG-ACK', isCorrect: false }
     ],
-    expl: 'La risposta SYN-ACK conferma che la porta TCP è in ascolto e pronta alla connessione.'
+    expl: 'A SYN-ACK response confirms that the target TCP port is in a LISTEN state and ready to establish a connection.'
   }
 ];
 
@@ -85,7 +85,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('secplus') || id.includes('firewall')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
-      description: 'Standard globale per la sicurezza informatica e Zero Trust. Pool di 314 domande autentiche su architetture difensive, PBQs firewall ACL e incident response.'
+      description: 'Global standard for cybersecurity and Zero Trust. Question pool of 314 authentic questions covering defensive architecture, firewall ACL PBQs, and incident response.'
     },
     {
       id: 'ccna',
@@ -98,7 +98,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ccna') || id.includes('router') || id.includes('vlan')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
-      description: 'Routing OSPF, subnetting VLSM, switching VLAN, sicurezza 802.1X e automazione API. Pool completo di 402 quesiti ufficiali.'
+      description: 'OSPF routing, VLSM subnetting, VLAN switching, 802.1X security, and API network automation. Complete pool of 402 official questions.'
     },
     {
       id: 'netplus',
@@ -111,7 +111,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('net') || id.includes('packet')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-blue-500/40 text-blue-400 bg-blue-500/10',
-      description: 'Topologie di rete, stack OSI, routing distance-vector e link-state, Wi-Fi 6E e cavi in fibra. 300 domande ufficiali d\'esame.'
+      description: 'Network topologies, OSI stack, distance-vector and link-state routing, Wi-Fi 6E, and fiber optics. 300 official exam questions.'
     },
     {
       id: 'aplus_core1',
@@ -124,7 +124,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap1')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
-      description: 'Hardware, connettività mobile, networking, virtualizzazione e cloud. 303 domande d\'esame certificate.'
+      description: 'Hardware, mobile connectivity, networking, virtualization, and cloud infrastructure. 303 certified exam questions.'
     },
     {
       id: 'aplus_core2',
@@ -137,7 +137,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap2')).length,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-orange-500/40 text-orange-400 bg-orange-500/10',
-      description: 'Sistemi operativi Windows/Linux/macOS, rimozione malware in 7 step, script bash/powershell e sicurezza. 305 domande ufficiali.'
+      description: 'Windows/Linux/macOS operating systems, 7-step malware removal, Bash/PowerShell scripting, and operational security. 305 official questions.'
     },
     {
       id: 'ceh',
@@ -150,7 +150,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       completedPBQs: userState.completedPbqIds.filter(id => id.includes('ceh') || id.includes('killchain')).length,
       pbqRef: 'pbq_ceh_killchain',
       color: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
-      description: 'Penetration testing avanzato, enumerazione Nmap, Active Directory Kerberoasting, malware memory analysis e reverse engineering.'
+      description: 'Advanced penetration testing, Nmap enumeration, Active Directory Kerberoasting, malware memory forensics, and reverse engineering.'
     }
   ];
 
@@ -200,32 +200,33 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 pb-28 space-y-6">
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 pb-32 space-y-7">
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-surface to-[#1B2640] border border-white/10 p-5 shadow-cyber-glass">
+      <div className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#0B1222] to-[#070C18] border border-white/10 p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.7),inset_0_1px_0_0_rgba(255,255,255,0.12)] overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
+          <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1.5 uppercase tracking-wider">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             {t.certHeaderBadge}
           </span>
           <span className="text-xs font-mono text-slate-400">
             {t.certHeaderSub}
           </span>
         </div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           {t.certHeaderTitle}
         </h1>
-        <p className="text-xs text-slate-300 mt-1">
+        <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
           {t.certHeaderDesc}
         </p>
       </div>
 
       {/* Certifications List */}
-      <div className="space-y-5">
+      <div className="space-y-6">
         {certs.map((cert) => (
           <div 
             key={cert.id}
-            className="rounded-2xl bg-surface border border-white/10 p-5 shadow-cyber-glass space-y-4 hover:border-white/20 transition-all"
+            className="rounded-3xl bg-[#0B1120]/90 border border-white/10 p-5 sm:p-6 shadow-[0_15px_40px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-4 hover:border-white/20 transition-all duration-300 backdrop-blur-xl"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -283,7 +284,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                           text: opt,
                           isCorrect: oIdx === q.correctIndex
                         }))),
-                        expl: q.explanation || `Risposta corretta: ${q.correctAnswer}`
+                        expl: q.explanation || `Correct answer: ${q.correctAnswer}`
                       }))
                     : QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
 
@@ -329,7 +330,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
               <div>
                 <span className="text-[10px] font-mono text-emerald-400 font-bold block">
-                  RAPID DIAGNOSTIC DRILL (3 DOMANDE)
+                  RAPID DIAGNOSTIC DRILL (5 QUESTIONS)
                 </span>
                 <h3 className="font-bold text-base text-white">{quickCheckCert}</h3>
               </div>
@@ -347,8 +348,8 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             {!quickCompleted ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                  <span>Domanda {quickQuestionIndex + 1} di {activeQuickQuestions.length}</span>
-                  <span className="text-emerald-400">Punteggio: {quickScore}/{activeQuickQuestions.length}</span>
+                  <span>Question {quickQuestionIndex + 1} of {activeQuickQuestions.length}</span>
+                  <span className="text-emerald-400">Score: {quickScore}/{activeQuickQuestions.length}</span>
                 </div>
 
                 <p className="text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
@@ -381,7 +382,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                 {quickAnswered && (
                   <div className="pt-2 animate-fade-in space-y-3">
                     <p className="text-xs text-slate-300 bg-surface-light p-3 rounded-xl border border-white/5">
-                      <strong>Spiegazione Tecnica:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
+                      <strong>Technical Explanation:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
                     </p>
                     <button
                       onClick={() => {
@@ -395,7 +396,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                       }}
                       className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 flex items-center justify-center gap-2"
                     >
-                      <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'PROSSIMA DOMANDA' : 'VISUALIZZA RISULTATO'}</span>
+                      <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'NEXT QUESTION' : 'VIEW RESULT'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -403,12 +404,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
               </div>
             ) : (
               <div className="text-center space-y-4 py-2">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
-                  🎯
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h4 className="text-lg font-bold text-white">Check Rapido Completato</h4>
+                <h4 className="text-lg font-bold text-white">Quick Check Completed</h4>
                 <p className="text-xs text-slate-300 font-mono">
-                  Hai risposto correttamente a <span className="text-emerald-400 font-bold">{quickScore}/{activeQuickQuestions.length}</span> domande.
+                  You answered <span className="text-emerald-400 font-bold">{quickScore}/{activeQuickQuestions.length}</span> questions correctly.
                 </p>
                 <button
                   onClick={() => {
@@ -417,7 +418,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   }}
                   className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300"
                 >
-                  Chiudi Check
+                  Close Check
                 </button>
               </div>
             )}
@@ -433,7 +434,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
               <div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase">
-                  SIMULAZIONE UFFICIALE {activePbq.certification}
+                  OFFICIAL SIMULATION: {activePbq.certification}
                 </span>
                 <h3 className="font-extrabold text-base sm:text-lg text-white mt-1">
                   {activePbq.title}
@@ -453,17 +454,17 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             {/* Scenario & Target Objective */}
             <div className="space-y-2 mb-4 bg-[#090D16] p-3.5 rounded-xl border border-white/5 text-xs text-slate-300">
               <p>
-                <strong className="text-white">Scenario d'Esame:</strong> {activePbq.scenarioDescription}
+                <strong className="text-white">Exam Scenario:</strong> {activePbq.scenarioDescription}
               </p>
               <p className="text-emerald-400">
-                <strong>Obiettivo PBQ:</strong> {activePbq.targetObjective}
+                <strong>PBQ Objective:</strong> {activePbq.targetObjective}
               </p>
             </div>
 
             {/* Interactive ACL Rule Table */}
             <div className="space-y-3 mb-5">
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">
-                TABELLA DI CONFIGURAZIONE REGOLE FIREWALL:
+                FIREWALL ACL RULE CONFIGURATION TABLE:
               </span>
 
               {activePbq.steps.map((step) => {
@@ -528,12 +529,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   {pbqSuccess ? (
                     <>
                       <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                      <span>PBQ SUPERATA CON SUCCESSO (+{activePbq.xpReward} XP · +{activePbq.eloReward} ELO)</span>
+                      <span>PBQ LAB PASSED (+{activePbq.xpReward} XP · +{activePbq.eloReward} ELO)</span>
                     </>
                   ) : (
                     <>
                       <AlertTriangle className="w-5 h-5 text-red-400" />
-                      <span>CONFIGURAZIONE ERRATA O NON CONFORME AL LEAST PRIVILEGE</span>
+                      <span>INCORRECT CONFIGURATION OR NON-COMPLIANT WITH LEAST PRIVILEGE</span>
                     </>
                   )}
                 </div>
@@ -549,7 +550,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                 onClick={handleSubmitPbq}
                 className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-neon-emerald transition-all"
               >
-                APPLICA ACL & VERIFICA CONFORMITÀ PBQ
+                APPLY ACL & VERIFY PBQ COMPLIANCE
               </button>
             ) : (
               <button
@@ -559,7 +560,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                 }}
                 className="w-full py-3.5 px-4 rounded-xl font-mono font-extrabold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 shadow-neon-emerald transition-all"
               >
-                CHIUDI LABORATORIO D'ESAME
+                CLOSE EXAM LAB
               </button>
             )}
           </div>
