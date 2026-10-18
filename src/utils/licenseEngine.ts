@@ -50,11 +50,52 @@ function timingSafeEqual(a: string, b: string): boolean {
 }
 
 /**
+ * Official Contributor & Developer Whitelist for permanent ZeroDay PRO
+ */
+export const CONTRIBUTOR_EMAILS = [
+  'a12matteo2009@gmail.com',
+  'fortunatigiacomo14@gmail.com'
+];
+
+export const CONTRIBUTOR_USERNAMES = [
+  'matteador',
+  'darkmatteo',
+  'giacomo fortunati',
+  'giacomofortunati',
+  'giacomo_fortunati',
+  'fortunatigiacomo14'
+];
+
+export const CONTRIBUTOR_DEV_KEYS = [
+  '0XPRO-DEV-MATTEO',
+  '0XPRO-DEV-GIACOMO',
+  '0XPRO-CONTRIBUTOR-LIFETIME',
+  '0XPRO-DEV-CORE'
+];
+
+/**
+ * Checks if an email, username, or callsign belongs to the core project contributors.
+ * Contributors automatically receive permanent PRO access!
+ */
+export function isContributor(emailOrUsername?: string | null): boolean {
+  if (!emailOrUsername) return false;
+  const clean = emailOrUsername.trim().toLowerCase();
+  if (CONTRIBUTOR_EMAILS.some(e => clean === e || clean.includes(e))) return true;
+  if (CONTRIBUTOR_USERNAMES.some(u => clean === u || clean.includes(u))) return true;
+  return false;
+}
+
+/**
  * Validates a ZeroDay PRO license key format and algorithmic checksum
  */
 export function verifyLicenseKey(rawKey: string): boolean {
   if (!rawKey || typeof rawKey !== 'string') return false;
   const cleanKey = rawKey.trim().toUpperCase();
+
+  // Instant developer bypass for core contributors
+  if (CONTRIBUTOR_DEV_KEYS.includes(cleanKey)) {
+    return true;
+  }
 
   // Pattern: 0xPRO-XXXX-XXXX-XXXX
   const parts = cleanKey.split('-');

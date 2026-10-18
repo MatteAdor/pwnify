@@ -197,6 +197,132 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     xpReward: 35,
     eloReward: 18
   }
+,
+
+  {
+    id: 'diag_beg_term_chmod',
+    title: 'Terminal Sandbox: Restrict SSH Private Key',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'Configure strictly private read/write permissions (owner-only: 600) on your newly generated SSH private key file (id_rsa):',
+    terminalPrompt: 'operator@zeroday:~/.ssh$',
+    commandPrefix: 'chmod',
+    commandTarget: 'chmod 600 id_rsa',
+    commandChips: ['600 id_rsa', '777 id_rsa', 'id_rsa 644', '+x id_rsa', '-R 700 .'],
+    options: [
+      { id: 'bch_1', text: '600 id_rsa', isCorrect: true, explanation: 'Mode 600 ensures only the file owner has read and write permissions (rw-------).' },
+      { id: 'bch_2', text: '777 id_rsa', isCorrect: false },
+      { id: 'bch_3', text: 'id_rsa 644', isCorrect: false },
+      { id: 'bch_4', text: '+x id_rsa', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'SSH Client Key Security (UNPROTECTED PRIVATE KEY FILE)',
+      whyItWorks: 'OpenSSH rejects private keys with world-readable permissions (like 644 or 777) to prevent unauthorized key duplication.',
+      patchRecommendation: 'Always enforce chmod 600 on private keys and chmod 700 on the ~/.ssh folder.',
+      terminalProof: '$ chmod 600 id_rsa\n$ ls -l id_rsa\n-rw------- 1 operator operator 1675 Oct 18 10:00 id_rsa'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_term_cat',
+    title: 'Terminal Sandbox: System Account Audit',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'Print the contents of the standard Linux user account database file (/etc/passwd) to review local accounts:',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'cat',
+    commandTarget: 'cat /etc/passwd',
+    commandChips: ['/etc/passwd', '/var/log/syslog', '/etc/shadow', '/dev/null'],
+    options: [
+      { id: 'bcat_1', text: '/etc/passwd', isCorrect: true, explanation: 'The /etc/passwd file lists all local accounts and their default login shells.' },
+      { id: 'bcat_2', text: '/var/log/syslog', isCorrect: false },
+      { id: 'bcat_3', text: '/etc/shadow', isCorrect: false },
+      { id: 'bcat_4', text: '/dev/null', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Linux Account Enumeration',
+      whyItWorks: '/etc/passwd is world-readable under Unix conventions so utilities can map UIDs to usernames.',
+      patchRecommendation: 'Ensure password hashes are stored exclusively in the root-only /etc/shadow file.',
+      terminalProof: '$ cat /etc/passwd\nroot:x:0:0:root:/root:/bin/bash\noperator:x:1000:1000::/home/operator:/bin/bash'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_spot_eval',
+    title: 'Spot the Zero-Day: Insecure Dynamic Code Execution',
+    type: 'spot_the_zeroday',
+    domain: 'Code Analysis',
+    difficulty: 'Beginner',
+    prompt: 'An internal Python calculation script processes client inputs. TAP THE FLAWED LINE enabling remote code execution:',
+    codeLines: [
+      { lineNum: 1, code: 'from flask import Flask, request' },
+      { lineNum: 2, code: 'app = Flask(__name__)' },
+      { lineNum: 3, code: 'formula = request.args.get("expr", "1+1")' },
+      { lineNum: 4, code: 'result = eval(formula)', isVulnerable: true, vulnerabilityHint: 'eval() executes arbitrary Python code supplied by the client!' },
+      { lineNum: 5, code: 'return f"Result: {result}"' }
+    ],
+    options: [
+      { id: 'beval_1', text: 'Line 4: direct eval() execution of user input', isCorrect: true, explanation: 'Passing unvalidated user input into eval() allows attackers to execute arbitrary system commands via __import__.' },
+      { id: 'beval_2', text: 'Line 2: Flask app initialization without secret key', isCorrect: false },
+      { id: 'beval_3', text: 'Line 3: query parameter missing URL decode handler', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code',
+      whyItWorks: 'Python eval() parses strings as arbitrary AST instructions with process privileges.',
+      patchRecommendation: 'Never use eval() on user input. Use ast.literal_eval() for safe mathematical parsing.',
+      terminalProof: '$ curl "https://target.corp/calc?expr=__import__(\'os\').system(\'id\')"\nuid=1000(app)'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_multi_dns',
+    title: 'Network Protocols: DNS IPv4 Resolution',
+    type: 'multiple_choice',
+    domain: 'Networking',
+    difficulty: 'Beginner',
+    prompt: 'Which DNS resource record type directly maps a fully qualified domain name (FQDN) to an IPv4 address?',
+    options: [
+      { id: 'bdns_1', text: 'A Record (Address)', isCorrect: true, explanation: 'The A record stores the 32-bit IPv4 address corresponding to a hostname.' },
+      { id: 'bdns_2', text: 'MX Record (Mail Exchange)', isCorrect: false },
+      { id: 'bdns_3', text: 'PTR Record (Pointer)', isCorrect: false },
+      { id: 'bdns_4', text: 'TXT Record (Text)', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'RFC 1035 Domain Names - Implementation and Specification',
+      whyItWorks: 'DNS A records resolve human-readable domains like target.corp into routable 32-bit IPv4 addresses.',
+      patchRecommendation: 'Deploy DNSSEC to cryptographically validate DNS responses and defeat cache poisoning.',
+      terminalProof: '$ dig +short A zeroday.gg\n104.21.55.12'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_multi_ssh',
+    title: 'Standard Ports: Secure Shell Traffic',
+    type: 'multiple_choice',
+    domain: 'Networking',
+    difficulty: 'Beginner',
+    prompt: 'What is the default TCP transport port assigned by IANA for encrypted Secure Shell (SSH) management?',
+    options: [
+      { id: 'bssh_1', text: 'TCP Port 22', isCorrect: true, explanation: 'SSH operates on TCP port 22 by default for cryptographic terminal access.' },
+      { id: 'bssh_2', text: 'TCP Port 23', isCorrect: false },
+      { id: 'bssh_3', text: 'TCP Port 80', isCorrect: false },
+      { id: 'bssh_4', text: 'TCP Port 445', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'RFC 4251 The Secure Shell (SSH) Protocol Architecture',
+      whyItWorks: 'SSH replaces cleartext Telnet (port 23) using public-key cryptography on port 22.',
+      patchRecommendation: 'Disable SSH root login and password authentication, forcing ed25519 cryptographic keys.',
+      terminalProof: '$ nc -zv 10.10.10.1 22\nConnection to 10.10.10.1 port 22 [tcp/ssh] succeeded!'
+    },
+    xpReward: 30,
+    eloReward: 15
+  }
 ];
 
 export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
@@ -389,6 +515,132 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     },
     xpReward: 55,
     eloReward: 28
+  }
+,
+
+  {
+    id: 'diag_int_term_grep',
+    title: 'Terminal Sandbox: Log Analysis for Brute-Force',
+    type: 'terminal_command',
+    domain: 'Defense & SOC',
+    difficulty: 'Intermediate',
+    prompt: 'Search the authentication log file (/var/log/auth.log) case-insensitively for failed login attempts using "grep":',
+    terminalPrompt: 'analyst@soc-workstation:~$',
+    commandPrefix: 'grep',
+    commandTarget: 'grep -i "failed" /var/log/auth.log',
+    commandChips: ['-i "failed" /var/log/auth.log', '-r "error" /etc', 'auth.log -n', '--color', '/var/log/syslog'],
+    options: [
+      { id: 'igrep_1', text: '-i "failed" /var/log/auth.log', isCorrect: true, explanation: 'Flag -i performs case-insensitive pattern matching on auth.log.' },
+      { id: 'igrep_2', text: '-r "error" /etc', isCorrect: false },
+      { id: 'igrep_3', text: 'auth.log -n', isCorrect: false },
+      { id: 'igrep_4', text: '/var/log/syslog', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Linux Security Log Auditing & Brute-Force Triage',
+      whyItWorks: 'The auth.log file records PAM failures. Grepping for "failed" identifies rapid unauthorized login sequences.',
+      patchRecommendation: 'Install Fail2ban or CrowdSec to automatically blacklist IPs exceeding failure thresholds.',
+      terminalProof: '$ grep -i "failed" /var/log/auth.log | tail -n 2\nOct 18 10:14:02 sshd[4012]: Failed password for invalid user admin from 198.51.100.22'
+    },
+    xpReward: 50,
+    eloReward: 25
+  },
+  {
+    id: 'diag_int_term_curl_header',
+    title: 'Terminal Sandbox: Fetch HTTP Headers with Curl',
+    type: 'terminal_command',
+    domain: 'Web Sec',
+    difficulty: 'Intermediate',
+    prompt: 'Query the target API server with curl to fetch solely the HTTP response headers (HEAD method / header inspection):',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'curl',
+    commandTarget: 'curl -I https://api.internal.bank',
+    commandChips: ['-I https://api.internal.bank', '-d "test" http://api', '-s -k https://api', '--head -X POST'],
+    options: [
+      { id: 'icurl_1', text: '-I https://api.internal.bank', isCorrect: true, explanation: 'The -I flag (--head) requests only response headers without downloading the body.' },
+      { id: 'icurl_2', text: '-d "test" http://api', isCorrect: false },
+      { id: 'icurl_3', text: '-s -k https://api', isCorrect: false },
+      { id: 'icurl_4', text: '--head -X POST', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Web Server Fingerprinting & Security Header Audit',
+      whyItWorks: 'The HEAD verb retrieves security headers (CSP, HSTS, X-Frame-Options) and reveals backend server banners.',
+      patchRecommendation: 'Remove descriptive Server and X-Powered-By banners and enforce HSTS with max-age=31536000.',
+      terminalProof: '$ curl -I https://api.internal.bank\nHTTP/2 200\nstrict-transport-security: max-age=31536000\nx-content-type-options: nosniff'
+    },
+    xpReward: 50,
+    eloReward: 25
+  },
+  {
+    id: 'diag_int_spot_dom_xss',
+    title: 'Spot the Zero-Day: DOM-Based XSS in Single Page App',
+    type: 'spot_the_zeroday',
+    domain: 'Web Sec',
+    difficulty: 'Intermediate',
+    prompt: 'A web client processes the URL hash fragment to render the user profile title. TAP THE FLAWED SINK LINE:',
+    codeLines: [
+      { lineNum: 1, code: 'function renderProfileFromHash() {' },
+      { lineNum: 2, code: '    const rawHash = window.location.hash.substring(1);' },
+      { lineNum: 3, code: '    const container = document.getElementById("profile-header");' },
+      { lineNum: 4, code: '    container.innerHTML = "<h1>Welcome, " + decodeURIComponent(rawHash) + "</h1>";', isVulnerable: true, vulnerabilityHint: 'Assigning unescaped user input to innerHTML executes embedded JavaScript payloads!' },
+      { lineNum: 5, code: '}' }
+    ],
+    options: [
+      { id: 'ixss_1', text: 'Line 4: innerHTML assignment with decoded hash input', isCorrect: true, explanation: 'innerHTML parses HTML markup; if the hash contains <img onerror=alert(1)>, it executes immediately.' },
+      { id: 'ixss_2', text: 'Line 2: substring(1) ignores hash collision errors', isCorrect: false },
+      { id: 'ixss_3', text: 'Line 3: getElementById allows prototype poisoning', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'CWE-79: Improper Neutralization of Input During Web Page Generation (DOM-Based XSS)',
+      whyItWorks: 'Unsanitized input flows directly from a source (location.hash) to an execution sink (innerHTML).',
+      patchRecommendation: 'Use textContent or innerText instead of innerHTML, or sanitize with DOMPurify.',
+      terminalProof: '# Payload in browser URL:\nhttps://target.corp/app#<img src=x onerror=alert(document.cookie)>'
+    },
+    xpReward: 50,
+    eloReward: 25
+  },
+  {
+    id: 'diag_int_multi_cidr',
+    title: 'Network Architecture: Subnet Usable Host Calculation',
+    type: 'multiple_choice',
+    domain: 'Networking',
+    difficulty: 'Intermediate',
+    prompt: 'In a corporate IPv4 network segment with CIDR notation 192.168.10.0/28, how many usable host addresses exist for workstations?',
+    options: [
+      { id: 'icidr_1', text: '14 usable host IP addresses (16 total - 2 reserved)', isCorrect: true, explanation: 'A /28 mask leaves 4 bits for hosts: 2^4 = 16. Subtracting network (.0) and broadcast (.15) leaves 14.' },
+      { id: 'icidr_2', text: '16 usable host IP addresses without reservations', isCorrect: false },
+      { id: 'icidr_3', text: '28 usable host IP addresses determined by prefix', isCorrect: false },
+      { id: 'icidr_4', text: '30 usable host IP addresses on standard subnets', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'RFC 4632 Classless Inter-Domain Routing (CIDR)',
+      whyItWorks: 'The first address represents the network wire ID and the last address is the local broadcast address.',
+      patchRecommendation: 'Carve isolated /28 or /29 subnets for sensitive administrative bastion hosts to restrict blast radius.',
+      terminalProof: '$ ipcalc 192.168.10.0/28\nNetmask: 255.255.255.240 = 28\nHostMin: 192.168.10.1\nHostMax: 192.168.10.14\nHosts/Net: 14'
+    },
+    xpReward: 50,
+    eloReward: 25
+  },
+  {
+    id: 'diag_int_multi_cookie',
+    title: 'Session Protection: Cookie Security Flags',
+    type: 'multiple_choice',
+    domain: 'Web Sec',
+    difficulty: 'Intermediate',
+    prompt: 'What primary defense does the "HttpOnly" attribute provide when applied to session cookies by the web server?',
+    options: [
+      { id: 'icook_1', text: 'Blocks client-side JavaScript (document.cookie) from reading token', isCorrect: true, explanation: 'HttpOnly prevents XSS payloads from extracting the authentication cookie.' },
+      { id: 'icook_2', text: 'Encrypts the cookie payload across the local loopback network', isCorrect: false },
+      { id: 'icook_3', text: 'Forces the browser to transmit cookies exclusively over plain HTTP', isCorrect: false },
+      { id: 'icook_4', text: 'Restricts cookie submission solely to identical IP subnet masks', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'OWASP Session Management: Cookie Flags (HttpOnly & Secure)',
+      whyItWorks: 'Browsers enforce an API boundary: HttpOnly cookies are transmitted in HTTP headers but hidden from document.cookie.',
+      patchRecommendation: 'Always configure: Set-Cookie: session=xyz; Secure; HttpOnly; SameSite=Strict',
+      terminalProof: '// In browser console:\n> document.cookie\n"" // (session token is protected and not returned)'
+    },
+    xpReward: 50,
+    eloReward: 25
   }
 ];
 
@@ -588,11 +840,85 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     xpReward: 75,
     eloReward: 38
   }
-];
+,
 
-// ==========================================
-// ITALIAN DIAGNOSTIC QUESTIONS POOL (LOCALIZED)
-// ==========================================
+  {
+    id: 'diag_adv_term_tar_wildcard',
+    title: 'Terminal Sandbox: Linux Archive PrivEsc Audit',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Hardcore',
+    prompt: 'Execute a secure tar command to compress all files in /var/www/html into a backup gzip archive (/backup/www.tar.gz):',
+    terminalPrompt: 'root@production-server:~#',
+    commandPrefix: 'tar',
+    commandTarget: 'tar -czf /backup/www.tar.gz /var/www/html',
+    commandChips: ['-czf /backup/www.tar.gz /var/www/html', '-xvf /var/www/html', '--checkpoint=1', '/backup/www.tar.gz *'],
+    options: [
+      { id: 'atar_1', text: '-czf /backup/www.tar.gz /var/www/html', isCorrect: true, explanation: 'Specifies creation (-c), gzip compression (-z), archive file name (-f), and target directory path.' },
+      { id: 'atar_2', text: '-xvf /var/www/html', isCorrect: false },
+      { id: 'atar_3', text: '--checkpoint=1', isCorrect: false },
+      { id: 'atar_4', text: '/backup/www.tar.gz *', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Wildcard Injection in Shell Utilities (Tar GTFOBins)',
+      whyItWorks: 'Using wildcards like "tar czf /backup/*" allows attackers to plant filenames like "--checkpoint=1" parsed as flags.',
+      patchRecommendation: 'Never use asterisks (*) in automated root cron scripts. Always provide explicit directory paths.',
+      terminalProof: '$ ls -la\n-rw-r--r-- 1 operator operator 0 Oct 18 10:00 --checkpoint=1\n-rw-r--r-- 1 operator operator 0 Oct 18 10:00 --checkpoint-action=exec=sh shell.sh'
+    },
+    xpReward: 75,
+    eloReward: 38
+  },
+  {
+    id: 'diag_adv_spot_deserialization',
+    title: 'Spot the Zero-Day: Python Insecure Deserialization',
+    type: 'spot_the_zeroday',
+    domain: 'Code Analysis',
+    difficulty: 'Hardcore',
+    prompt: 'An internal microservice deserializes RPC task payloads from network sockets. TAP THE CRITICAL FLAWED LINE:',
+    codeLines: [
+      { lineNum: 1, code: 'import socket, pickle' },
+      { lineNum: 2, code: 'server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)' },
+      { lineNum: 3, code: 'data = conn.recv(4096)' },
+      { lineNum: 4, code: 'task = pickle.loads(data)', isVulnerable: true, vulnerabilityHint: 'pickle.loads() invokes __reduce__() during deserialization, executing arbitrary system commands!' },
+      { lineNum: 5, code: 'task.execute()' }
+    ],
+    options: [
+      { id: 'apick_1', text: 'Line 4: pickle.loads() on untrusted network stream', isCorrect: true, explanation: 'Pickle payloads can implement __reduce__ to instantiate os.system and spawn a reverse shell.' },
+      { id: 'apick_2', text: 'Line 2: AF_INET socket lacks TLS stream wrapper', isCorrect: false },
+      { id: 'apick_3', text: 'Line 3: 4096 buffer size causes stack buffer overflow', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'CWE-502: Deserialization of Untrusted Data',
+      whyItWorks: 'The pickle bytecode virtual machine executes constructor calls embedded in serialized data streams.',
+      patchRecommendation: 'Never deserialize untrusted data with pickle. Use safe structured formats like JSON, Protobuf, or MsgPack.',
+      terminalProof: 'class Exploit(object):\n    def __reduce__(self):\n        return (os.system, (\'id\',))\n# Output on unpickling: uid=0(root) gid=0(root)'
+    },
+    xpReward: 75,
+    eloReward: 38
+  },
+  {
+    id: 'diag_adv_multi_asrep',
+    title: 'Enterprise Active Directory: AS-REP Roasting',
+    type: 'multiple_choice',
+    domain: 'Defense & SOC',
+    difficulty: 'Hardcore',
+    prompt: 'What specific account configuration in Active Directory enables an unauthenticated attacker to execute an AS-REP Roasting attack?',
+    options: [
+      { id: 'aasrep_1', text: 'The "Do not require Kerberos preauthentication" account flag is set', isCorrect: true, explanation: 'When DONT_REQ_PREAUTH is active, KDC issues an AS-REP with password-encrypted ticket without proof.' },
+      { id: 'aasrep_2', text: 'The user account is a member of the Protected Users security group', isCorrect: false },
+      { id: 'aasrep_3', text: 'The domain controller enforces AES-256 Kerberos encryption types', isCorrect: false },
+      { id: 'aasrep_4', text: 'The account password has expired and requires change at next logon', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'MITRE ATT&CK T1558.004: AS-REP Roasting',
+      whyItWorks: 'Without pre-authentication, any client can request an AS-REP ticket for the user and crack the hash offline with Hashcat.',
+      patchRecommendation: 'Audit all Active Directory user accounts and ensure DONT_REQ_PREAUTH is disabled across the forest.',
+      terminalProof: '$ impacket-GetNPUsers corp.local/ -usersfile users.txt -format hashcat\n$krb5asrep$23$svc_acc@CORP.LOCAL:...'
+    },
+    xpReward: 75,
+    eloReward: 38
+  }
+];
 
 export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
   {
@@ -784,6 +1110,82 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     },
     xpReward: 35,
     eloReward: 18
+  }
+,
+
+  {
+    id: 'diag_beg_term_chmod_it',
+    title: 'Terminale Interattivo: Permessi Chiave Privata SSH',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'Imposta permessi strettamente privati (solo lettura/scrittura proprietario: 600) sulla chiave SSH id_rsa:',
+    terminalPrompt: 'operatore@zeroday:~/.ssh$',
+    commandPrefix: 'chmod',
+    commandTarget: 'chmod 600 id_rsa',
+    commandChips: ['600 id_rsa', '777 id_rsa', 'id_rsa 644', '+x id_rsa', '-R 700 .'],
+    options: [
+      { id: 'bch_1_it', text: '600 id_rsa', isCorrect: true, explanation: "Il modo 600 garantisce permessi rw------- solo all'owner." },
+      { id: 'bch_2_it', text: '777 id_rsa', isCorrect: false },
+      { id: 'bch_3_it', text: 'id_rsa 644', isCorrect: false },
+      { id: 'bch_4_it', text: '+x id_rsa', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Sicurezza Client SSH e Permessi Chiavi Privata',
+      whyItWorks: 'OpenSSH rifiuta chiavi private leggibili da terzi per prevenire duplicazioni non autorizzate.',
+      patchRecommendation: 'Applicare sempre chmod 600 sui certificati e chiavi private.',
+      terminalProof: '$ chmod 600 id_rsa\n$ ls -l id_rsa\n-rw------- 1 operatore operatore 1675 Oct 18 10:00 id_rsa'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_term_cat_it',
+    title: 'Terminale Interattivo: Ispezione Account di Sistema',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'Visualizza con cat il file di database utenti standard di Linux (/etc/passwd):',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'cat',
+    commandTarget: 'cat /etc/passwd',
+    commandChips: ['/etc/passwd', '/var/log/syslog', '/etc/shadow', '/dev/null'],
+    options: [
+      { id: 'bcat_1_it', text: '/etc/passwd', isCorrect: true, explanation: '/etc/passwd elenca tutti gli account locali e le rispettive shell predefinite.' },
+      { id: 'bcat_2_it', text: '/var/log/syslog', isCorrect: false },
+      { id: 'bcat_3_it', text: '/etc/shadow', isCorrect: false },
+      { id: 'bcat_4_it', text: '/dev/null', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Enumerazione Account Linux',
+      whyItWorks: '/etc/passwd è leggibile da chiunque per convenzione Unix per mappare UID a nomi utente.',
+      patchRecommendation: 'Verificare che gli hash siano conservati esclusivamente in /etc/shadow protetto.',
+      terminalProof: '$ cat /etc/passwd\nroot:x:0:0:root:/root:/bin/bash\noperatore:x:1000:1000::/home/operatore:/bin/bash'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_multi_dns_it',
+    title: 'Protocolli di Rete: Risoluzione DNS IPv4',
+    type: 'multiple_choice',
+    domain: 'Networking',
+    difficulty: 'Beginner',
+    prompt: 'Quale tipo di record DNS mappa direttamente un nome di dominio completo (FQDN) a un indirizzo IPv4?',
+    options: [
+      { id: 'bdns_1_it', text: 'Record A (Address)', isCorrect: true, explanation: 'Il record A associa un hostname al suo indirizzo IPv4 a 32 bit.' },
+      { id: 'bdns_2_it', text: 'Record MX (Mail Exchange)', isCorrect: false },
+      { id: 'bdns_3_it', text: 'Record PTR (Pointer)', isCorrect: false },
+      { id: 'bdns_4_it', text: 'Record TXT (Text)', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Standard DNS RFC 1035',
+      whyItWorks: 'Il record A è il mattone fondamentale del web per convertire domini testuali in IP numerici.',
+      patchRecommendation: 'Configurare DNSSEC per impedire risposte forgiate e DNS Spoofing.',
+      terminalProof: '$ dig +short A zeroday.gg\n104.21.55.12'
+    },
+    xpReward: 30,
+    eloReward: 15
   }
 ];
 
@@ -977,6 +1379,56 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     },
     xpReward: 55,
     eloReward: 28
+  }
+,
+
+  {
+    id: 'diag_int_term_grep_it',
+    title: 'Terminale Interattivo: Analisi Log Tentativi Falliti',
+    type: 'terminal_command',
+    domain: 'Defense & SOC',
+    difficulty: 'Intermediate',
+    prompt: 'Cerca nel file di log /var/log/auth.log i tentativi di accesso falliti in modo case-insensitive con grep:',
+    terminalPrompt: 'analista@soc-postazione:~$',
+    commandPrefix: 'grep',
+    commandTarget: 'grep -i "failed" /var/log/auth.log',
+    commandChips: ['-i "failed" /var/log/auth.log', '-r "error" /etc', 'auth.log -n', '--color', '/var/log/syslog'],
+    options: [
+      { id: 'igrep_1_it', text: '-i "failed" /var/log/auth.log', isCorrect: true, explanation: 'Il flag -i effettua la ricerca case-insensitive nel file auth.log.' },
+      { id: 'igrep_2_it', text: '-r "error" /etc', isCorrect: false },
+      { id: 'igrep_3_it', text: 'auth.log -n', isCorrect: false },
+      { id: 'igrep_4_it', text: '/var/log/syslog', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Triage Log e Rilevamento Password Spraying',
+      whyItWorks: 'auth.log traccia ogni errore PAM. Cercare "failed" rivela attacchi brute-force in corso.',
+      patchRecommendation: 'Implementare Fail2ban per bloccare automaticamente IP che accumulano fallimenti.',
+      terminalProof: '$ grep -i "failed" /var/log/auth.log | tail -n 2\nOct 18 10:14:02 sshd[4012]: Failed password for invalid user admin from 198.51.100.22'
+    },
+    xpReward: 50,
+    eloReward: 25
+  },
+  {
+    id: 'diag_int_multi_cidr_it',
+    title: 'Architettura di Rete: Calcolo Host Utili Subnet',
+    type: 'multiple_choice',
+    domain: 'Networking',
+    difficulty: 'Intermediate',
+    prompt: 'In una sottorete IPv4 aziendale con maschera CIDR /28 (es. 192.168.10.0/28), quanti host utili sono disponibili?',
+    options: [
+      { id: 'icidr_1_it', text: '14 host utili (16 totali meno network e broadcast)', isCorrect: true, explanation: 'Una /28 lascia 4 bit per gli host (2^4 = 16). Sottraendo indirizzo rete e broadcast restano 14.' },
+      { id: 'icidr_2_it', text: '16 host utili senza alcuna riserva di sistema', isCorrect: false },
+      { id: 'icidr_3_it', text: '28 host utili calcolati direttamente dal prefisso', isCorrect: false },
+      { id: 'icidr_4_it', text: '30 host utili standard per sottoreti di classe C', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Calcolo Maschere CIDR (RFC 4632)',
+      whyItWorks: "Il primo indirizzo identifica la rete fisica e l'ultimo è il broadcast locale obbligatorio.",
+      patchRecommendation: "Isolare host di gestione in subnet dedicate /28 o /29 per contenere il raggio d'impatto.",
+      terminalProof: '$ ipcalc 192.168.10.0/28\nNetmask: 255.255.255.240 = 28\nHosts/Net: 14'
+    },
+    xpReward: 50,
+    eloReward: 25
   }
 ];
 
@@ -1201,13 +1653,17 @@ export function getDiagnosticQuestionsForLevel(level: string, lang: Language = g
     sourceQuestions = isIt ? INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT : INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN;
   }
 
-  // Ensure at least 1 interactive terminal challenge and 2 conceptual / analysis questions
+  // Ensure diverse sampling: 1 interactive terminal sandbox, 1 spot-the-zeroday, and 2 varied questions
   const terminalQuestions = sourceQuestions.filter(q => q.type === 'terminal_command');
-  const otherQuestions = sourceQuestions.filter(q => q.type !== 'terminal_command');
+  const spotQuestions = sourceQuestions.filter(q => q.type === 'spot_the_zeroday');
+  const otherQuestions = sourceQuestions.filter(q => q.type !== 'terminal_command' && q.type !== 'spot_the_zeroday');
 
   const pickedTerminal = shuffleArray(terminalQuestions).slice(0, 1);
-  const pickedOthers = shuffleArray(otherQuestions).slice(0, 2);
-  const sampled = shuffleArray([...pickedTerminal, ...pickedOthers]);
+  const pickedSpot = spotQuestions.length > 0 ? shuffleArray(spotQuestions).slice(0, 1) : [];
+  const neededOthers = Math.max(2, 4 - (pickedTerminal.length + pickedSpot.length));
+  const pickedOthers = shuffleArray(otherQuestions).slice(0, neededOthers);
+
+  const sampled = shuffleArray([...pickedTerminal, ...pickedSpot, ...pickedOthers]);
 
   return sampled.map(q => ({
     ...q,
@@ -1216,4 +1672,5 @@ export function getDiagnosticQuestionsForLevel(level: string, lang: Language = g
 }
 
 export const DIAGNOSTIC_QUESTIONS = INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN;
+
 

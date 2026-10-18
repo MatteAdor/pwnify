@@ -16,6 +16,8 @@ interface OnboardingFunnelProps {
     level: string;
     commitment: number;
     readinessScore: number;
+    chosenUsername?: string;
+    profession?: string;
   }) => void;
   onOpenPaywall: () => void;
 }
@@ -29,6 +31,7 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
   const [selectedGoal, setSelectedGoal] = useState<string>('comptia_sec');
   const [selectedLevel, setSelectedLevel] = useState<string>('intermediate');
   const [dailyTime, setDailyTime] = useState<number>(15);
+  const [customCallsign, setCustomCallsign] = useState<string>('');
 
   // Diagnostic Quiz State
   const [diagQuestions, setDiagQuestions] = useState<HardcoreQuestion[]>(() => getDiagnosticQuestionsForLevel('intermediate', lang));
@@ -194,7 +197,9 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
       goal: selectedGoal,
       level: selectedLevel,
       commitment: dailyTime,
-      readinessScore: calculatedReadiness
+      readinessScore: calculatedReadiness,
+      chosenUsername: customCallsign.trim() || undefined,
+      profession: goals.find(g => g.id === selectedGoal)?.title
     });
     // Trigger Paywall 1
     onOpenPaywall();
@@ -493,22 +498,28 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
             {/* Interactive Terminal Sandbox */}
             {currentQuestion.type === 'terminal_command' && (
               <div className="space-y-2">
-                <div className="rounded-xl bg-[#06090F] border border-cyan-500/40 p-3 shadow-inner font-mono text-xs text-slate-200">
-                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/5 text-[11px] text-slate-400">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                <div className="rounded-xl bg-[#060A14] border border-cyan-500/40 p-3 sm:p-4 shadow-inner font-mono text-xs text-slate-200">
+                  <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-white/10 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/90 shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/90 shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90 shadow-sm" />
+                      </div>
+                      <span className="text-slate-300 font-mono font-bold tracking-wider text-[11px]">TTY1 // DIAGNOSTIC SANDBOX</span>
                     </div>
-                    <span className="text-slate-400">bash — terminale diagnostico interattivo</span>
+                    <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>ONLINE</span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-emerald-400 font-bold shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 bg-[#0A0F1D] p-2 rounded-lg border border-white/5">
+                    <span className="text-emerald-400 font-bold shrink-0 text-xs">
                       {currentQuestion.terminalPrompt || 'operator@zeroday:~$'}
                     </span>
                     {currentQuestion.commandPrefix && (
-                      <span className="text-slate-300 font-bold shrink-0">
+                      <span className="text-white font-bold shrink-0 text-xs">
                         {currentQuestion.commandPrefix}
                       </span>
                     )}
@@ -524,12 +535,12 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                         }
                       }}
                       placeholder="digita o tocca i comandi sotto..."
-                      className="bg-slate-900 border border-slate-700 focus:border-cyan-400 text-cyan-300 px-2 py-1 rounded text-xs flex-1 min-w-[150px] outline-none font-mono"
+                      className="bg-[#0D1527] border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-cyan-300 px-2.5 py-1.5 rounded text-xs flex-1 min-w-[150px] outline-none font-mono"
                     />
                   </div>
 
                   {terminalStdout && (
-                    <div className="mt-2 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-400 bg-black/50 p-2 rounded border border-emerald-500/20">
+                    <div className="mt-2.5 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-300 bg-black/70 p-2.5 rounded-lg border border-emerald-500/30 shadow-inner">
                       {terminalStdout}
                     </div>
                   )}
@@ -705,6 +716,25 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                   </p>
                 </div>
 
+                {/* Operator Callsign / Username Selection */}
+                <div className="p-3 sm:p-4 rounded-xl bg-[#06090F] border border-white/10 text-left space-y-1.5 my-2">
+                  <label className="text-[10px] sm:text-xs font-mono font-bold text-slate-300 uppercase tracking-wider block">
+                    {lang === 'it' ? 'Scegli il tuo Callsign / Nome Operatore:' : 'Choose your Operator Callsign:'}
+                  </label>
+                  <input
+                    type="text"
+                    value={customCallsign}
+                    onChange={(e) => setCustomCallsign(e.target.value)}
+                    placeholder={lang === 'it' ? 'Es. DarkMatteo, Shadow_Op, GhostSec' : 'e.g. DarkMatteo, Shadow_Op, GhostSec'}
+                    className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-emerald-500 text-xs text-white font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {lang === 'it' 
+                      ? 'Questo nome comparirà nel tuo profilo, nelle leghe e nella roadmap.'
+                      : 'This callsign will appear in your profile, leagues, and skill roadmap.'}
+                  </p>
+                </div>
+
                 {/* Primary CTA: Launch Paywall */}
                 <button
                   onClick={handleFinishOnboarding}
@@ -721,7 +751,9 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                       goal: selectedGoal,
                       level: selectedLevel,
                       commitment: dailyTime,
-                      readinessScore: calculatedReadiness
+                      readinessScore: calculatedReadiness,
+                      chosenUsername: customCallsign.trim() || undefined,
+                      profession: goals.find(g => g.id === selectedGoal)?.title
                     });
                   }}
                   className="text-xs text-slate-400 hover:text-slate-200 underline font-mono cursor-pointer"

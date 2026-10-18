@@ -139,6 +139,9 @@ export interface UserState {
   hasSeenTrial?: boolean;
   userEmail?: string;
   isLoggedIn?: boolean;
+  profession?: string;
+  lastUsernameChangeTimestamp?: number;
+  language?: 'en' | 'it';
 }
 
 export type PaywallContext = 

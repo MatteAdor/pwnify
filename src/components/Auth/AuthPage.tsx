@@ -88,9 +88,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   // OAuth Modals
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [googleInputEmail, setGoogleInputEmail] = useState('');
+  const [googleInputCallsign, setGoogleInputCallsign] = useState('');
 
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [githubInputHandle, setGithubInputHandle] = useState('');
+  const [githubInputCallsign, setGithubInputCallsign] = useState('');
 
   // Passwordless Email OTP Login Modal
   const [isEmailOtpModalOpen, setIsEmailOtpModalOpen] = useState(false);
@@ -379,8 +381,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setTimeout(() => {
       const defaultName = cleanMail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-      const finalName = `Google_${defaultName}`;
-      const res = loginWithOAuth('google', { name: finalName, email: cleanMail });
+      const finalName = googleInputCallsign.trim() || `Google_${defaultName}`;
+      const res = loginWithOAuth('google', { 
+        name: finalName, 
+        email: cleanMail,
+        customUsername: googleInputCallsign.trim() || undefined
+      });
       setIsProcessing(false);
       setIsGoogleModalOpen(false);
       sound.playVictoryFanfare();
@@ -417,13 +423,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
+    const finalName = githubInputCallsign.trim() || cleanHandle;
+
     setIsProcessing(true);
     sound.playTap();
     setErrorMsg(null);
 
     setTimeout(() => {
       const gitEmail = `${cleanHandle.toLowerCase()}@users.noreply.github.com`;
-      const res = loginWithOAuth('github', { name: cleanHandle, email: gitEmail });
+      const res = loginWithOAuth('github', { 
+        name: finalName, 
+        email: gitEmail,
+        customUsername: githubInputCallsign.trim() || undefined
+      });
       setIsProcessing(false);
       setIsGitHubModalOpen(false);
       sound.playVictoryFanfare();
@@ -1060,6 +1072,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   onChange={(e) => setGoogleInputEmail(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
                 />
+                <input
+                  type="text"
+                  placeholder="Scegli il tuo nome operatore (Callsign)"
+                  value={googleInputCallsign}
+                  onChange={(e) => setGoogleInputCallsign(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
+                />
                 <button
                   type="submit"
                   disabled={isProcessing}
@@ -1111,10 +1130,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. octocat or your-handle"
+                  placeholder="Username GitHub (es. octocat o tuo-handle)"
                   value={githubInputHandle}
                   onChange={(e) => setGithubInputHandle(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-white text-xs text-white font-mono"
+                />
+                <input
+                  type="text"
+                  placeholder="Scegli il tuo nome operatore (Callsign)"
+                  value={githubInputCallsign}
+                  onChange={(e) => setGithubInputCallsign(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
                 />
                 <button
                   type="submit"

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { UserState } from '../types';
 import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
-import { useLanguage } from '../utils/language';
+import { useLanguage, saveLanguage } from '../utils/language';
 import { 
   Flame, Ticket, Sparkles, Terminal, 
   Volume2, VolumeX, RotateCcw, Palette,
-  LogIn, UserCheck, Settings, X, Shield
+  LogIn, UserCheck, Settings, X, Shield,
+  Globe, Edit3, Check, Zap, AlertCircle
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -18,6 +19,7 @@ interface NavbarProps {
   onOpenDailyBreach?: () => void;
   onOpenArsenal?: () => void;
   onOpenAuth?: () => void;
+  onUpdateUsername?: (newUsername: string) => { success: boolean; error?: string };
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,23 +30,85 @@ export const Navbar: React.FC<NavbarProps> = ({
   isGodMode = true,
   onOpenDailyBreach,
   onOpenArsenal,
-  onOpenAuth
+  onOpenAuth,
+  onUpdateUsername
 }) => {
-  const { t } = useLanguage();
+  const { lang, setLanguage, t } = useLanguage();
   const rank = getRankFromElo(userState.elo);
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  // Username edit state in settings
+  const [isEditingUsername, setIsEditingUsername] = useState<boolean>(false);
+  const [usernameInput, setUsernameInput] = useState<string>(userState.username);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
+
+  // Calculate 7-day cooldown for username change
+  const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+  const elapsedChange = userState.lastUsernameChangeTimestamp 
+    ? Date.now() - userState.lastUsernameChangeTimestamp 
+    : Infinity;
+  const isUsernameCooldownActive = elapsedChange < COOLDOWN_MS;
+  const cooldownDaysRemaining = isUsernameCooldownActive 
+    ? Math.ceil((COOLDOWN_MS - elapsedChange) / (24 * 60 * 60 * 1000)) 
+    : 0;
+
+  // Chosen profession displayed above username
+  const chosenProfession = userState.profession || (
+    userState.goal === 'soc_blue' ? 'SOC Analyst' :
+    userState.goal === 'web_hacking' ? 'Penetration Tester' :
+    userState.goal === 'linux_bash' ? 'Linux Systems Specialist' :
+    'Cyber Warfare Operator'
+  );
 
   const handleToggleSound = () => {
     const muted = sound.toggleMute();
     setIsMuted(muted);
   };
 
+  const handleSaveUsername = () => {
+    setUsernameError(null);
+    setUsernameSuccess(null);
+
+    if (isUsernameCooldownActive) {
+      setUsernameError(
+        lang === 'it' 
+          ? `Puoi cambiare nome tra ${cooldownDaysRemaining} giorni.` 
+          : `You can change your username in ${cooldownDaysRemaining} days.`
+      );
+      return;
+    }
+
+    if (!usernameInput || usernameInput.trim().length < 3) {
+      setUsernameError(
+        lang === 'it' 
+          ? 'Il nome operatore deve avere almeno 3 caratteri.' 
+          : 'Callsign must be at least 3 characters.'
+      );
+      return;
+    }
+
+    if (onUpdateUsername) {
+      const res = onUpdateUsername(usernameInput.trim());
+      if (!res.success) {
+        setUsernameError(res.error || (lang === 'it' ? 'Errore durante il salvataggio' : 'Failed to update username'));
+        sound.playPayloadBlocked();
+      } else {
+        sound.playExploitSuccess();
+        setUsernameSuccess(lang === 'it' ? 'Nome aggiornato con successo!' : 'Callsign updated successfully!');
+        setIsEditingUsername(false);
+      }
+    } else {
+      setIsEditingUsername(false);
+    }
+  };
+
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-[#0B0E14]/95 backdrop-blur-md border-b border-zinc-800/80 px-3 sm:px-6 pt-safe pb-2.5 min-h-[58px] flex items-center transition-all">
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2.5">
-          {/* Brand Logo - Clear and Prominent on Mobile */}
+          {/* Brand Logo */}
           <div 
             onClick={() => sound.playTap()}
             className="flex items-center gap-2 cursor-pointer select-none shrink-0"
@@ -56,33 +120,53 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-mono font-bold text-base sm:text-lg tracking-tight text-white">
                 Zero<span className="text-emerald-400">Day</span>
               </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-300 border border-zinc-700">
-                PRO
-              </span>
+              {/* Only render PRO badge if user has PRO */}
+              {userState.isPro && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold">
+                  PRO
+                </span>
+              )}
             </div>
           </div>
 
           {/* Minimalist Top Telemetry & Controls: Visible & High Contrast */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* 2x XP Telemetry Indicator / Paywall Trigger */}
+            <div 
+              onClick={() => {
+                sound.playTap();
+                if (!userState.isPro) onOpenPaywall();
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg border transition-all cursor-pointer font-mono font-bold text-xs ${
+                userState.isPro
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm'
+                  : 'bg-zinc-900/90 border-zinc-800 hover:border-amber-500/50 text-zinc-400 hover:text-amber-300'
+              }`}
+              title={userState.isPro ? '2x XP Boost Attivo (PRO)' : 'Clicca per sbloccare 2x XP Boost permanente'}
+            >
+              <Zap className={`w-3.5 h-3.5 ${userState.isPro ? 'text-amber-400 fill-amber-400' : 'text-amber-400/70'}`} />
+              <span className="text-[11px] font-mono">2x XP</span>
+            </div>
+
             {/* Daily Streak Counter */}
             <div 
               onClick={() => sound.playTap()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
               title={t.dailyStreak}
             >
-              <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
-              <span className="font-mono font-bold text-xs sm:text-sm text-amber-300">
+              <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <span className="font-mono font-bold text-xs text-amber-300">
                 {userState.streakDays}d
               </span>
             </div>
 
             {/* Arena Tickets Counter */}
             <div 
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-indigo-500/40 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-indigo-500/40 transition-colors"
               title={t.arenaTickets}
             >
-              <Ticket className="w-4 h-4 text-indigo-400" />
-              <span className="font-mono font-bold text-xs sm:text-sm text-indigo-300">
+              <Ticket className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="font-mono font-bold text-xs text-indigo-300">
                 {userState.isPro ? (
                   <span className="text-emerald-400 font-semibold text-xs">∞ PRO</span>
                 ) : (
@@ -98,9 +182,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   sound.playTap();
                   onOpenPaywall();
                 }}
-                className="hidden xs:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-bold text-xs transition-all transform active:scale-95 cursor-pointer shadow-sm"
+                className="hidden xs:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-bold text-xs transition-all transform active:scale-95 cursor-pointer shadow-sm"
               >
-                <Sparkles className="w-3.5 h-3.5 fill-zinc-950" />
+                <Sparkles className="w-3 h-3 fill-zinc-950" />
                 <span>PRO</span>
               </button>
             )}
@@ -109,9 +193,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => {
                 sound.playTap();
+                setUsernameInput(userState.username);
+                setUsernameError(null);
+                setUsernameSuccess(null);
                 setIsSettingsOpen(true);
               }}
-              className="flex items-center gap-1.5 p-2 rounded-lg bg-zinc-900/90 border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 p-1.5 sm:p-2 rounded-lg bg-zinc-900/90 border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
               title="Impostazioni & Account"
               aria-label="Settings and Profile"
             >
@@ -153,7 +240,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {/* Operator Account Section */}
-            <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
                   OPERATORE ATTIVO
@@ -163,13 +250,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
 
+              {/* Profession Displayed Above Username */}
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-mono font-bold w-fit">
+                <Shield className="w-3 h-3 text-cyan-400" />
+                <span className="uppercase tracking-wide">{chosenProfession}</span>
+              </div>
+
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 font-mono">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 font-mono">
                     {userState.username.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="truncate">
-                    <p className="font-mono font-bold text-xs text-white truncate">
+                    <p className="font-mono font-bold text-sm text-white truncate">
                       {userState.username}
                     </p>
                     <p className="text-[10px] font-mono text-emerald-400">
@@ -178,25 +271,137 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
 
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Change username toggle */}
+                  <button
+                    onClick={() => {
+                      sound.playTap();
+                      setIsEditingUsername(!isEditingUsername);
+                      setUsernameInput(userState.username);
+                      setUsernameError(null);
+                      setUsernameSuccess(null);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 hover:border-zinc-600 font-mono text-xs font-bold text-zinc-300 hover:text-white transition-all flex items-center gap-1 cursor-pointer"
+                    title="Modifica Callsign"
+                  >
+                    <Edit3 className="w-3 h-3 text-zinc-300" />
+                    <span className="hidden sm:inline">Modifica</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      sound.playTap();
+                      setIsSettingsOpen(false);
+                      onOpenAuth?.();
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 hover:border-emerald-500/40 font-mono text-xs font-bold text-zinc-200 hover:text-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {userState.isLoggedIn ? (
+                      <>
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Account</span>
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>{t.logInNav}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Username Edit Form with 1-Week Cooldown Enforcement */}
+              {isEditingUsername && (
+                <div className="pt-2 border-t border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase">
+                      Cambia Nome Operatore:
+                    </label>
+                    {isUsernameCooldownActive && (
+                      <span className="text-[10px] font-mono text-amber-400 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Attendi {cooldownDaysRemaining} giorni
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      disabled={isUsernameCooldownActive}
+                      value={usernameInput}
+                      onChange={(e) => setUsernameInput(e.target.value)}
+                      placeholder="Nuovo Callsign (min 3 car.)"
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-emerald-500 text-xs font-mono text-white disabled:opacity-50"
+                    />
+                    <button
+                      disabled={isUsernameCooldownActive}
+                      onClick={handleSaveUsername}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-mono font-bold text-xs transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span>Salva</span>
+                    </button>
+                  </div>
+
+                  {usernameError && (
+                    <p className="text-[10px] font-mono text-red-400">{usernameError}</p>
+                  )}
+                  {usernameSuccess && (
+                    <p className="text-[10px] font-mono text-emerald-400">{usernameSuccess}</p>
+                  )}
+                  <p className="text-[9px] text-zinc-500 font-mono">
+                    *Il primo cambio è immediato; le modifiche successive richiedono 1 settimana di cooldown.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Language Switcher */}
+            <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-mono font-bold text-white block">
+                    Lingua / Language
+                  </span>
+                  <p className="text-[10px] text-zinc-400">
+                    Seleziona lingua interfaccia & quiz
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
                 <button
                   onClick={() => {
                     sound.playTap();
-                    setIsSettingsOpen(false);
-                    onOpenAuth?.();
+                    setLanguage('it');
+                    saveLanguage('it');
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 hover:border-emerald-500/40 font-mono text-xs font-bold text-zinc-200 hover:text-emerald-300 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+                    lang === 'it' 
+                      ? 'bg-emerald-500 text-zinc-950 shadow-sm' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
                 >
-                  {userState.isLoggedIn ? (
-                    <>
-                      <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Account</span>
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>{t.logInNav}</span>
-                    </>
-                  )}
+                  IT
+                </button>
+                <button
+                  onClick={() => {
+                    sound.playTap();
+                    setLanguage('en');
+                    saveLanguage('en');
+                  }}
+                  className={`px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+                    lang === 'en' 
+                      ? 'bg-emerald-500 text-zinc-950 shadow-sm' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  EN
                 </button>
               </div>
             </div>

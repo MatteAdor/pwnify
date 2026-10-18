@@ -28,8 +28,10 @@ import {
   persistActiveAccountState, 
   sanitizeUserState,
   syncDatabaseWithBackend,
+  updateOperatorUsername,
   UserAccount 
 } from './utils/userDatabase';
+import { isContributor } from './utils/licenseEngine';
 import { sound } from './utils/soundEngine';
 import { useLanguage } from './utils/language';
 import { 
@@ -189,15 +191,6 @@ export const App: React.FC = () => {
     }
   }, [userState.username]);
 
-  // Update Callsign / Username handler with strict sanitization
-  const handleUpdateUsername = (newName: string) => {
-    const sanitized = sanitizeCallsign(newName, userState.username);
-    if (!sanitized) return;
-    setUserState(prev => ({
-      ...prev,
-      username: sanitized
-    }));
-  };
 
   // Restore License Key handler with cryptographic verification
   const handleRestoreLicense = (key: string) => {
@@ -371,15 +364,46 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
     level: string;
     commitment: number;
     readinessScore: number;
+    chosenUsername?: string;
+    profession?: string;
   }) => {
-    setUserState(prev => ({
-      ...prev,
-      goal: data.goal,
-      experienceLevel: data.level,
-      dailyCommitment: data.commitment,
-      readinessScore: data.readinessScore,
-      onboardingCompleted: true
-    }));
+    setUserState(prev => {
+      const nextUsername = data.chosenUsername && data.chosenUsername.trim().length >= 3 
+        ? sanitizeCallsign(data.chosenUsername.trim(), prev.username) 
+        : prev.username;
+      const isAutoPro = isContributor(nextUsername) || isContributor(prev.userEmail) || prev.isPro;
+      const chosenProf = data.profession || (
+        data.goal === 'soc_blue' ? 'SOC Analyst' :
+        data.goal === 'web_hacking' ? 'Penetration Tester' :
+        data.goal === 'linux_bash' ? 'Linux Systems Specialist' :
+        'Cyber Warfare Operator'
+      );
+
+      const updated: UserState = {
+        ...prev,
+        username: nextUsername,
+        goal: data.goal,
+        profession: chosenProf,
+        experienceLevel: data.level,
+        dailyCommitment: data.commitment,
+        readinessScore: data.readinessScore,
+        onboardingCompleted: true,
+        isPro: isAutoPro,
+        licenseKey: isAutoPro ? (prev.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME') : prev.licenseKey
+      };
+      persistActiveAccountState(updated);
+      return updated;
+    });
+  };
+
+  // Username update with cooldown handler for Navbar settings
+  const handleUpdateUsername = (newUsername: string): { success: boolean; error?: string } => {
+    const res = updateOperatorUsername(newUsername, userState);
+    if (res.success && res.updatedState) {
+      setUserState(res.updatedState);
+      return { success: true };
+    }
+    return { success: false, error: res.error };
   };
 
   // Skill Node Click Handler
@@ -567,6 +591,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
             onOpenArsenal={() => setIsArsenalOpen(true)}
             onOpenAuth={() => setIsAuthOpen(true)}
+            onUpdateUsername={handleUpdateUsername}
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}

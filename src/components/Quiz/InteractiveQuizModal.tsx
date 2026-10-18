@@ -465,23 +465,29 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
               {currentQ.type === 'terminal_command' && (
                 <div className="space-y-2.5">
                   {/* Live Terminal Box */}
-                  <div className="rounded-xl bg-[#06090F] border border-cyan-500/40 p-3 shadow-inner font-mono text-xs text-slate-200">
-                    <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/5 text-[11px] text-slate-400">
-                      <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  <div className="rounded-xl bg-[#060A14] border border-cyan-500/40 p-3 sm:p-4 shadow-inner font-mono text-xs text-slate-200">
+                    <div className="flex items-center justify-between gap-2 mb-2.5 pb-2 border-b border-white/10 text-[11px] text-slate-400">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500/90 shadow-sm" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-amber-500/90 shadow-sm" />
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/90 shadow-sm" />
+                        </div>
+                        <span className="text-slate-300 font-mono font-bold tracking-wider text-[11px]">TTY1 // BASH SANDBOX</span>
                       </div>
-                      <span className="text-slate-400">bash — sessione interattiva</span>
+                      <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>ONLINE</span>
+                      </div>
                     </div>
 
                     {/* Terminal Prompt Line */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-emerald-400 font-bold shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 bg-[#0A0F1D] p-2.5 rounded-lg border border-white/5">
+                      <span className="text-emerald-400 font-bold shrink-0 text-xs">
                         {currentQ.terminalPrompt || 'operator@cyberlab:~$'}
                       </span>
                       {currentQ.commandPrefix && (
-                        <span className="text-slate-300 font-bold shrink-0">
+                        <span className="text-white font-bold shrink-0 text-xs">
                           {currentQ.commandPrefix}
                         </span>
                       )}
@@ -497,13 +503,13 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                           }
                         }}
                         placeholder="completa il comando o tocca i chip sotto..."
-                        className="bg-slate-900 border border-slate-700 focus:border-cyan-400 text-cyan-300 px-2 py-1 rounded text-xs flex-1 min-w-[180px] outline-none font-mono"
+                        className="bg-[#0D1527] border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-cyan-300 px-2.5 py-1.5 rounded text-xs flex-1 min-w-[180px] outline-none font-mono"
                       />
                     </div>
 
                     {/* Real-time Stdout Terminal Simulation */}
                     {terminalStdout && (
-                      <div className="mt-2 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-400 bg-black/50 p-2 rounded border border-emerald-500/20">
+                      <div className="mt-2.5 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-300 bg-black/70 p-2.5 rounded-lg border border-emerald-500/30 shadow-inner">
                         {terminalStdout}
                       </div>
                     )}

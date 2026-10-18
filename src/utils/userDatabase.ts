@@ -2,6 +2,7 @@ import { UserState } from '../types';
 import { INITIAL_DAILY_BOUNTIES } from '../data/bountiesAndPbq';
 import { calculateDynamicTelemetry } from './readinessEngine';
 import { sanitizeCallsign } from './security';
+import { isContributor } from './licenseEngine';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
@@ -64,11 +65,16 @@ export function createCleanAccountState(
   isLoggedIn: boolean = true
 ): UserState {
   const dynamic = calculateDynamicTelemetry([], [], false);
+  const cleanEmail = email ? email.trim().toLowerCase() : undefined;
+  const safeName = sanitizeCallsign(username, 'Operator');
+  const autoPro = isContributor(cleanEmail) || isContributor(safeName);
+
   return sanitizeUserState({
-    username: sanitizeCallsign(username, 'Operator'),
-    userEmail: email ? email.trim().toLowerCase() : undefined,
+    username: safeName,
+    userEmail: cleanEmail,
     isLoggedIn,
-    isPro: false,
+    isPro: autoPro,
+    licenseKey: autoPro ? '0xPRO-CONTRIBUTOR-LIFETIME' : undefined,
     streakDays: 0,
     streakShieldActive: false,
     elo: 1000,
@@ -335,6 +341,12 @@ export function loginEmailAccount(
     return { success: false, error: 'Incorrect password.' };
   }
 
+  // Ensure contributors automatically have PRO
+  if (isContributor(found.email) || isContributor(found.username)) {
+    found.userState.isPro = true;
+    found.userState.licenseKey = found.userState.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME';
+  }
+
   found.lastLoginAt = new Date().toISOString();
   saveAccounts(accounts);
   setCurrentSession(found);
@@ -353,10 +365,11 @@ export const loginAccount = loginEmailAccount;
  */
 export function loginWithOAuth(
   provider: 'google' | 'github',
-  profile: { name: string; email: string }
+  profile: { name: string; email: string; customUsername?: string }
 ): { success: boolean; account: UserAccount } {
   const cleanEmail = profile.email.trim().toLowerCase();
-  const baseName = sanitizeCallsign(profile.name.replace(/\s+/g, '_'), provider === 'google' ? 'Google_Op' : 'GitHub_Op');
+  const rawChosenName = (profile.customUsername && profile.customUsername.trim()) || profile.name;
+  const baseName = sanitizeCallsign(rawChosenName.replace(/\s+/g, '_'), provider === 'google' ? 'Google_Op' : 'GitHub_Op');
   const accounts = getRegisteredAccounts();
 
   let existing = accounts.find(a => 
@@ -365,6 +378,10 @@ export function loginWithOAuth(
   );
 
   if (existing) {
+    if (isContributor(existing.email) || isContributor(existing.username) || isContributor(cleanEmail)) {
+      existing.userState.isPro = true;
+      existing.userState.licenseKey = existing.userState.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME';
+    }
     existing.lastLoginAt = new Date().toISOString();
     existing.userState = sanitizeUserState(existing.userState);
     saveAccounts(accounts);
@@ -511,4 +528,63 @@ export function purgeAllUserAccounts(): void {
     console.error('Failed to purge accounts', e);
   }
 }
+
+/**
+ * Updates the operator username with a 7-day cooldown check.
+ * 1 change allowed immediately; subsequent changes require 7 days.
+ */
+export function updateOperatorUsername(
+  newUsername: string,
+  currentState: UserState
+): { success: boolean; error?: string; updatedState?: UserState } {
+  const clean = sanitizeCallsign(newUsername, '').trim();
+  if (clean.length < 3) {
+    return { success: false, error: 'Il nome operatore deve avere almeno 3 caratteri.' };
+  }
+
+  // Check 7 days cooldown (7 * 24 * 60 * 60 * 1000 ms)
+  const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+  if (currentState.lastUsernameChangeTimestamp) {
+    const elapsed = Date.now() - currentState.lastUsernameChangeTimestamp;
+    if (elapsed < COOLDOWN_MS) {
+      const remainingDays = Math.ceil((COOLDOWN_MS - elapsed) / (24 * 60 * 60 * 1000));
+      return { 
+        success: false, 
+        error: `Puoi cambiare nome operatore solo una volta a settimana. Riprova tra ${remainingDays} giorni.` 
+      };
+    }
+  }
+
+  // Check uniqueness across other accounts
+  const accounts = getRegisteredAccounts();
+  const session = getCurrentSession();
+  const duplicate = accounts.find(
+    a => a.id !== session?.id && a.username.toLowerCase() === clean.toLowerCase()
+  );
+  if (duplicate) {
+    return { success: false, error: 'Questo callsign è già in uso da un altro operatore.' };
+  }
+
+  const updatedState: UserState = {
+    ...currentState,
+    username: clean,
+    lastUsernameChangeTimestamp: Date.now()
+  };
+
+  if (session) {
+    session.username = clean;
+    session.userState = sanitizeUserState(updatedState);
+    setCurrentSession(session);
+
+    const idx = accounts.findIndex(a => a.id === session.id);
+    if (idx !== -1) {
+      accounts[idx].username = clean;
+      accounts[idx].userState = sanitizeUserState(updatedState);
+      saveAccounts(accounts);
+    }
+  }
+
+  return { success: true, updatedState };
+}
+
 
