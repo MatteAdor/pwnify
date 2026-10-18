@@ -6,13 +6,15 @@ import {
   Lock, CheckCircle2, Play, Sparkles, Shield, 
   Terminal, Globe, Network, Cpu, Key, Server, 
   ArrowLeft, ChevronRight, Zap, BookOpen, 
-  Check, Copy, FileText, HelpCircle, Flame, Target
+  Check, Copy, FileText, HelpCircle, Flame, Target,
+  AlertTriangle, Clock
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {
   userState: UserState;
   onSelectNode: (node: SkillNode) => void;
   onOpenPaywall: () => void;
+  onOpenDailyBreach?: () => void;
 }
 
 // Icon and color mapper for chapters
@@ -157,7 +159,8 @@ const CHAPTER_TOOLS: Record<string, {
 export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   userState,
   onSelectNode,
-  onOpenPaywall
+  onOpenPaywall,
+  onOpenDailyBreach
 }) => {
   // Navigation: null = Chapter Overview, string = Chapter Detail (Selected Module ID)
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
@@ -165,6 +168,10 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   // Tactical Cheat Sheet Modal State
   const [activeCheatSheetModuleId, setActiveCheatSheetModuleId] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // Daily Breach solved state check
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isBreachSolvedToday = userState.lastDailyBreachDate === todayStr;
 
   // Selected module data
   const activeModule: SkillModule | undefined = SKILL_MODULES.find(m => m.id === selectedChapterId);
@@ -562,6 +569,71 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   {userState.completedNodeIds.length} nodi completati
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Daily 0xBreach Challenge Hero Card */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#200e12] via-[#161224] to-[#0c1424] border-2 border-red-500/40 p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
+                  <AlertTriangle className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
+                      DEFCON 1 · ACTIVE BREACH
+                    </span>
+                    <span className="text-xs font-mono text-slate-400">1 Tentativo al Giorno</span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
+                    Daily 0xBreach Challenge
+                  </h2>
+                </div>
+              </div>
+
+              <div className="text-right font-mono">
+                <span className="text-[10px] text-slate-400 block">SERIE TRIAGE</span>
+                <span className="text-xs font-bold text-amber-400">
+                  🔥 x{userState.dailyBreachStreak || 0}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Un exploit critico del mondo reale richiede analisi immediata. Ispeziona il frammento di codice, identifica la root cause e ottieni XP doppi e la scheda condivisibile in stile Wordle.
+            </p>
+
+            <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  sound.playTap();
+                  if (onOpenDailyBreach) onOpenDailyBreach();
+                }}
+                className={`py-3 px-5 rounded-xl font-mono font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer ${
+                  isBreachSolvedToday
+                    ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60'
+                    : 'bg-gradient-to-r from-red-500 via-amber-500 to-emerald-400 hover:from-red-400 hover:to-emerald-300 text-slate-950 font-black'
+                }`}
+              >
+                {isBreachSolvedToday ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>TRIAGE COMPLETATO OGGI (RIVEDI ANALISI)</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <span>AVVIA TRIAGE ZERO-DAY (+150 XP)</span>
+                  </>
+                )}
+              </button>
+
+              <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>Nuovo breach alle 00:00</span>
+              </span>
             </div>
           </div>
 
