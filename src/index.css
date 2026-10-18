@@ -41,18 +41,22 @@
   font-family: 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Mobile Responsive Proportional Scaling */
-/* Scales all Tailwind rem-based paddings, margins, and typography down by ~18% on phone screens */
-@media (max-width: 640px) {
+html {
+  font-size: 15px;
+}
+
+@media (min-width: 640px) {
   html {
-    font-size: 13.5px;
+    font-size: 16px;
   }
 }
 
-@media (max-width: 390px) {
-  html {
-    font-size: 12.5px;
-  }
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 0.65rem);
+}
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.75rem);
 }
 
 html, body, button, input, select, textarea {

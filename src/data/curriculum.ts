@@ -54,9 +54,9 @@ export const SKILL_MODULES_EN: SkillModule[] = [
               { lineNum: 4, code: 'ls -la /var/log' }
             ],
             options: [
-              { id: 'bs_1', text: 'Line 3: cat attempts to access non-existent directory /etc/config', isCorrect: true },
-              { id: 'bs_2', text: 'Line 2: echo with equals signs is invalid in bash', isCorrect: false },
-              { id: 'bs_3', text: 'Line 4: ls -la requires sudo privileges', isCorrect: false }
+              { id: 'bs_1', text: 'Line 3: non-existent path /etc/config', isCorrect: true },
+              { id: 'bs_2', text: 'Line 2: echo equals syntax invalid', isCorrect: false },
+              { id: 'bs_3', text: 'Line 4: ls requires sudo privileges', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'Linux FHS (Filesystem Hierarchy Standard)',
@@ -193,10 +193,10 @@ export const SKILL_MODULES_EN: SkillModule[] = [
             difficulty: 'Beginner',
             prompt: 'Which key property distinguishes a cryptographic hash function (such as SHA-256) from a reversible encryption algorithm (such as AES)?',
             options: [
-              { id: 'hp_1', text: 'Hashing is a one-way (irreversible) fixed-length mathematical function', isCorrect: true },
-              { id: 'hp_2', text: 'Hashing requires a private key to decrypt the original input text', isCorrect: false },
-              { id: 'hp_3', text: 'Hashing produces a longer output string as input length increases', isCorrect: false },
-              { id: 'hp_4', text: 'Hashing functions only over active HTTPS network connections', isCorrect: false }
+              { id: 'hp_1', text: 'One-way irreversible mathematical function', isCorrect: true },
+              { id: 'hp_2', text: 'Requires private key to decrypt input', isCorrect: false },
+              { id: 'hp_3', text: 'Output length grows with input length', isCorrect: false },
+              { id: 'hp_4', text: 'Functions only over HTTPS connections', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'Cryptographic Hash Functions: One-Way Property',
@@ -224,9 +224,9 @@ export const SKILL_MODULES_EN: SkillModule[] = [
               { lineNum: 7, code: '});' }
             ],
             options: [
-              { id: 'spt_1', text: 'Line 5: direct database insertion of "password" parameter in plaintext', isCorrect: true },
-              { id: 'spt_2', text: 'Line 2: unsafe object destructuring from req.body', isCorrect: false },
-              { id: 'spt_3', text: 'Line 6: invalid return of HTTP 201 status code', isCorrect: false }
+              { id: 'spt_1', text: 'Line 5: raw plaintext password in INSERT', isCorrect: true },
+              { id: 'spt_2', text: 'Line 2: req.body destructuring', isCorrect: false },
+              { id: 'spt_3', text: 'Line 6: status 201 return format', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'CWE-256: Plaintext Storage of a Password',

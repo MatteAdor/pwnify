@@ -7,7 +7,7 @@ import {
   Terminal, Globe, Network, Cpu, Key, Server, 
   ArrowLeft, ChevronRight, Zap, BookOpen, 
   Check, Copy, FileText, Flame, Target,
-  AlertTriangle, Clock
+  AlertTriangle, Clock, X
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {
@@ -471,7 +471,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   {CHAPTER_TOOLS[activeModule.id]?.recommendedLab || 'Esercitazione guidata con validazione payload.'}
                 </p>
                 <span className="text-[10px] font-mono text-emerald-400 font-bold inline-flex items-center gap-1 pt-0.5">
-                  {userState.isPro ? 'ACCEDI AL LAB →' : 'SBLOCCA CON PRO 🔒'}
+                  {userState.isPro ? 'ACCEDI AL LAB →' : 'SBLOCCA CON PRO'}
                 </span>
               </div>
 
@@ -509,22 +509,20 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
             </p>
           </div>
 
-          {/* Daily 0xBreach Challenge Hero Card - Cleaned up to eliminate mobile text collisions */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#1c0c10] via-[#14101e] to-[#0a101c] border-2 border-red-500/40 p-4 sm:p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
-            <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
-            
+          {/* Daily 0xBreach Challenge Hero Card - Clean, technical, and professional */}
+          <div className="rounded-2xl bg-zinc-900/90 border border-red-500/30 p-4 sm:p-5 relative overflow-hidden space-y-3">
             {/* Top row: Status, Title, Streak */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
-                  <AlertTriangle className="w-4 h-4 animate-pulse" />
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-red-500/30 text-red-300 border border-red-500/40">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
                       DEFCON 1
                     </span>
-                    <h2 className="text-xs sm:text-sm font-black text-white">
+                    <h2 className="text-xs sm:text-sm font-bold text-white">
                       Daily 0xBreach
                     </h2>
                   </div>
@@ -533,14 +531,15 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
 
               {/* Triage streak */}
               <div className="font-mono text-right shrink-0">
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                  🔥 x{userState.dailyBreachStreak || 0} TRIAGE
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                  <Flame className="w-3 h-3 text-amber-400" />
+                  <span>x{userState.dailyBreachStreak || 0} TRIAGE</span>
                 </span>
               </div>
             </div>
 
             {/* Short, non-overwhelming summary */}
-            <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+            <p className="text-[11px] sm:text-xs text-zinc-300 leading-relaxed">
               Analizza l'incidente CVE quotidiano nel frammento di codice e individua la root cause per ottenere XP doppi.
             </p>
 
@@ -551,10 +550,10 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   sound.playTap();
                   if (onOpenDailyBreach) onOpenDailyBreach();
                 }}
-                className={`w-full py-2.5 px-4 rounded-xl font-mono font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer ${
+                className={`w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs transition-all flex items-center justify-center gap-2 transform active:scale-98 cursor-pointer ${
                   isBreachSolvedToday
-                    ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60'
-                    : 'bg-gradient-to-r from-red-500 via-amber-500 to-emerald-400 hover:from-red-400 hover:to-emerald-300 text-slate-950 font-black'
+                    ? 'bg-zinc-800 border border-emerald-500/40 text-emerald-300 hover:bg-zinc-750'
+                    : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold'
                 }`}
               >
                 {isBreachSolvedToday ? (
@@ -711,9 +710,10 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
 
               <button
                 onClick={() => setActiveCheatSheetModuleId(null)}
-                className="p-1.5 rounded text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Chiudi cheat sheet"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

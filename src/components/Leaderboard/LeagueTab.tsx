@@ -23,21 +23,21 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
 
   useEffect(() => {
     const mockHackerProfiles = [
-      { name: '0x_V0rtex', avatar: '🐉', streak: 7, baseDiff: 240 },
-      { name: 'K3rnel_Crush3r', avatar: '💀', streak: 5, baseDiff: 180 },
-      { name: 'syn_flood_99', avatar: '⚡', streak: 4, baseDiff: 120 },
-      { name: 'b4sh_pwn3r', avatar: '👾', streak: 6, baseDiff: 70 },
-      { name: 'cyber_samurai', avatar: '🗡️', streak: 3, baseDiff: 25 },
+      { name: '0x_V0rtex', avatar: 'VX', streak: 7, baseDiff: 240 },
+      { name: 'K3rnel_Crush3r', avatar: 'KC', streak: 5, baseDiff: 180 },
+      { name: 'syn_flood_99', avatar: 'SF', streak: 4, baseDiff: 120 },
+      { name: 'b4sh_pwn3r', avatar: 'BP', streak: 6, baseDiff: 70 },
+      { name: 'cyber_samurai', avatar: 'CS', streak: 3, baseDiff: 25 },
       // User will be inserted here dynamically based on XP
-      { name: 'spectre_v4', avatar: '🕶️', streak: 2, baseDiff: -40 },
-      { name: 'null_byte_ninja', avatar: '🥷', streak: 4, baseDiff: -95 },
-      { name: 'packet_chaser', avatar: '📡', streak: 2, baseDiff: -150 },
-      { name: 'sudo_su_root', avatar: '👑', streak: 1, baseDiff: -210 },
-      { name: 'crypto_ghost', avatar: '🔐', streak: 3, baseDiff: -280 },
-      { name: 'buffer_overflow', avatar: '💥', streak: 0, baseDiff: -360 },
-      { name: 'wireshark_sniff', avatar: '🦈', streak: 1, baseDiff: -440 },
-      { name: 'reverse_eng_0', avatar: '⚙️', streak: 0, baseDiff: -510 },
-      { name: 'script_k1d_x', avatar: '🐣', streak: 0, baseDiff: -600 }
+      { name: 'spectre_v4', avatar: 'SP', streak: 2, baseDiff: -40 },
+      { name: 'null_byte_ninja', avatar: 'NN', streak: 4, baseDiff: -95 },
+      { name: 'packet_chaser', avatar: 'PC', streak: 2, baseDiff: -150 },
+      { name: 'sudo_su_root', avatar: 'SU', streak: 1, baseDiff: -210 },
+      { name: 'crypto_ghost', avatar: 'CG', streak: 3, baseDiff: -280 },
+      { name: 'buffer_overflow', avatar: 'BO', streak: 0, baseDiff: -360 },
+      { name: 'wireshark_sniff', avatar: 'WS', streak: 1, baseDiff: -440 },
+      { name: 'reverse_eng_0', avatar: 'RE', streak: 0, baseDiff: -510 },
+      { name: 'script_k1d_x', avatar: 'SK', streak: 0, baseDiff: -600 }
     ];
 
     const currentXp = userState.xp;
@@ -45,7 +45,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
     const list: { username: string; avatar: string; xp: number; isUser: boolean; winStreak: number }[] = [
       {
         username: userState.username,
-        avatar: '⚡',
+        avatar: (userState.username.slice(0, 2) || 'OP').toUpperCase(),
         xp: currentXp,
         isUser: true,
         winStreak: userState.winStreak
@@ -196,19 +196,19 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
                   {/* Position number */}
                   <span className={`w-6 font-mono font-bold text-center text-xs ${
                     hacker.rankPosition === 1 
-                      ? 'text-amber-400' 
+                      ? 'text-amber-400 font-extrabold' 
                       : hacker.rankPosition === 2 
-                      ? 'text-slate-300' 
+                      ? 'text-zinc-300 font-bold' 
                       : hacker.rankPosition === 3 
-                      ? 'text-amber-600' 
-                      : 'text-slate-500'
+                      ? 'text-amber-600 font-bold' 
+                      : 'text-zinc-500'
                   }`}>
-                    {hacker.rankPosition === 1 ? '🥇' : hacker.rankPosition === 2 ? '🥈' : hacker.rankPosition === 3 ? '🥉' : `#${hacker.rankPosition}`}
+                    #{hacker.rankPosition}
                   </span>
 
                   {/* Avatar icon */}
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm border ${
-                    hacker.isUser ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-slate-800 border-white/10'
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs border ${
+                    hacker.isUser ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-300'
                   }`}>
                     {hacker.avatar}
                   </div>

@@ -8,139 +8,139 @@ import { getSavedLanguage, Language } from '../utils/language';
 
 export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
   {
-    id: 'diag_beg_1_terminal',
-    title: 'Terminal Fundamentals: Navigation',
-    type: 'multiple_choice',
-    domain: 'Linux & Bash',
-    difficulty: 'Beginner',
-    prompt: 'In a Linux shell, which command prints the absolute path of the current working directory?',
-    codeSnippet: 'user@zeroday-lab:~$ [COMMAND]\n/home/user/workspace',
-    options: [
-      { id: 'b1_opt1', text: 'pwd (Print Working Directory)', isCorrect: true, explanation: 'pwd outputs the full absolute path of the active folder.' },
-      { id: 'b1_opt2', text: 'ls (List files)', isCorrect: false },
-      { id: 'b1_opt3', text: 'cd (Change Directory)', isCorrect: false },
-      { id: 'b1_opt4', text: 'mkdir (Make Directory)', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'POSIX Shell Fundamentals',
-      whyItWorks: 'pwd prints the absolute filesystem location from root /.',
-      patchRecommendation: 'Verify your directory before executing shell commands.',
-      terminalProof: '$ pwd\n/home/user/workspace'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_2_http',
-    title: 'Web Protocols: HTTP Status Codes',
-    type: 'multiple_choice',
-    domain: 'Web Sec',
-    difficulty: 'Beginner',
-    prompt: 'When requesting a web endpoint, the server returns "HTTP 404". What does this code indicate?',
-    codeSnippet: 'GET /admin.php HTTP/1.1\nHost: target.corp\n\nHTTP/1.1 404 Not Found',
-    options: [
-      { id: 'b2_opt1', text: 'Requested resource not found on server', isCorrect: true, explanation: '404 indicates the requested URI does not exist on the host.' },
-      { id: 'b2_opt2', text: 'Server crashed and offline', isCorrect: false },
-      { id: 'b2_opt3', text: 'Password incorrect / access denied', isCorrect: false },
-      { id: 'b2_opt4', text: 'TLS certificate expired', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'RFC 9110 HTTP Status Standards',
-      whyItWorks: '4xx status codes denote client-side errors; 404 specifically signals missing resources.',
-      patchRecommendation: 'Configure generic custom error handlers to avoid path leakage.',
-      terminalProof: '$ curl -I https://target.corp/test\nHTTP/1.1 404 Not Found'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_3_passwords',
-    title: 'Data Protection: Password Storage',
+    id: 'diag_beg_mfa',
+    title: 'Identity Defense: Two-Factor Auth',
     type: 'multiple_choice',
     domain: 'Cryptography',
     difficulty: 'Beginner',
-    prompt: 'Why is storing user passwords in plaintext inside databases strictly forbidden in security standards?',
-    codeSnippet: 'DATABASE_USERS:\n1 | admin | Password123!\n2 | ceo   | Secret2026',
+    prompt: 'Why is Multi-Factor Authentication (MFA) critical even when an operator uses a complex password?',
+    codeSnippet: 'LOGIN ATTEMPT:\nUsername: admin\nPassword: ********** [MATCH]\nMFA OTP Code: ???',
     options: [
-      { id: 'b3_opt1', text: 'Breach exposes credentials immediately in cleartext', isCorrect: true, explanation: 'Plaintext passwords allow instant credential theft without cracking.' },
-      { id: 'b3_opt2', text: 'Excessive database RAM consumption', isCorrect: false },
-      { id: 'b3_opt3', text: 'Browsers reject unencrypted form fields', isCorrect: false },
-      { id: 'b3_opt4', text: 'OS halts services without SSL certificates', isCorrect: false }
+      { id: 'bm_opt1', text: 'Blocks login even if password is leaked in a breach', isCorrect: true, explanation: 'MFA requires a second proof of identity (TOTP/token), preventing credential reuse.' },
+      { id: 'bm_opt2', text: 'Accelerates network connection download speeds', isCorrect: false },
+      { id: 'bm_opt3', text: 'Removes the need for host endpoint antivirus', isCorrect: false },
+      { id: 'bm_opt4', text: 'Physically encrypts the local hardware drive', isCorrect: false }
     ],
     rootCauseBreakdown: {
-      cveOrTopic: 'CWE-256: Plaintext Storage of Passwords',
-      whyItWorks: 'Plaintext passwords can be leveraged immediately for credential stuffing across other services.',
-      patchRecommendation: 'Hash credentials with salted key derivation algorithms like Argon2id or bcrypt.',
-      terminalProof: '$ cat /etc/shadow | grep admin\nadmin:$6$rounds=5000$salt$hash...'
+      cveOrTopic: 'NIST SP 800-63B: Digital Identity Guidelines',
+      whyItWorks: 'Credential theft alone is insufficient to compromise accounts protected by out-of-band MFA.',
+      patchRecommendation: 'Enforce hardware FIDO2 or TOTP authenticator app tokens across all corporate accounts.',
+      terminalProof: '$ pam_authenticate(user, PAM_DISALLOW_NULL_AUTHTOK)\n[2FA Required: Challenge Sent]'
     },
     xpReward: 30,
     eloReward: 15
   },
   {
-    id: 'diag_beg_4_ports',
-    title: 'Network Ports: Standard Web Traffic',
-    type: 'multiple_choice',
-    domain: 'Networking',
-    difficulty: 'Beginner',
-    prompt: 'Which standard TCP port is utilized worldwide for encrypted HTTPS web traffic?',
-    codeSnippet: 'TARGET: https://secure-bank.corp:???',
-    options: [
-      { id: 'b4_opt1', text: 'Port 443 (HTTPS / TLS)', isCorrect: true, explanation: 'Port 443 is the IANA standard for HTTP over TLS.' },
-      { id: 'b4_opt2', text: 'Port 80 (Plaintext HTTP)', isCorrect: false },
-      { id: 'b4_opt3', text: 'Port 22 (SSH)', isCorrect: false },
-      { id: 'b4_opt4', text: 'Port 3389 (RDP)', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'IANA Assigned Transport Ports',
-      whyItWorks: 'Port 443 routes encrypted web sessions wrapped inside TLS/SSL certificates.',
-      patchRecommendation: 'Redirect all plaintext port 80 traffic to HTTPS port 443 with HSTS enabled.',
-      terminalProof: '$ nmap -p 443 secure-bank.corp\nPORT    STATE SERVICE\n443/tcp open  https'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_5_phishing',
-    title: 'Threat Vectors: Social Engineering',
+    id: 'diag_beg_phishing_link',
+    title: 'Threat Detection: Spoofed URL',
     type: 'multiple_choice',
     domain: 'Defense & SOC',
     difficulty: 'Beginner',
-    prompt: 'What is the primary operational objective of a phishing campaign?',
-    codeSnippet: 'FROM: security@micros0ft-verify.com\nSUBJECT: Immediate Account Suspension!',
+    prompt: 'An urgent security notice arrives by email. Which destination URL indicates an active phishing campaign?',
+    codeSnippet: 'EMAIL SENDER: Security Team <alert@corporate-update.org>\nACTION: Verify your credentials immediately',
     options: [
-      { id: 'b5_opt1', text: 'Steal credentials or deliver malware via deceptive lure', isCorrect: true, explanation: 'Phishing tricks users into disclosing credentials or executing malicious payloads.' },
-      { id: 'b5_opt2', text: 'Directly overload web server CPU resources', isCorrect: false },
-      { id: 'b5_opt3', text: 'Corrupt physical magnetic hard drive platters', isCorrect: false },
-      { id: 'b5_opt4', text: 'Disassemble compiled kernel device drivers', isCorrect: false }
+      { id: 'bp_opt1', text: 'https://login-micros0ft.support-verify.com', isCorrect: true, explanation: 'The domain is support-verify.com with a typo-squatted subdomain mimicking Microsoft.' },
+      { id: 'bp_opt2', text: 'https://account.microsoft.com/security', isCorrect: false },
+      { id: 'bp_opt3', text: 'https://login.live.com/oauth2', isCorrect: false },
+      { id: 'bp_opt4', text: 'https://portal.office.com/landing', isCorrect: false }
     ],
     rootCauseBreakdown: {
-      cveOrTopic: 'MITRE ATT&CK T1566: Phishing',
-      whyItWorks: 'Attackers craft deceptive messages impersonating trusted authorities to manipulate victims.',
-      patchRecommendation: 'Deploy email authentication (SPF, DKIM, DMARC) and hardware FIDO2 MFA tokens.',
-      terminalProof: '$ dig TXT _dmarc.target.corp\nv=DMARC1; p=reject;'
+      cveOrTopic: 'MITRE ATT&CK T1566: Phishing & Typo-Squatting',
+      whyItWorks: 'Attackers register look-alike domains to deceive users into submitting corporate credentials.',
+      patchRecommendation: 'Inspect the root domain before entering credentials and configure email DMARC policies.',
+      terminalProof: '$ whois support-verify.com\nCreation Date: 2026-10-17 (Registered 24h ago)'
     },
     xpReward: 30,
     eloReward: 15
   },
   {
-    id: 'diag_beg_6_firewall',
+    id: 'diag_beg_polp',
+    title: 'Access Control: Least Privilege',
+    type: 'multiple_choice',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'What does the Principle of Least Privilege (PoLP) dictate in secure architecture?',
+    codeSnippet: 'ACCESS MATRIX:\nOperator: Developer\nRequested: Domain Admin (Full Root)\nPolicy: ???',
+    options: [
+      { id: 'bl_opt1', text: 'Grant only minimum permissions required for duties', isCorrect: true, explanation: 'Restricting permissions minimizes blast radius if an individual account is compromised.' },
+      { id: 'bl_opt2', text: 'Give root administrative access to all employees', isCorrect: false },
+      { id: 'bl_opt3', text: 'Share one master password across entire departments', isCorrect: false },
+      { id: 'bl_opt4', text: 'Disable firewall rules to accelerate engineering work', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Principle of Least Privilege (PoLP)',
+      whyItWorks: 'Limiting permissions contains compromised accounts and prevents lateral network movement.',
+      patchRecommendation: 'Implement Role-Based Access Control (RBAC) with Just-In-Time (JIT) privilege elevation.',
+      terminalProof: '$ sudo -l\nUser operator may run the following: (root) /usr/bin/journalctl'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_malware_ext',
+    title: 'Endpoint Security: Suspicious Payload',
+    type: 'multiple_choice',
+    domain: 'Code Analysis',
+    difficulty: 'Beginner',
+    prompt: 'An unexpected archive arrives via email. Which filename represents a dangerous hidden executable payload?',
+    codeSnippet: 'ARCHIVE CONTENTS:\n[1] README.txt\n[2] Contract.pdf\n[3] Invoice_Payment.pdf.exe\n[4] Logo.png',
+    options: [
+      { id: 'bx_opt1', text: 'Invoice_Payment.pdf.exe (executable payload)', isCorrect: true, explanation: 'Double extensions trick OS file managers while Windows executes the file as a PE binary.' },
+      { id: 'bx_opt2', text: 'Contract.pdf (document)', isCorrect: false },
+      { id: 'bx_opt3', text: 'README.txt (text file)', isCorrect: false },
+      { id: 'bx_opt4', text: 'Logo.png (image)', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Double Extension Masquerading (MITRE T1036.007)',
+      whyItWorks: 'When file extensions are hidden, users only see .pdf while the OS executes .exe code.',
+      patchRecommendation: 'Configure OS to always show file extensions and block executable extensions at mail gateway.',
+      terminalProof: '$ file Invoice_Payment.pdf.exe\nPE32 executable (GUI) Intel 80386, for MS Windows'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_firewall',
     title: 'Perimeter Defense: Packet Filtering',
     type: 'multiple_choice',
     domain: 'Networking',
     difficulty: 'Beginner',
-    prompt: 'What is the primary operational purpose of a network firewall?',
-    codeSnippet: 'INCOMING TCP -> [FIREWALL RULESET] -> HOST',
+    prompt: 'What is the primary operational role of an enterprise network firewall?',
+    codeSnippet: 'INCOMING TCP PACKET -> [FIREWALL ACL] -> LOCAL HOST',
     options: [
-      { id: 'b6_opt1', text: 'Control and filter traffic based on security rules', isCorrect: true, explanation: 'Firewalls inspect packet headers and block unauthorized connection attempts.' },
-      { id: 'b6_opt2', text: 'Double broadband internet connection speed', isCorrect: false },
-      { id: 'b6_opt3', text: 'Store relational SQL database backups', isCorrect: false },
-      { id: 'b6_opt4', text: 'Format external USB flash drives', isCorrect: false }
+      { id: 'bf_opt1', text: 'Filter and block unauthorized network connections', isCorrect: true, explanation: 'Firewalls inspect packet headers and drop traffic that violates defined security policies.' },
+      { id: 'bf_opt2', text: 'Double broadband transmission download speed', isCorrect: false },
+      { id: 'bf_opt3', text: 'Store relational SQL database transaction logs', isCorrect: false },
+      { id: 'bf_opt4', text: 'Automatically update browser search history', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Stateful Packet Inspection (SPI)',
       whyItWorks: 'Firewalls enforce access control lists (ACLs) to segregate trusted and untrusted network zones.',
       patchRecommendation: 'Implement default-deny ingress rules, only exposing strictly required public services.',
       terminalProof: '$ sudo iptables -L -n -v\nChain INPUT (policy DROP)'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_social_eng',
+    title: 'Human Factors: Social Engineering',
+    type: 'multiple_choice',
+    domain: 'Defense & SOC',
+    difficulty: 'Beginner',
+    prompt: 'How is Social Engineering defined in modern offensive cybersecurity?',
+    codeSnippet: 'CALLER: "Hello, this is IT Helpdesk. We need your VPN PIN for maintenance."',
+    options: [
+      { id: 'bs_opt1', text: 'Psychological manipulation to trick victims into revealing secrets', isCorrect: true, explanation: 'Attackers exploit human trust, urgency, or authority rather than technical software bugs.' },
+      { id: 'bs_opt2', text: 'Hardware overheating inside server cooling systems', isCorrect: false },
+      { id: 'bs_opt3', text: 'Automated compilation of Linux operating systems', isCorrect: false },
+      { id: 'bs_opt4', text: 'Measuring physical Wi-Fi signal attenuation over distance', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Social Engineering & Pretexting (MITRE T1566)',
+      whyItWorks: 'Human operators are often the weakest link when subjected to fabricated urgency or authority.',
+      patchRecommendation: 'Establish mandatory out-of-band verification procedures before releasing credentials.',
+      terminalProof: '[VOICE LOG: Caller impersonated Director to extract password reset]'
     },
     xpReward: 30,
     eloReward: 15
@@ -435,139 +435,139 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
 
 export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
   {
-    id: 'diag_beg_1_terminal',
-    title: 'Fondamenta Terminale: Navigazione',
-    type: 'multiple_choice',
-    domain: 'Linux & Bash',
-    difficulty: 'Beginner',
-    prompt: 'Nel terminale Linux/macOS, quale comando stampa il percorso assoluto della cartella corrente?',
-    codeSnippet: 'user@zeroday-lab:~$ [COMANDO]\n/home/user/workspace',
-    options: [
-      { id: 'b1_opt1', text: 'pwd (Print Working Directory)', isCorrect: true, explanation: 'pwd stampa il percorso assoluto completo della directory attiva.' },
-      { id: 'b1_opt2', text: 'ls (List files)', isCorrect: false },
-      { id: 'b1_opt3', text: 'cd (Change Directory)', isCorrect: false },
-      { id: 'b1_opt4', text: 'mkdir (Make Directory)', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'Principi Shell POSIX',
-      whyItWorks: 'pwd restituisce la posizione assoluta nel filesystem a partire dalla radice /.',
-      patchRecommendation: 'Verificare sempre la cartella attiva prima di eseguire comandi o script.',
-      terminalProof: '$ pwd\n/home/user/workspace'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_2_http',
-    title: 'Architettura Web: Codici di Stato HTTP',
-    type: 'multiple_choice',
-    domain: 'Web Sec',
-    difficulty: 'Beginner',
-    prompt: 'Quando si richiede una risorsa web, il server risponde "HTTP 404". Cosa indica questo codice?',
-    codeSnippet: 'GET /admin.php HTTP/1.1\nHost: target.corp\n\nHTTP/1.1 404 Not Found',
-    options: [
-      { id: 'b2_opt1', text: 'Risorsa richiesta non trovata sul server', isCorrect: true, explanation: '404 indica che l\'URI richiesto non esiste sull\'host.' },
-      { id: 'b2_opt2', text: 'Server web andato in crash', isCorrect: false },
-      { id: 'b2_opt3', text: 'Password errata o accesso negato', isCorrect: false },
-      { id: 'b2_opt4', text: 'Certificato TLS scaduto', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'Standard Codici di Stato RFC 9110',
-      whyItWorks: 'La famiglia 4xx indica errori client; 404 segnala specificamente una risorsa assente.',
-      patchRecommendation: 'Configurare pagine 404 generiche per non divulgare percorsi interni.',
-      terminalProof: '$ curl -I https://target.corp/test\nHTTP/1.1 404 Not Found'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_3_passwords',
-    title: 'Sicurezza Dati: Memorizzazione Password',
+    id: 'diag_beg_mfa',
+    title: 'Difesa Identità: Autenticazione a Due Fattori',
     type: 'multiple_choice',
     domain: 'Cryptography',
     difficulty: 'Beginner',
-    prompt: 'Perché salvare le password in chiaro nel database è severamente proibito?',
-    codeSnippet: 'DATABASE_USERS:\n1 | admin | Password123!\n2 | ceo   | Secret2026',
+    prompt: 'Perché l\'autenticazione a due fattori (MFA) è fondamentale anche se si usa una password complessa?',
+    codeSnippet: 'TENTATIVO DI ACCESSO:\nUsername: admin\nPassword: ********** [CORRETTA]\nCodice OTP MFA: ???',
     options: [
-      { id: 'b3_opt1', text: 'Un data breach espone subito tutte le credenziali in chiaro', isCorrect: true, explanation: 'Le password in chiaro permettono il furto immediato degli account senza dover decifrare nulla.' },
-      { id: 'b3_opt2', text: 'Consumo eccessivo di RAM durante le query', isCorrect: false },
-      { id: 'b3_opt3', text: 'I browser bloccano i moduli con testo non criptato', isCorrect: false },
-      { id: 'b3_opt4', text: 'Il sistema operativo disattiva il database senza certificato SSL', isCorrect: false }
+      { id: 'bm_opt1', text: 'Blocca l\'accesso anche se la password viene rubata in un leak', isCorrect: true, explanation: 'L\'MFA richiede una seconda prova di identità (token TOTP), impedendo l\'uso illecito delle credenziali.' },
+      { id: 'bm_opt2', text: 'Velocizza il download della connessione internet', isCorrect: false },
+      { id: 'bm_opt3', text: 'Elimina del tutto la necessità di avere un antivirus', isCorrect: false },
+      { id: 'bm_opt4', text: 'Formatta automaticamente la memoria RAM a ogni riavvio', isCorrect: false }
     ],
     rootCauseBreakdown: {
-      cveOrTopic: 'CWE-256: Salvataggio Password in Chiaro',
-      whyItWorks: 'Se il database trapela, le credenziali in chiaro permettono attacchi immediati su altri servizi.',
-      patchRecommendation: 'Usare algoritmi di derivazione chiave lenti e salati come Argon2id o bcrypt.',
-      terminalProof: '$ cat /etc/shadow | grep admin\nadmin:$6$rounds=5000$salt$hash...'
+      cveOrTopic: 'Linee Guida Identità Digitale NIST SP 800-63B',
+      whyItWorks: 'Il solo furto delle credenziali non basta a compromettere gli account protetti da MFA fuori banda.',
+      patchRecommendation: 'Imporre l\'autenticazione a due fattori (FIDO2 o app TOTP) su tutti gli account operatore.',
+      terminalProof: '$ pam_authenticate(user, PAM_DISALLOW_NULL_AUTHTOK)\n[2FA Required: Challenge Inviata]'
     },
     xpReward: 30,
     eloReward: 15
   },
   {
-    id: 'diag_beg_4_ports',
-    title: 'Porte di Rete: Traffico Web Sicuro',
-    type: 'multiple_choice',
-    domain: 'Networking',
-    difficulty: 'Beginner',
-    prompt: 'Quale porta standard TCP viene usata globalmente per il traffico web cifrato HTTPS?',
-    codeSnippet: 'TARGET: https://secure-bank.corp:???',
-    options: [
-      { id: 'b4_opt1', text: 'Porta 443 (HTTPS / TLS)', isCorrect: true, explanation: 'La porta 443 è lo standard IANA per HTTP su canale cifrato TLS.' },
-      { id: 'b4_opt2', text: 'Porta 80 (HTTP in chiaro)', isCorrect: false },
-      { id: 'b4_opt3', text: 'Porta 22 (SSH)', isCorrect: false },
-      { id: 'b4_opt4', text: 'Porta 3389 (RDP)', isCorrect: false }
-    ],
-    rootCauseBreakdown: {
-      cveOrTopic: 'Porte di Trasporto Assegnate IANA',
-      whyItWorks: 'La porta 443 incapsula le sessioni web dentro tunnel TLS protetti da certificati.',
-      patchRecommendation: 'Reindirizzare tutto il traffico porta 80 su HTTPS 443 con HSTS attivo.',
-      terminalProof: '$ nmap -p 443 secure-bank.corp\n443/tcp open  https'
-    },
-    xpReward: 30,
-    eloReward: 15
-  },
-  {
-    id: 'diag_beg_5_phishing',
-    title: 'Minacce Cyber: Ingegneria Sociale',
+    id: 'diag_beg_phishing_link',
+    title: 'Rilevamento Minacce: URL Contraffatto',
     type: 'multiple_choice',
     domain: 'Defense & SOC',
     difficulty: 'Beginner',
-    prompt: 'Qual è l\'obiettivo principale di un attacco di phishing?',
-    codeSnippet: 'MITTENTE: sicurezza@micros0ft-verifica.com\nOGGETTO: Sospensione Immediata Account!',
+    prompt: 'Ricevi un avviso urgente di sicurezza via email. Quale URL indica un tentativo di phishing con dominio contraffatto?',
+    codeSnippet: 'MITTENTE: Team Sicurezza <alert@aggiornamento-sistema.org>\nAZIONE RICHIESTA: Verifica subito le tue credenziali',
     options: [
-      { id: 'b5_opt1', text: 'Rubare credenziali o distribuire malware tramite inganno', isCorrect: true, explanation: 'Il phishing spinge le vittime a inserire password o aprire allegati malevoli.' },
-      { id: 'b5_opt2', text: 'Sovraccaricare la CPU del server web', isCorrect: false },
-      { id: 'b5_opt3', text: 'Danneggiare fisicamente i dischi rigidi del computer', isCorrect: false },
-      { id: 'b5_opt4', text: 'Decompilare i driver di sistema del kernel', isCorrect: false }
+      { id: 'bp_opt1', text: 'https://login-micros0ft.supporto-verifica.com', isCorrect: true, explanation: 'Il dominio effettivo è supporto-verifica.com con un sottodominio fraudolento che imita Microsoft.' },
+      { id: 'bp_opt2', text: 'https://account.microsoft.com/security', isCorrect: false },
+      { id: 'bp_opt3', text: 'https://login.live.com/oauth2', isCorrect: false },
+      { id: 'bp_opt4', text: 'https://portal.office.com/landing', isCorrect: false }
     ],
     rootCauseBreakdown: {
-      cveOrTopic: 'MITRE ATT&CK T1566: Phishing',
-      whyItWorks: 'Gli aggressori sfruttano messaggi allarmistici fingendosi enti fidati per manipolare l\'utente.',
-      patchRecommendation: 'Abilitare filtri DMARC/SPF e usare chiavi hardware di autenticazione FIDO2.',
-      terminalProof: '$ dig TXT _dmarc.target.corp\nv=DMARC1; p=reject;'
+      cveOrTopic: 'MITRE ATT&CK T1566: Phishing & Typo-Squatting',
+      whyItWorks: 'Gli attaccanti registrano domini simili per ingannare le vittime e catturare credenziali aziendali.',
+      patchRecommendation: 'Controllare sempre il dominio radice prima di inserire credenziali e abilitare policy DMARC.',
+      terminalProof: '$ whois supporto-verifica.com\nData Creazione: 2026-10-17 (Registrato 24 ore fa)'
     },
     xpReward: 30,
     eloReward: 15
   },
   {
-    id: 'diag_beg_6_firewall',
+    id: 'diag_beg_polp',
+    title: 'Controllo Accessi: Minimo Privilegio',
+    type: 'multiple_choice',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'Cosa stabilisce il Principio del Minimo Privilegio (Principle of Least Privilege)?',
+    codeSnippet: 'MATRICE PRIVILEGI:\nOperatore: Sviluppatore Junior\nRichiesto: Domain Admin (Root Totale)\nPolicy di Sicurezza: ???',
+    options: [
+      { id: 'bl_opt1', text: 'Assegnare solo i permessi strettamente necessari alle proprie mansioni', isCorrect: true, explanation: 'Limitare i permessi riduce il raggio d\'impatto nel caso in cui un singolo account venga violato.' },
+      { id: 'bl_opt2', text: 'Concedere accesso di root amministratore a qualsiasi dipendente', isCorrect: false },
+      { id: 'bl_opt3', text: 'Condividere una singola password master per tutti gli uffici', isCorrect: false },
+      { id: 'bl_opt4', text: 'Disattivare i firewall per non rallentare il lavoro di programmazione', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Principio del Minimo Privilegio (PoLP)',
+      whyItWorks: 'Limitare i permessi contiene l\'attacco ed evita il movimento laterale nella rete aziendale.',
+      patchRecommendation: 'Adottare il controllo accessi basato su ruoli (RBAC) e privilegi Just-In-Time.',
+      terminalProof: '$ sudo -l\nUser operator may run the following: (root) /usr/bin/journalctl'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_malware_ext',
+    title: 'Sicurezza Endpoint: Allegato Sospetto',
+    type: 'multiple_choice',
+    domain: 'Code Analysis',
+    difficulty: 'Beginner',
+    prompt: 'Ricevi un archivio inatteso via email. Quale nome di file nasconde un payload eseguibile malevolo?',
+    codeSnippet: 'CONTENUTO ARCHIVIO:\n[1] README.txt\n[2] Contratto.pdf\n[3] Fattura_Pagamento.pdf.exe\n[4] Logo.png',
+    options: [
+      { id: 'bx_opt1', text: 'Fattura_Pagamento.pdf.exe (payload eseguibile)', isCorrect: true, explanation: 'La doppia estensione inganna l\'utente mentre Windows esegue il file come programma PE.' },
+      { id: 'bx_opt2', text: 'Contratto.pdf (documento)', isCorrect: false },
+      { id: 'bx_opt3', text: 'README.txt (file di testo)', isCorrect: false },
+      { id: 'bx_opt4', text: 'Logo.png (immagine)', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Doppia Estensione Masquerading (MITRE T1036.007)',
+      whyItWorks: 'Quando le estensioni note sono nascoste, l\'utente vede .pdf ma il sistema lancia il file .exe.',
+      patchRecommendation: 'Configurare il sistema operativo per mostrare sempre le estensioni e bloccare gli .exe via mail.',
+      terminalProof: '$ file Fattura_Pagamento.pdf.exe\nPE32 executable (GUI) Intel 80386, for MS Windows'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_firewall',
     title: 'Difesa Perimetrale: Filtraggio Pacchetti',
     type: 'multiple_choice',
     domain: 'Networking',
     difficulty: 'Beginner',
-    prompt: 'Qual è la funzione fondamentale di un firewall di rete?',
-    codeSnippet: 'PACCHETTO IN ENTRATA -> [REGOLE FIREWALL] -> SERVER',
+    prompt: 'Qual è la funzione operativa fondamentale di un firewall di rete aziendale?',
+    codeSnippet: 'PACCHETTO IN ENTRATA -> [REGOLE ACL FIREWALL] -> SERVER AZIENDALE',
     options: [
-      { id: 'b6_opt1', text: 'Controllare e filtrare il traffico in base a regole di sicurezza', isCorrect: true, explanation: 'Il firewall ispeziona le intestazioni e blocca le connessioni non autorizzate.' },
-      { id: 'b6_opt2', text: 'Raddoppiare la velocità di download della connessione', isCorrect: false },
-      { id: 'b6_opt3', text: 'Memorizzare i backup del database SQL', isCorrect: false },
-      { id: 'b6_opt4', text: 'Formattare chiavette USB e dischi esterni', isCorrect: false }
+      { id: 'bf_opt1', text: 'Filtrare e bloccare il traffico di rete non autorizzato', isCorrect: true, explanation: 'Il firewall ispeziona i pacchetti e scarta il traffico che viola le policy di sicurezza impostate.' },
+      { id: 'bf_opt2', text: 'Raddoppiare la velocità di download della fibra ottica', isCorrect: false },
+      { id: 'bf_opt3', text: 'Memorizzare i registri delle transazioni del database SQL', isCorrect: false },
+      { id: 'bf_opt4', text: 'Aggiornare automaticamente la cronologia del browser', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Stateful Packet Inspection (SPI)',
       whyItWorks: 'Il firewall applica liste di controllo accessi (ACL) separando zone fidate da reti ostili.',
       patchRecommendation: 'Configurare policy default-deny, aprendo solo le porte rigorosamente necessarie.',
       terminalProof: '$ sudo iptables -L -n -v\nChain INPUT (policy DROP)'
+    },
+    xpReward: 30,
+    eloReward: 15
+  },
+  {
+    id: 'diag_beg_social_eng',
+    title: 'Fattore Umano: Ingegneria Sociale',
+    type: 'multiple_choice',
+    domain: 'Defense & SOC',
+    difficulty: 'Beginner',
+    prompt: 'Come viene definita l\'Ingegneria Sociale (Social Engineering) nella sicurezza moderna?',
+    codeSnippet: 'CHIAMATA: "Buongiorno, sono dell\'Helpdesk IT. Ho urgenza del suo PIN VPN per manutenzione."',
+    options: [
+      { id: 'bs_opt1', text: 'Manipolazione psicologica per indurre la vittima a rivelare segreti', isCorrect: true, explanation: 'Gli attaccanti sfruttano fiducia, urgenza o autorità apparente invece di bug nel software.' },
+      { id: 'bs_opt2', text: 'Surriscaldamento dei componenti hardware nei server', isCorrect: false },
+      { id: 'bs_opt3', text: 'Compilazione automatizzata del kernel di Linux', isCorrect: false },
+      { id: 'bs_opt4', text: 'Misurazione della dispersione del segnale Wi-Fi a distanza', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Ingegneria Sociale & Pretexting (MITRE T1566)',
+      whyItWorks: 'L\'essere umano è spesso l\'anello debole se sottoposto a situazioni di finta urgenza o autorità.',
+      patchRecommendation: 'Istituire procedure di verifica fuori banda prima di comunicare codici o credenziali.',
+      terminalProof: '[LOG VOCALE: Chiamante si spaccia per Direttore IT per estorcere reset password]'
     },
     xpReward: 30,
     eloReward: 15
