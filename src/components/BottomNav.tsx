@@ -1,9 +1,9 @@
 import React from 'react';
-import { Target, Swords, Trophy, Radar, ShieldCheck } from 'lucide-react';
+import { Layers, Swords, Target, Radar, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { useLanguage } from '../utils/language';
 
-export type ActiveTab = 'tree' | 'arena' | 'leagues' | 'radar' | 'certs';
+export type ActiveTab = 'tree' | 'arena' | 'missions' | 'radar' | 'certs';
 
 interface BottomNavProps {
   activeTab: ActiveTab;
@@ -23,7 +23,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id: 'tree' as ActiveTab,
       label: t.navSkillTree,
       sublabel: t.navSkillTreeSub,
-      icon: Target,
+      icon: Layers,
       badge: null,
       badgeColor: '',
     },
@@ -36,11 +36,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       badgeColor: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
     },
     {
-      id: 'leagues' as ActiveTab,
-      label: t.navLeagues,
-      sublabel: t.navLeaguesSub,
-      icon: Trophy,
-      badge: 'PROMO',
+      id: 'missions' as ActiveTab,
+      label: t.navMissions,
+      sublabel: t.navMissionsSub,
+      icon: Target,
+      badge: '3 TAGLIE',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     },
     {

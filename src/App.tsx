@@ -7,7 +7,7 @@ import { OnboardingFunnel } from './components/Onboarding/OnboardingFunnel';
 import { TacticalSkillTree } from './components/SkillTree/TacticalSkillTree';
 import { InteractiveQuizModal } from './components/Quiz/InteractiveQuizModal';
 import { ArenaPvP, DuelChallengeData } from './components/Arena/ArenaPvP';
-import { LeagueTab } from './components/Leaderboard/LeagueTab';
+import { MissionsTab } from './components/Missions/MissionsTab';
 import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
 import { CertPrepTab } from './components/Certs/CertPrepTab';
 import { PaywallModal } from './components/Paywall/PaywallModal';
@@ -639,9 +639,6 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                 userState={userState}
                 onSelectNode={handleSelectNode}
                 onOpenPaywall={() => triggerPaywall('manual_upgrade')}
-                onOpenPaywallContext={triggerPaywall}
-                onClaimFreeBounty={handleClaimFreeBounty}
-                onClaimProBounty={handleClaimProBounty}
               />
             )}
 
@@ -659,10 +656,13 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
               />
             )}
 
-            {activeTab === 'leagues' && (
-              <LeagueTab
+            {activeTab === 'missions' && (
+              <MissionsTab
                 userState={userState}
-                onOpenPaywall={(ctx) => triggerPaywall(ctx)}
+                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                onOpenPaywallContext={triggerPaywall}
+                onClaimFreeBounty={handleClaimFreeBounty}
+                onClaimProBounty={handleClaimProBounty}
               />
             )}
 

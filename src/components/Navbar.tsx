@@ -210,41 +210,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
 
-            {/* Tactical Features: 0xBreach & Cyber Arsenal */}
+            {/* Tactical Customization: Cyber Arsenal */}
             <div className="space-y-2">
               <span className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-wider px-1">
-                Laboratori & Personalizzazione
+                Personalizzazione & HUD
               </span>
-
-              {/* DEFCON 1 0xBreach Challenge */}
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  setIsSettingsOpen(false);
-                  onOpenDailyBreach?.();
-                }}
-                className="w-full p-3 rounded-xl bg-gradient-to-r from-red-950/40 via-amber-950/30 to-red-950/40 border border-red-500/40 hover:border-amber-400 text-left flex items-center justify-between transition-all group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono font-bold text-white group-hover:text-amber-300">
-                        Daily 0xBreach
-                      </span>
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold animate-pulse">
-                        DEFCON 1
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400">
-                      Risolvi l'incidente Zero-Day del giorno
-                    </p>
-                  </div>
-                </div>
-                <Zap className="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
-              </button>
 
               {/* Cyber Arsenal Customizer */}
               <button
