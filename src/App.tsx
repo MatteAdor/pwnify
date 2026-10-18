@@ -17,6 +17,9 @@ import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberAr
 import { AuthModal } from './components/Auth/AuthModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPortal } from './components/Landing/LandingPortal';
+import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
+import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
+import { isBrowserEnvironment, APK_DOWNLOAD_URL } from './utils/platform';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
@@ -145,6 +148,11 @@ export const App: React.FC = () => {
   const [isPaywallOpen, setIsPaywallOpen] = useState<boolean>(false);
   const [paywallContext, setPaywallContext] = useState<PaywallContext>('manual_upgrade');
 
+  // Native APK Download Gate Modal State (Forces APK download for PvP / advanced modules)
+  const [isGateModalOpen, setIsGateModalOpen] = useState<boolean>(false);
+  const [gateModalContext, setGateModalContext] = useState<GateContext>('arena_locked');
+  const [browserActivityCount, setBrowserActivityCount] = useState<number>(0);
+
   // Viral Hacker ID Card Modal State
   const [isHackerCardOpen, setIsHackerCardOpen] = useState<boolean>(false);
 
@@ -267,6 +275,12 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
   // Accept incoming challenge -> jump straight to Arena battle against ghost
   const handleAcceptDuel = () => {
     if (!incomingDuel) return;
+    if (isBrowserEnvironment()) {
+      sound.playPayloadBlocked();
+      setGateModalContext('arena_locked');
+      setIsGateModalOpen(true);
+      return;
+    }
     sound.playExploitSuccess();
     setActiveDuelForArena(incomingDuel);
     setActiveTab('arena');
@@ -466,6 +480,20 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
         dailyBounties: updatedBounties
       };
     });
+
+    // In web browser: remind the user periodically to download the native APK!
+    if (isBrowserEnvironment()) {
+      setBrowserActivityCount(prev => {
+        const next = prev + 1;
+        if (next % 2 === 0) {
+          setTimeout(() => {
+            setGateModalContext('periodic_reminder');
+            setIsGateModalOpen(true);
+          }, 600);
+        }
+        return next;
+      });
+    }
   };
 
   // Arena Ticket Consumption
@@ -574,6 +602,17 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
           : [...(prev.completedPbqIds || []), pbqId]
       };
     });
+
+    if (isBrowserEnvironment()) {
+      setBrowserActivityCount(prev => {
+        const next = prev + 1;
+        setTimeout(() => {
+          setGateModalContext('periodic_reminder');
+          setIsGateModalOpen(true);
+        }, 800);
+        return next;
+      });
+    }
   };
 
   // Sudden Death Survival Mode Score Handler
@@ -631,6 +670,29 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
         />
       ) : (
         <>
+          {/* Browser Sandbox Persistent Reminder Banner */}
+          {isBrowserEnvironment() && (
+            <div className="bg-[#0b1322] border-b border-emerald-500/30 px-3 sm:px-6 py-2 flex items-center justify-between text-xs font-mono text-emerald-300 z-30 shrink-0">
+              <div className="flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                <span className="truncate">
+                  {isEn 
+                    ? 'Browser Sandbox · 1v1 Arena PvP & Full PBQ Labs require the native Android App'
+                    : 'Sandbox Web Limitata · Arena 1v1 e tutti i laboratori PBQ richiedono l\'App Android'}
+                </span>
+              </div>
+              <a
+                href={APK_DOWNLOAD_URL}
+                download="zeroday.apk"
+                onClick={() => sound.playVictoryFanfare()}
+                className="ml-3 shrink-0 px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Get APK' : 'Scarica APK (20.8MB)'}</span>
+              </a>
+            </div>
+          )}
+
           {/* Tactical Navbar */}
           <Navbar
             userState={userState}
@@ -729,17 +791,21 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             )}
 
             {activeTab === 'arena' && (
-              <ArenaPvP
-                userState={userState}
-                onConsumeTicket={handleConsumeTicket}
-                onWinMatch={handleWinMatch}
-                onLossMatch={handleLossMatch}
-                onOpenPaywall={(ctx) => triggerPaywall(ctx)}
-                onOpenHackerCard={() => setIsHackerCardOpen(true)}
-                initialDuelChallenge={activeDuelForArena}
-                onClearInitialDuel={() => setActiveDuelForArena(null)}
-                onUpdateSurvivalScore={handleUpdateSurvivalScore}
-              />
+              isBrowserEnvironment() ? (
+                <ArenaWebLockedView onBackToSkillTree={() => setActiveTab('tree')} />
+              ) : (
+                <ArenaPvP
+                  userState={userState}
+                  onConsumeTicket={handleConsumeTicket}
+                  onWinMatch={handleWinMatch}
+                  onLossMatch={handleLossMatch}
+                  onOpenPaywall={(ctx) => triggerPaywall(ctx)}
+                  onOpenHackerCard={() => setIsHackerCardOpen(true)}
+                  initialDuelChallenge={activeDuelForArena}
+                  onClearInitialDuel={() => setActiveDuelForArena(null)}
+                  onUpdateSurvivalScore={handleUpdateSurvivalScore}
+                />
+              )
             )}
 
             {activeTab === 'missions' && (
@@ -974,6 +1040,13 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
           )}
         </>
       )}
+
+      {/* Native App Download Gate & Periodic Browser Restriction Modal */}
+      <AppDownloadGateModal
+        isOpen={isGateModalOpen}
+        onClose={() => setIsGateModalOpen(false)}
+        context={gateModalContext}
+      />
 
       {/* GDPR, Terms, Privacy & Refund Legal Modal */}
       <LegalModal

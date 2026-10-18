@@ -2,6 +2,7 @@ import React from 'react';
 import { Layers, Swords, Target, Radar, ShieldCheck } from 'lucide-react';
 import { sound } from '../utils/soundEngine';
 import { useLanguage } from '../utils/language';
+import { isBrowserEnvironment } from '../utils/platform';
 
 export type ActiveTab = 'tree' | 'arena' | 'missions' | 'radar' | 'certs';
 
@@ -29,7 +30,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id: 'arena' as ActiveTab,
       label: t.navArena,
       icon: Swords,
-      badge: winStreak > 0 ? `x${winStreak}` : null,
+      badge: isBrowserEnvironment() ? 'APK' : (winStreak > 0 ? `x${winStreak}` : null),
     },
     {
       id: 'missions' as ActiveTab,
