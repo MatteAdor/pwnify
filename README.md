@@ -87,4 +87,4 @@ npm run preview
 
 ---
 
-*Engineered by DarkMatteo, FortuJack & Ritmada.*
+*Engineered by DarkMatteo, FortuJack09 & Ritmada.*
