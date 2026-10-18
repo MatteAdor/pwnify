@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PaywallContext } from '../../types';
 import { MONETIZATION_CONFIG } from '../../config/monetization';
+import { PRICING_CONFIG } from '../../config/pricing.config';
 import { sound } from '../../utils/soundEngine';
 import { 
   X, Check, Sparkles, ArrowRight, Zap, AlertTriangle, 
@@ -27,7 +28,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   onRestoreLicense,
   winStreak = 3
 }) => {
-  const [billingCycle, setBillingCycle] = useState<'annual' | 'monthly'>('annual');
+  const [billingCycle, setBillingCycle] = useState<'annual' | 'monthly' | 'starterPass'>('annual');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -66,13 +67,15 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   };
 
   // Honest Checkout Handler: Redirects to real payment gateway or prompts for license key
-  const handleExecuteCheckout = (planType: 'annual' | 'monthly') => {
+  const handleExecuteCheckout = (planType: 'annual' | 'monthly' | 'starterPass') => {
     sound.playTap();
     setErrorMessage(null);
 
     const checkoutUrl = planType === 'annual' 
       ? MONETIZATION_CONFIG.stripeAnnualUrl 
-      : MONETIZATION_CONFIG.stripeMonthlyUrl;
+      : planType === 'monthly'
+      ? MONETIZATION_CONFIG.stripeMonthlyUrl
+      : MONETIZATION_CONFIG.starterPassUrl;
 
     const isConfiguredUrl = checkoutUrl && 
       checkoutUrl.startsWith('https://') && 
@@ -296,7 +299,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 }`}
               >
                 <div className="absolute -top-2.5 right-3 px-2 py-0.5 rounded bg-emerald-500 text-zinc-950 font-mono font-bold text-[9px] uppercase tracking-wider">
-                  SAVE 62%
+                  SAVE 42%
                 </div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-mono font-bold text-xs text-zinc-200">ANNUAL</span>
@@ -307,11 +310,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-mono font-bold text-xl sm:text-2xl text-white">€5.75</span>
+                  <span className="font-mono font-bold text-xl sm:text-2xl text-white">€{(PRICING_CONFIG.plans.annual.amount / 12).toFixed(2)}</span>
                   <span className="text-xs text-zinc-400">/mo</span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                  Billed annually at €69/yr
+                  Billed annually at €{PRICING_CONFIG.plans.annual.amount.toFixed(2)}/yr
                 </p>
               </div>
 
@@ -333,12 +336,38 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-mono font-bold text-xl sm:text-2xl text-white">€14.99</span>
+                  <span className="font-mono font-bold text-xl sm:text-2xl text-white">€{PRICING_CONFIG.plans.monthly.amount.toFixed(2)}</span>
                   <span className="text-xs text-zinc-400">/mo</span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                  Billed monthly at €14.99/mo
+                  Billed monthly at €{PRICING_CONFIG.plans.monthly.amount.toFixed(2)}/mo
                 </p>
+              </div>
+            </div>
+
+            {/* Starter Pass Option */}
+            <div
+              onClick={() => setBillingCycle('starterPass')}
+              className={`p-3 rounded-xl border cursor-pointer transition-colors flex items-center justify-between ${
+                billingCycle === 'starterPass'
+                  ? 'bg-zinc-850 border-emerald-500'
+                  : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-xs text-white">STARTER PASS (90 GIORNI)</span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">ONE-TIME</span>
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-0.5">Accesso completo 90 giorni senza alcun rinnovo automatico</p>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono font-bold text-sm text-emerald-400">€{PRICING_CONFIG.plans.starterPass.amount.toFixed(2)}</span>
+                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                  billingCycle === 'starterPass' ? 'border-emerald-500 bg-emerald-500 text-zinc-950' : 'border-zinc-600'
+                }`}>
+                  {billingCycle === 'starterPass' && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
               </div>
             </div>
 
