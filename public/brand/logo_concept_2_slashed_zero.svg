@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient: Deep Pure OLED Dark -->
+    <radialGradient id="oledBg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#080E18"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- Neon Emerald Gradient -->
+    <linearGradient id="cyberEmerald" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#34D399"/>
+    </linearGradient>
+
+    <!-- Laser Slash Gradient -->
+    <linearGradient id="slashGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6EE7B7"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <!-- Intense Emerald Filter -->
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur1"/>
+      <feGaussianBlur stdDeviation="4" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Pure Black Squircle Container -->
+  <rect width="512" height="512" rx="116" fill="url(#oledBg)"/>
+  <rect width="508" height="508" x="2" y="2" rx="114" fill="none" stroke="#111827" stroke-width="2.5"/>
+
+  <!-- Tactical HUD Corner Bracket Marks -->
+  <path d="M 56,86 L 56,56 L 86,56" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 456,86 L 456,56 L 426,56" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 56,426 L 56,456 L 86,456" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 456,426 L 456,456 L 426,456" fill="none" stroke="#1F2937" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Outer Concentric Orbit Ring (Fragmented Tactical Radar) -->
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#111827" stroke-width="2"/>
+  <path d="M 256,84 A 172 172 0 0 1 378,134" fill="none" stroke="#10B981" stroke-width="2" stroke-opacity="0.3"/>
+  <path d="M 256,428 A 172 172 0 0 1 134,378" fill="none" stroke="#10B981" stroke-width="2" stroke-opacity="0.3"/>
+
+  <!-- Central Emblem: Segmented Octagonal Zero [ 0 ] -->
+  <g filter="url(#subtleGlow)">
+    <!-- Left Segment of Zero -->
+    <path d="M 230,136 L 194,172 L 194,340 L 230,376" 
+          fill="none" 
+          stroke="url(#cyberEmerald)" 
+          stroke-width="24" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+
+    <!-- Right Segment of Zero -->
+    <path d="M 282,136 L 318,172 L 318,340 L 282,376" 
+          fill="none" 
+          stroke="url(#cyberEmerald)" 
+          stroke-width="24" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- The Zero-Day Breach Slash (45-degree Precision Laser) -->
+  <g filter="url(#neonGlow)">
+    <!-- Main Laser Stroke -->
+    <line x1="140" y1="372" x2="372" y2="140" 
+          stroke="url(#slashGlow)" 
+          stroke-width="14" 
+          stroke-linecap="round"/>
+
+    <!-- High-energy White Core Filament -->
+    <line x1="168" y1="344" x2="344" y2="168" 
+          stroke="#E6FFFA" 
+          stroke-width="4" 
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- Precision Focal Points (Radar reticles) -->
+  <circle cx="140" cy="372" r="5" fill="#34D399"/>
+  <circle cx="372" cy="140" r="5" fill="#34D399"/>
+  <circle cx="256" cy="256" r="3" fill="#10B981"/>
+</svg>

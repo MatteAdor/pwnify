@@ -1,17 +1,23 @@
 {
   "short_name": "ZeroDay",
-  "name": "ZeroDay // Cyber Ops & Cert Prep",
+  "name": "ZeroDay // Cyber Warfare Academy",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%23090D16%22/><text x=%2250%22 y=%2268%22 font-size=%2260%22 text-anchor=%22middle%22>🛡️</text></svg>",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "start_url": "/",
-  "background_color": "#090D16",
-  "theme_color": "#090D16",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "display": "standalone",
   "orientation": "portrait",
   "description": "Gamified Cybersecurity, Linux, Networking & CompTIA Security+/CCNA/CEH Exam Prep"

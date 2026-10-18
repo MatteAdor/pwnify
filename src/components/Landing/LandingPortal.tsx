@@ -113,9 +113,11 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-sm">
-              0x
-            </div>
+            <img 
+              src="/brand/zeroday_icon_192.png" 
+              alt="ZeroDay Icon" 
+              className="w-9 h-9 rounded-md object-cover border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)]" 
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold tracking-tight text-white font-mono text-sm sm:text-base">ZERODAY</span>
@@ -390,9 +392,11 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             <div className="bg-[#0D1424] border border-white/10 rounded-lg p-6 space-y-5">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Smartphone className="w-5 h-5" />
-                  </div>
+                  <img 
+                    src="/brand/zeroday_icon_192.png" 
+                    alt="ZeroDay APK" 
+                    className="w-11 h-11 rounded-lg object-cover border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]" 
+                  />
                   <div>
                     <h3 className="font-bold text-white text-base">ZeroDay for Android (APK)</h3>
                     <p className="text-xs font-mono text-slate-400">Build: {APK_VERSION} · Size: {APK_SIZE}</p>

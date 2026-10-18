@@ -174,9 +174,9 @@ export const AppDownloadGateModal: React.FC<AppDownloadGateModalProps> = ({
             href={APK_DOWNLOAD_URL}
             download="zeroday.apk"
             onClick={() => sound.playVictoryFanfare()}
-            className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <img src="/brand/zeroday_icon_192.png" alt="ZeroDay" className="w-5 h-5 rounded object-cover shadow-sm" />
             <span>{isEn ? 'DOWNLOAD ZERODAY APK (ANDROID)' : 'SCARICA ZERODAY APK (ANDROID)'}</span>
             <span className="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded font-mono">{APK_SIZE}</span>
           </a>

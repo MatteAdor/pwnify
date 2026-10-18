@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Solid Dark Charcoal/OLED Gradient -->
+    <radialGradient id="monolithBg" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#020408"/>
+    </radialGradient>
+
+    <!-- Emerald Edge Gradient -->
+    <linearGradient id="facetHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="60%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <linearGradient id="darkPlate1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <linearGradient id="darkPlate2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#090D16"/>
+    </linearGradient>
+
+    <filter id="subtleNeon" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect width="512" height="512" rx="116" fill="url(#monolithBg)"/>
+  <rect width="508" height="508" x="2" y="2" rx="114" fill="none" stroke="#1F2937" stroke-width="1.5"/>
+
+  <!-- Tactical Grid Coordinate Marks -->
+  <line x1="256" y1="48" x2="256" y2="72" stroke="#1F2937" stroke-width="2"/>
+  <line x1="256" y1="440" x2="256" y2="464" stroke="#1F2937" stroke-width="2"/>
+  <line x1="48" y1="256" x2="72" y2="256" stroke="#1F2937" stroke-width="2"/>
+  <line x1="440" y1="256" x2="464" y2="256" stroke="#1F2937" stroke-width="2"/>
+
+  <!-- Monolithic Geometric Cyber Core: Tri-Plate Prism forming Negative Space '0D' -->
+  <!-- Plate A: Left Angled Pillar -->
+  <polygon points="160,140 216,110 216,402 160,372" 
+           fill="url(#darkPlate1)" 
+           stroke="#334155" 
+           stroke-width="2"/>
+
+  <!-- Plate B: Right Outer Cyber Shell -->
+  <path d="M 236,110 L 320,154 C 362,176 384,214 384,256 C 384,298 362,336 320,358 L 236,402 Z" 
+        fill="url(#darkPlate2)" 
+        stroke="#1E293B" 
+        stroke-width="2"/>
+
+  <!-- Glowing Core Seam: Precision Emerald Wedge & Negative Void -->
+  <g filter="url(#subtleNeon)">
+    <!-- Primary Emerald Vector: Downward Cutting Wedge -->
+    <polyline points="236,146 304,182 304,330 236,366" 
+              fill="none" 
+              stroke="url(#facetHighlight)" 
+              stroke-width="14" 
+              stroke-linejoin="round"
+              stroke-linecap="round"/>
+
+    <!-- Central Zero Core Dot (Target Locked) -->
+    <polygon points="216,256 226,244 238,256 226,268" 
+             fill="#34D399"/>
+  </g>
+
+  <!-- Linear Tech Accent Line -->
+  <line x1="160" y1="140" x2="216" y2="110" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+  <line x1="160" y1="372" x2="216" y2="402" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZeroDay — Logo & Brandmark Proposals</title>
+  <style>
+    :root {
+      --bg: #030712;
+      --card-bg: #090D16;
+      --border: #1F2937;
+      --accent: #10B981;
+      --accent-bright: #34D399;
+      --text-main: #F3F4F6;
+      --text-dim: #9CA3AF;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", monospace;
+      padding: 40px 20px;
+      line-height: 1.5;
+    }
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 40px auto;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-bright);
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: var(--text-dim);
+      font-size: 15px;
+    }
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      border-color: rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+    }
+    .card-tag {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .preview-box {
+      background: #000000;
+      border: 1px solid #111827;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1;
+      padding: 32px;
+      margin-bottom: 20px;
+    }
+    .preview-box img, .preview-box svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      max-width: 260px;
+      max-height: 260px;
+    }
+    .scales {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: #000000;
+      border: 1px solid #111827;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .scales span {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: monospace;
+    }
+    .scale-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .scale-item img, .scale-item svg {
+      border-radius: 6px;
+      border: 1px solid #1F2937;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+    .action-btn {
+      width: 100%;
+      background: #111827;
+      border: 1px solid #374151;
+      color: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .action-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+    }
+    .section-title {
+      max-width: 1200px;
+      margin: 40px auto 20px auto;
+      font-size: 18px;
+      font-weight: 700;
+      border-bottom: 1px solid #1F2937;
+      padding-bottom: 10px;
+      color: var(--accent-bright);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="badge">Brand Architecture & Identity</div>
+    <h1>ZeroDay (0xDAY) — Logo Concept Showcase</h1>
+    <p class="subtitle">Design minimalista, pulito e su sfondo nero OLED con accenti smeraldo, perfettamente abbinato all'app.</p>
+  </div>
+
+  <div class="section-title">Opzioni Vettoriali Pure (Scalabili SVG — Web / App / Favicon)</div>
+
+  <div class="grid">
+    <!-- Concept 1 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA A // VECTOR</div>
+      <div class="preview-box">
+        <img src="/brand/logo_concept_1_hex_shield.svg" alt="Concept 1: Hex Shield 0x" />
+      </div>
+      <div class="scales">
+        <div class="scale-item">
+          <img src="/brand/logo_concept_1_hex_shield.svg" width="48" height="48" />
+          <span>48px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_1_hex_shield.svg" width="32" height="32" />
+          <span>32px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_1_hex_shield.svg" width="20" height="20" />
+          <span>20px</span>
+        </div>
+        <span style="margin-left: auto;">Mobile & Tab</span>
+      </div>
+      <div class="card-title">The Hex-Shield 0x</div>
+      <div class="card-desc">Monogramma '0x' geometrico racchiuso in uno scudo cibernetico esagonale con laser-slash interno e micro-tacche balistiche.</div>
+    </div>
+
+    <!-- Concept 2 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA B // VECTOR (RACCOMANDATA)</div>
+      <div class="preview-box">
+        <img src="/brand/logo_concept_2_slashed_zero.svg" alt="Concept 2: Slashed Zero Breach" />
+      </div>
+      <div class="scales">
+        <div class="scale-item">
+          <img src="/brand/logo_concept_2_slashed_zero.svg" width="48" height="48" />
+          <span>48px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_2_slashed_zero.svg" width="32" height="32" />
+          <span>32px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_2_slashed_zero.svg" width="20" height="20" />
+          <span>20px</span>
+        </div>
+        <span style="margin-left: auto;">Mobile & Tab</span>
+      </div>
+      <div class="card-title">The Slashed Zero (Breach)</div>
+      <div class="card-desc">Zero cibernetico ottagonale attraversato da un laser tagliente a 45° a luce bianca/smeraldo. Massima leggibilità a qualsiasi scala icona.</div>
+    </div>
+
+    <!-- Concept 3 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA C // VECTOR</div>
+      <div class="preview-box">
+        <img src="/brand/logo_concept_3_tactical_monolith.svg" alt="Concept 3: Tactical Monolith" />
+      </div>
+      <div class="scales">
+        <div class="scale-item">
+          <img src="/brand/logo_concept_3_tactical_monolith.svg" width="48" height="48" />
+          <span>48px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_3_tactical_monolith.svg" width="32" height="32" />
+          <span>32px</span>
+        </div>
+        <div class="scale-item">
+          <img src="/brand/logo_concept_3_tactical_monolith.svg" width="20" height="20" />
+          <span>20px</span>
+        </div>
+        <span style="margin-left: auto;">Mobile & Tab</span>
+      </div>
+      <div class="card-title">Tactical Monolith (0D)</div>
+      <div class="card-desc">Stile Linear / Vercel: prisma angolare in titanio e grafite che disegna nello spazio negativo le iniziali '0D' con fessura a neon smeraldo.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Opzioni Tech-Render 3D (Photorealistic Dark-Mode App Icons)</div>
+
+  <div class="grid">
+    <!-- Render 1 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA D // 3D GLYPH</div>
+      <div class="preview-box">
+        <img src="/brand/zeroday_tech_glyph_1792350375460.jpg" alt="Render Glyph" />
+      </div>
+      <div class="card-title">Linear Cyber Shield Glyph</div>
+      <div class="card-desc">Simbolo 'Ø' fuso a profilo di scudo con illuminazione al neon smeraldo e fondo nero puro senza bordi.</div>
+    </div>
+
+    <!-- Render 2 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA E // 3D CHISELED</div>
+      <div class="preview-box">
+        <img src="/brand/zeroday_minimalist_icon_1792350360075.jpg" alt="Render Minimalist" />
+      </div>
+      <div class="card-title">Chiseled Graphite Insignia</div>
+      <div class="card-desc">Scudo tattico sfaccettato in grafite e titanio con circuiti smeraldo incisi e profilo app squircle.</div>
+    </div>
+
+    <!-- Render 3 -->
+    <div class="card">
+      <div class="card-tag">PROPOSTA F // 3D SQUIRCLE</div>
+      <div class="preview-box">
+        <img src="/brand/zeroday_app_icon_1792350342774.jpg" alt="Render App Icon" />
+      </div>
+      <div class="card-title">Dimensional Titanium App Icon</div>
+      <div class="card-desc">Icona stile Apple App Store / Google Play: geometria '0x' in rilievo con riflessi metallici e backlighting smeraldo.</div>
+    </div>
+  </div>
+
+</body>
+</html>
