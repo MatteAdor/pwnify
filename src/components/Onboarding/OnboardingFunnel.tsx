@@ -3,11 +3,12 @@ import { getDiagnosticQuestionsForLevel } from '../../data/diagnosticQuestions';
 import { HardcoreQuestion } from '../../types';
 import { 
   Shield, CheckCircle2, AlertTriangle, ArrowRight, Terminal, 
-  Cpu, Target, Sparkles, Check, Globe 
+  Cpu, Target, Sparkles, Check, Globe, CornerDownLeft 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLanguage } from '../../utils/language';
 import { sound } from '../../utils/soundEngine';
+import { executeVirtualCommand } from '../../utils/terminalEngine';
 
 interface OnboardingFunnelProps {
   onComplete: (data: {
@@ -34,6 +35,8 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
   const [currentDiagIndex, setCurrentDiagIndex] = useState<number>(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedLineNum, setSelectedLineNum] = useState<number | null>(null);
+  const [terminalInputText, setTerminalInputText] = useState<string>('');
+  const [terminalStdout, setTerminalStdout] = useState<string | null>(null);
   const [userScore, setUserScore] = useState<number>(0);
   const [hasAnswered, setHasAnswered] = useState<boolean>(false);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean>(false);
@@ -139,6 +142,24 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
       if (vulnerableLine && selectedLineNum === vulnerableLine.lineNum) {
         correct = true;
       }
+    } else if (currentQuestion.type === 'terminal_command') {
+      const target = currentQuestion.commandTarget?.trim().toLowerCase() || '';
+      const prefix = currentQuestion.commandPrefix?.trim().toLowerCase() || '';
+      const input = terminalInputText.trim().toLowerCase();
+      const combined = `${prefix} ${input}`.trim();
+      
+      const fullCmd = `${currentQuestion.commandPrefix ? currentQuestion.commandPrefix + ' ' : ''}${terminalInputText}`.trim();
+      const result = executeVirtualCommand(fullCmd);
+      setTerminalStdout(result.output);
+
+      const correctOpt = currentQuestion.options.find(o => o.isCorrect);
+      if (
+        combined.includes(target) || 
+        input.includes(target) || 
+        (correctOpt && input.includes(correctOpt.text.trim().toLowerCase()))
+      ) {
+        correct = true;
+      }
     } else {
       const correctOpt = currentQuestion.options.find(o => o.isCorrect);
       if (correctOpt && selectedOptionId === correctOpt.id) {
@@ -157,6 +178,8 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
     setHasAnswered(false);
     setSelectedOptionId(null);
     setSelectedLineNum(null);
+    setTerminalInputText('');
+    setTerminalStdout(null);
     if (currentDiagIndex < diagQuestions.length - 1) {
       setCurrentDiagIndex(prev => prev + 1);
     } else {
@@ -430,7 +453,7 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
             </div>
 
             {/* Code / Packet Snippet display */}
-            {currentQuestion.codeSnippet && !currentQuestion.codeLines && (
+            {currentQuestion.codeSnippet && !currentQuestion.codeLines && currentQuestion.type !== 'terminal_command' && (
               <div className="rounded-lg bg-[#06090F] border border-white/10 p-2 overflow-x-auto text-[11px] font-mono text-slate-300 shadow-inner max-h-24 sm:max-h-32 overflow-y-auto">
                 <pre className="whitespace-pre-wrap">{currentQuestion.codeSnippet}</pre>
               </div>
@@ -467,44 +490,133 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
               </div>
             )}
 
-            {/* Multiple choice options */}
-            <div className="space-y-1.5 pt-0.5">
-              {currentQuestion.options.map((opt) => {
-                const isSelected = selectedOptionId === opt.id;
-                let optClass = 'bg-surface/80 border-white/10 hover:border-white/20';
+            {/* Interactive Terminal Sandbox */}
+            {currentQuestion.type === 'terminal_command' && (
+              <div className="space-y-2">
+                <div className="rounded-xl bg-[#06090F] border border-cyan-500/40 p-3 shadow-inner font-mono text-xs text-slate-200">
+                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-white/5 text-[11px] text-slate-400">
+                    <div className="flex gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                    </div>
+                    <span className="text-slate-400">bash — terminale diagnostico interattivo</span>
+                  </div>
 
-                if (hasAnswered) {
-                  if (opt.isCorrect) {
-                    optClass = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
-                  } else if (isSelected && !opt.isCorrect) {
-                    optClass = 'bg-red-950/60 border-red-500 text-red-300';
-                  }
-                } else if (isSelected) {
-                  optClass = 'bg-indigo-950/40 border-indigo-500 text-indigo-200';
-                }
-
-                return (
-                  <button
-                    key={opt.id}
-                    disabled={hasAnswered}
-                    onClick={() => setSelectedOptionId(opt.id)}
-                    className={`w-full text-left py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-xs transition-all flex items-center justify-between cursor-pointer leading-snug ${optClass}`}
-                  >
-                    <span className="font-mono">{opt.text}</span>
-                    {hasAnswered && opt.isCorrect && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-1.5" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-emerald-400 font-bold shrink-0">
+                      {currentQuestion.terminalPrompt || 'operator@zeroday:~$'}
+                    </span>
+                    {currentQuestion.commandPrefix && (
+                      <span className="text-slate-300 font-bold shrink-0">
+                        {currentQuestion.commandPrefix}
+                      </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
+                    <input
+                      type="text"
+                      maxLength={256}
+                      disabled={hasAnswered}
+                      value={terminalInputText}
+                      onChange={(e) => setTerminalInputText(e.target.value.slice(0, 256))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !hasAnswered) {
+                          handleDiagnosticAnswer();
+                        }
+                      }}
+                      placeholder="digita o tocca i comandi sotto..."
+                      className="bg-slate-900 border border-slate-700 focus:border-cyan-400 text-cyan-300 px-2 py-1 rounded text-xs flex-1 min-w-[150px] outline-none font-mono"
+                    />
+                  </div>
+
+                  {terminalStdout && (
+                    <div className="mt-2 pt-2 border-t border-white/10 font-mono text-[11px] whitespace-pre-wrap text-emerald-400 bg-black/50 p-2 rounded border border-emerald-500/20">
+                      {terminalStdout}
+                    </div>
+                  )}
+                </div>
+
+                {currentQuestion.commandChips && currentQuestion.commandChips.length > 0 && !hasAnswered && (
+                  <div>
+                    <span className="text-[10px] font-mono text-slate-400 block mb-1 uppercase">
+                      Tocca i parametri per assemblare la sintassi:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentQuestion.commandChips.map((chip, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            sound.playTap();
+                            setTerminalInputText(prev => prev ? `${prev} ${chip}` : chip);
+                          }}
+                          className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-surface border border-white/10 hover:border-cyan-400 text-slate-200 hover:text-cyan-300 font-mono text-xs font-semibold transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{chip}</span>
+                          <CornerDownLeft className="w-3 h-3 opacity-60 text-cyan-400" />
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.playTap();
+                          setTerminalInputText('');
+                        }}
+                        className="min-h-[34px] px-2.5 py-1.5 rounded-lg bg-red-950/40 border border-red-500/30 hover:border-red-500/60 text-red-400 text-xs font-mono font-bold transition-all active:scale-95 cursor-pointer"
+                      >
+                        Cancella
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Multiple choice options */}
+            {currentQuestion.type !== 'terminal_command' && (
+              <div className="space-y-1.5 pt-0.5">
+                {currentQuestion.options.map((opt) => {
+                  const isSelected = selectedOptionId === opt.id;
+                  let optClass = 'bg-surface/80 border-white/10 hover:border-white/20';
+
+                  if (hasAnswered) {
+                    if (opt.isCorrect) {
+                      optClass = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
+                    } else if (isSelected && !opt.isCorrect) {
+                      optClass = 'bg-red-950/60 border-red-500 text-red-300';
+                    }
+                  } else if (isSelected) {
+                    optClass = 'bg-indigo-950/40 border-indigo-500 text-indigo-200';
+                  }
+
+                  return (
+                    <button
+                      key={opt.id}
+                      disabled={hasAnswered}
+                      onClick={() => setSelectedOptionId(opt.id)}
+                      className={`w-full text-left py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl border text-[11px] sm:text-xs transition-all flex items-center justify-between cursor-pointer leading-snug ${optClass}`}
+                    >
+                      <span className="font-mono">{opt.text}</span>
+                      {hasAnswered && opt.isCorrect && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-1.5" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Submit or Next Question Action */}
             {!hasAnswered ? (
               <button
-                disabled={currentQuestion.type === 'spot_the_zeroday' ? !selectedLineNum : !selectedOptionId}
+                disabled={
+                  currentQuestion.type === 'spot_the_zeroday' 
+                    ? !selectedLineNum 
+                    : currentQuestion.type === 'terminal_command' 
+                    ? !terminalInputText.trim() 
+                    : !selectedOptionId
+                }
                 onClick={handleDiagnosticAnswer}
-                className="w-full mt-1.5 py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-neon-emerald cursor-pointer"
+                className="w-full mt-1.5 py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-sm"
               >
                 {t.verifyAnswerBtn}
               </button>

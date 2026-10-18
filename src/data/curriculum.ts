@@ -224,9 +224,9 @@ export const SKILL_MODULES_EN: SkillModule[] = [
               { lineNum: 7, code: '});' }
             ],
             options: [
-              { id: 'spt_1', text: 'Line 5: raw plaintext password in INSERT', isCorrect: true },
-              { id: 'spt_2', text: 'Line 2: req.body destructuring', isCorrect: false },
-              { id: 'spt_3', text: 'Line 6: status 201 return format', isCorrect: false }
+              { id: 'spt_1', text: 'Line 5: unhashed plaintext password in database INSERT', isCorrect: true },
+              { id: 'spt_2', text: 'Line 2: uncontrolled req.body destructuring assignment', isCorrect: false },
+              { id: 'spt_3', text: 'Line 6: missing HTTP status 201 JSON return serialization', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'CWE-256: Plaintext Storage of a Password',
@@ -366,9 +366,9 @@ export const SKILL_MODULES_EN: SkillModule[] = [
               { lineNum: 7, code: '});' }
             ],
             options: [
-              { id: 's_o1', text: 'Line 2: req.body is not sanitized with regex for special characters', isCorrect: false },
-              { id: 's_o2', text: 'Line 4: axios.get(imageUrl) performs internal network calls without IP allowlists', isCorrect: true },
-              { id: 's_o3', text: 'Line 6: res.send exposes the binary image buffer', isCorrect: false }
+              { id: 's_o1', text: 'Line 2: req.body payload parsed without escaping dangerous shell metacharacters', isCorrect: false },
+              { id: 's_o2', text: 'Line 4: axios.get(imageUrl) fetches arbitrary URLs without internal IP allowlisting', isCorrect: true },
+              { id: 's_o3', text: 'Line 6: res.send returns binary stream buffer exposing internal heap memory', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'CWE-918: Server-Side Request Forgery (SSRF)',
@@ -434,10 +434,10 @@ Content-Type: application/json
   "mfa_enabled": false
 }`,
             options: [
-              { id: 'idor_1', text: 'The JWT belongs to user 8820, but the endpoint updates user 1001 without checking subject ownership against the path parameter', isCorrect: true },
-              { id: 'idor_2', text: 'The Content-Type header must be application/x-www-form-urlencoded', isCorrect: false },
-              { id: 'idor_3', text: 'The PUT method is not permitted by RFC HTTP specifications', isCorrect: false },
-              { id: 'idor_4', text: 'The JSON payload exceeds the maximum size of 1024 bytes', isCorrect: false }
+              { id: 'idor_1', text: 'Endpoint updates target user 1001 without verifying JWT token subject ownership', isCorrect: true },
+              { id: 'idor_2', text: 'Server rejects request because PUT method violates RFC state change standards', isCorrect: false },
+              { id: 'idor_3', text: 'Authorization header lacks mandatory signed cryptographic tenant certificates', isCorrect: false },
+              { id: 'idor_4', text: 'Content-Type header requires strict application/x-www-form-urlencoded format', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'OWASP API Security Top 10 - API1:2023 Broken Object Level Authorization',
@@ -447,6 +447,31 @@ Content-Type: application/json
             },
             xpReward: 75,
             eloReward: 25
+          },
+          {
+            id: 'q_idor_terminal',
+            title: 'Terminal Sandbox: IDOR Parameter Manipulation with Curl',
+            type: 'terminal_command',
+            domain: 'Web Sec',
+            difficulty: 'Intermediate',
+            prompt: 'Complete the curl command to exploit IDOR and retrieve account profile data for user ID 1001:',
+            terminalPrompt: 'pentester@kali:~$',
+            commandPrefix: 'curl -s -H "Authorization: Bearer $TOKEN"',
+            commandTarget: 'curl -s -H "Authorization: Bearer $TOKEN" https://api.bank.corp/v2/users/1001/profile',
+            commandChips: ['https://api.bank.corp/v2/users/1001/profile', 'https://api.bank.corp/v2/users/8820/profile', '-X DELETE /api/v2/session', '--cookie "role=admin"'],
+            options: [
+              { id: 'it_1', text: 'https://api.bank.corp/v2/users/1001/profile', isCorrect: true },
+              { id: 'it_2', text: 'https://api.bank.corp/v2/users/8820/profile', isCorrect: false },
+              { id: 'it_3', text: '-X DELETE /api/v2/session', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'IDOR / BOLA Endpoint Exploitation',
+              whyItWorks: 'Substituting user 8820 with 1001 directly in the URI path returns another user\'s private record.',
+              patchRecommendation: 'Implement server-side object ownership checks tied to the verified session subject.',
+              terminalProof: '$ curl -s -H "Authorization: Bearer $TOKEN" https://api.bank.corp/v2/users/1001/profile\n{"id":1001,"username":"director","salary":185000}'
+            },
+            xpReward: 75,
+            eloReward: 20
           }
         ]
       }
@@ -505,16 +530,41 @@ Subnet Mask: 255.255.252.0 (/22)
 Host Bits Remaining: 32 - 26 = 6 bits
 Total IP Addresses: 2^6 = 64 addresses`,
             options: [
-              { id: 'sub_a', text: '62 usable hosts (64 total minus Network ID and Broadcast)', isCorrect: true },
-              { id: 'sub_b', text: '64 usable hosts', isCorrect: false },
-              { id: 'sub_c', text: '30 usable hosts', isCorrect: false },
-              { id: 'sub_d', text: '126 usable hosts', isCorrect: false }
+              { id: 'sub_a', text: '62 assignable host addresses', isCorrect: true },
+              { id: 'sub_b', text: '64 assignable host addresses', isCorrect: false },
+              { id: 'sub_c', text: '30 assignable host addresses', isCorrect: false },
+              { id: 'sub_d', text: '126 assignable host addresses', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'IPv4 Address Architecture & Usable Host Calculation',
               whyItWorks: 'Each subnet reserves the first address (host bits all 0) as Network ID and last address (host bits all 1) as Directed Broadcast.',
               patchRecommendation: 'Allocate subnets scaled to host requirements to prevent address space exhaustion.',
               terminalProof: '$ ipcalc 192.168.1.0/26 | grep Hosts\nHosts/Net: 62'
+            },
+            xpReward: 55,
+            eloReward: 15
+          },
+          {
+            id: 'q_ipcalc_terminal',
+            title: 'Terminal Sandbox: Subnet Calculation via ipcalc',
+            type: 'terminal_command',
+            domain: 'Networking',
+            difficulty: 'Intermediate',
+            prompt: 'Complete the ipcalc command to calculate host ranges and broadcast addresses for network 192.168.1.0/24:',
+            terminalPrompt: 'netadmin@router:~$',
+            commandPrefix: 'ipcalc',
+            commandTarget: 'ipcalc 192.168.1.0/24',
+            commandChips: ['192.168.1.0/24', '192.168.1.0/16', '--broadcast-only', '10.0.0.1 -t', '-n 255.255.255.0'],
+            options: [
+              { id: 'ipc_1', text: '192.168.1.0/24', isCorrect: true },
+              { id: 'ipc_2', text: '192.168.1.0/16', isCorrect: false },
+              { id: 'ipc_3', text: '-n 255.255.255.0', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'Network Boundary & Netmask Validation',
+              whyItWorks: 'ipcalc evaluates CIDR boundaries and calculates network address, broadcast address, and assignable host range.',
+              patchRecommendation: 'Double-check IP boundaries with ipcalc before provisioning VPC security groups or subnets.',
+              terminalProof: '$ ipcalc 192.168.1.0/24\nHostMin: 192.168.1.1\nHostMax: 192.168.1.254\nBroadcast: 192.168.1.255\nHosts/Net: 254'
             },
             xpReward: 55,
             eloReward: 15
@@ -591,9 +641,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
               { lineNum: 5, code: 'chmod 600 /backups/uploads.tar.gz' }
             ],
             options: [
-              { id: 't1', text: 'Line 3: || exit 1 causes denial of service on cron daemon', isCorrect: false },
-              { id: 't2', text: 'Line 4: Expanding * allows arbitrary command-line arguments to be passed to tar', isCorrect: true },
-              { id: 't3', text: 'Line 5: chmod 600 does not protect against group privileges', isCorrect: false }
+              { id: 't1', text: 'Line 3: Subshell exit pipeline terminates the parent crond system service process', isCorrect: false },
+              { id: 't2', text: 'Line 4: Wildcard expansion treats filenames as command-line argument flags in tar', isCorrect: true },
+              { id: 't3', text: 'Line 5: Mode 600 allows unprivileged members of the root group to read the archive', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'Unix Wildcard Injection / Tar Arbitrary Command Execution',
@@ -621,9 +671,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
               { lineNum: 7, code: '      - /proc:/host/proc:ro' }
             ],
             options: [
-              { id: 'd_opt1', text: 'Line 4: datadog/agent image has not been patched for CVEs', isCorrect: false },
-              { id: 'd_opt2', text: 'Line 6: Mounting /var/run/docker.sock allows spawning privileged containers with host root filesystem mounts', isCorrect: true },
-              { id: 'd_opt3', text: 'Line 7: Read-only mount of /proc leaks RAM passwords', isCorrect: false }
+              { id: 'd_opt1', text: 'Line 4: Outdated agent base image contains known remote code execution vulnerabilities', isCorrect: false },
+              { id: 'd_opt2', text: 'Line 6: Exposed docker.sock permits creating privileged containers with root host mounts', isCorrect: true },
+              { id: 'd_opt3', text: 'Line 7: Read-only mount of host /proc reveals kernel memory pointers to local processes', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'Docker Daemon UNIX Socket Exposure (Host Takeover)',
@@ -706,9 +756,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
 2026-10-17T14:03:59Z  update.cdn-microsoft-sync.com            64      58s
 2026-10-17T14:05:04Z  update.cdn-microsoft-sync.com            64      65s`,
             options: [
-              { id: 'c1', text: 'Regular ~60-second cadences with a ~10% standard deviation (10% Jitter) towards a typosquatted domain', isCorrect: true },
-              { id: 'c2', text: 'DNS packet payloads exceed typical sizes for standard A record replies', isCorrect: false },
-              { id: 'c3', text: 'The target domain is signed with an invalid DNSSEC chain', isCorrect: false }
+              { id: 'c1', text: 'Regular 60s sleep cycles with 10% timing jitter querying a typosquatted domain', isCorrect: true },
+              { id: 'c2', text: 'DNS request packet payloads exceeding maximum threshold for standard A queries', isCorrect: false },
+              { id: 'c3', text: 'Anomalous authoritative name server replying with broken DNSSEC signature tags', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'MITRE ATT&CK T1071.004: Application Layer Protocol (DNS C2)',
@@ -780,9 +830,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
               { lineNum: 6, code: '});' }
             ],
             options: [
-              { id: 'bola_1', text: 'Line 3: Database loads invoice by ID without verifying req.user.tenantId / req.user.id', isCorrect: true },
-              { id: 'bola_2', text: 'Line 1: authenticateUser does not support async promises', isCorrect: false },
-              { id: 'bola_3', text: 'Line 4: Status 404 generates memory leaks', isCorrect: false }
+              { id: 'bola_1', text: 'Line 3: Queries record by ID without checking req.user ownership or tenant boundary', isCorrect: true },
+              { id: 'bola_2', text: 'Line 1: Authentication middleware fails to await asynchronous promise resolution', isCorrect: false },
+              { id: 'bola_3', text: 'Line 4: Returning HTTP 404 generates uncaught exception memory leak in runtime loop', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'OWASP API1:2023 - Broken Object Level Authorization (BOLA)',
@@ -801,9 +851,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
             difficulty: 'Hardcore',
             prompt: 'In a vulnerable JWT library, what happens when an attacker modifies the token header to {"alg": "none", "typ": "JWT"} and drops the signature?',
             options: [
-              { id: 'alg_1', text: 'The parser treats the token as valid without verifying any cryptographic signature, enabling arbitrary admin impersonation', isCorrect: true },
-              { id: 'alg_2', text: 'The server attempts to decrypt the payload with a null RSA private key', isCorrect: false },
-              { id: 'alg_3', text: 'A Certificate Revocation List (CRL) exception is automatically triggered', isCorrect: false }
+              { id: 'alg_1', text: 'Parser accepts token without signature check, enabling arbitrary role impersonation', isCorrect: true },
+              { id: 'alg_2', text: 'Server initiates decryption using an empty RSA public key extracted from header', isCorrect: false },
+              { id: 'alg_3', text: 'Cryptographic library triggers an unhandled Certificate Revocation List error', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'CVE-2015-9235: JSON Web Token "none" Algorithm Vulnerability',
@@ -813,6 +863,31 @@ Total IP Addresses: 2^6 = 64 addresses`,
             },
             xpReward: 55,
             eloReward: 16
+          },
+          {
+            id: 'q_jwt_terminal_decode',
+            title: 'Terminal Sandbox: Decode JWT Header with Base64',
+            type: 'terminal_command',
+            domain: 'Web Sec',
+            difficulty: 'Intermediate',
+            prompt: 'Complete the Linux command pipeline to decode the Base64URL-encoded JWT header "eyJhbGciOiJub25lIn0":',
+            terminalPrompt: 'operator@cyberlab:~$',
+            commandPrefix: 'echo -n "eyJhbGciOiJub25lIn0" |',
+            commandTarget: 'echo -n "eyJhbGciOiJub25lIn0" | base64 -d',
+            commandChips: ['base64 -d', 'sha256sum', 'tr -d "\n"', 'grep -i "alg"', 'openssl rsa'],
+            options: [
+              { id: 'jdec_1', text: 'base64 -d', isCorrect: true },
+              { id: 'jdec_2', text: 'sha256sum', isCorrect: false },
+              { id: 'jdec_3', text: 'openssl rsa', isCorrect: false }
+            ],
+            rootCauseBreakdown: {
+              cveOrTopic: 'JWT Header Inspection & Base64 Decoding',
+              whyItWorks: 'JWT headers are plain Base64URL-encoded JSON. Decoding the first segment reveals the cryptographic signature algorithm and key IDs.',
+              patchRecommendation: 'Never rely on header parameters alone for trust; enforce server-configured verification keys and approved algorithms.',
+              terminalProof: '$ echo -n "eyJhbGciOiJub25lIn0" | base64 -d\n{"alg":"none"}'
+            },
+            xpReward: 55,
+            eloReward: 15
           }
         ]
       }
@@ -842,9 +917,9 @@ Total IP Addresses: 2^6 = 64 addresses`,
             difficulty: 'Hardcore',
             prompt: 'Why can any authenticated Active Directory domain user request a TGS ticket for a service account with a registered SPN without raising immediate alarms?',
             options: [
-              { id: 'kb_1', text: 'The Kerberos KDC legitimately issues the TGS encrypted with the service account\'s NTLM password hash so the client can authenticate', isCorrect: true },
-              { id: 'kb_2', text: 'TGS tickets are transmitted in plaintext without symmetric encryption', isCorrect: false },
-              { id: 'kb_3', text: 'Active Directory does not require authentication for LDAP queries on port 389', isCorrect: false }
+              { id: 'kb_1', text: 'KDC grants TGS ticket encrypted with service NTLM hash, enabling offline cracking', isCorrect: true },
+              { id: 'kb_2', text: 'TGS ticket exchange occurs in plaintext without requiring session key validation', isCorrect: false },
+              { id: 'kb_3', text: 'Domain Controller accepts unauthenticated LDAP bind requests on standard port 389', isCorrect: false }
             ],
             rootCauseBreakdown: {
               cveOrTopic: 'MITRE ATT&CK T1558.003: Steal or Forge Kerberos Tickets (Kerberoasting)',

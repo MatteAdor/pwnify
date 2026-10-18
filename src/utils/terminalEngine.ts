@@ -221,6 +221,104 @@ LANG=en_US.UTF-8`,
         exitCode: 0
       };
 
+    case 'ping':
+      return {
+        output: `PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=118 time=12.4 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=118 time=11.9 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=118 time=12.1 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=118 time=12.0 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 11.912/12.100/12.405/0.187 ms`,
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'ipcalc':
+      return {
+        output: `Address:   192.168.1.0          11000000.10101000.00000001. 00000000
+Netmask:   255.255.255.0 = 24   11111111.11111111.11111111. 00000000
+Wildcard:  0.0.0.255            00000000.00000000.00000000. 11111111
+=>
+Network:   192.168.1.0/24       11000000.10101000.00000001. 00000000
+HostMin:   192.168.1.1          11000000.10101000.00000001. 00000001
+HostMax:   192.168.1.254        11000000.10101000.00000001. 11111110
+Broadcast: 192.168.1.255        11000000.10101000.00000001. 11111111
+Hosts/Net: 254                   (Class C, Private Internet)`,
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'base64':
+      if (fullArgs.includes('-d') || fullArgs.includes('--decode')) {
+        return {
+          output: `{"alg":"none","typ":"JWT"}\n{"user":"admin","role":"root"}`,
+          isError: false,
+          exitCode: 0
+        };
+      }
+      return {
+        output: `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0K`,
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'echo':
+      if (fullArgs.includes('sha256sum')) {
+        return {
+          output: `d04b5f9e8a71a938c5d1...  -`,
+          isError: false,
+          exitCode: 0
+        };
+      }
+      if (fullArgs.includes('ip_forward')) {
+        return {
+          output: `[+] IPv4 packet forwarding enabled in /proc/sys/net/ipv4/ip_forward`,
+          isError: false,
+          exitCode: 0
+        };
+      }
+      return {
+        output: fullArgs.replace(/['"]/g, ''),
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'sqlmap':
+      return {
+        output: `[+] fetching database names
+[+] production_db
+[+] dumping table 'users'
++----+----------+------------------------------------+
+| id | username | password_hash                      |
++----+----------+------------------------------------+
+| 1  | admin    | $2y$10$e8vK1zK8... (SqlAdmin2024!) |
+| 2  | operator | $2y$10$9x0M2...   (User123!)       |
++----+----------+------------------------------------+
+[INFO] table 'production_db.users' dumped to CSV`,
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'impacket-getnpusers':
+      return {
+        output: `[*] Getting TGT for user corp.local/operator
+$krb5asrep$23$operator@CORP.LOCAL:...
+[+] Output saved to asrep.hashes (Hashcat format 18200)`,
+        isError: false,
+        exitCode: 0
+      };
+
+    case 'arpspoof':
+      return {
+        output: `0:c:29:4f:8e:12 0:50:56:c0:0:8 0806 42: arp reply 192.168.1.1 is-at 0:c:29:4f:8e:12
+0:c:29:4f:8e:12 0:50:56:c0:0:9 0806 42: arp reply 192.168.1.50 is-at 0:c:29:4f:8e:12`,
+        isError: false,
+        exitCode: 0
+      };
+
     default:
       return {
         output: `bash: ${baseCmd}: command not found. Digita 'help' per la lista dei comandi.`,
