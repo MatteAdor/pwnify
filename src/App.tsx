@@ -16,6 +16,7 @@ import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { AuthModal } from './components/Auth/AuthModal';
 import { AuthPage } from './components/Auth/AuthPage';
+import { LandingPortal } from './components/Landing/LandingPortal';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
@@ -122,6 +123,19 @@ export const App: React.FC = () => {
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
+
+  // View Mode: 'portal' (Public Presentation & Download Hub) vs 'app' (Interactive Web Platform)
+  const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get('view') === 'app' || window.location.hash === '#app') {
+          return 'app';
+        }
+      }
+    } catch {}
+    return 'portal';
+  });
 
   // Interactive Quiz Modal State
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
@@ -577,8 +591,21 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
 
   return (
     <div className={`min-h-screen ${THEME_BG_MAP[currentTheme] || 'bg-[#090D16]'} text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300`}>
-      {/* Auth Screen vs Onboarding vs Tactical Platform */}
-      {!userState.isLoggedIn ? (
+      {/* Public Presentation & Download Portal vs Interactive Web App */}
+      {viewMode === 'portal' ? (
+        <LandingPortal
+          onLaunchApp={() => {
+            sound.playTap();
+            setViewMode('app');
+            window.location.hash = '#app';
+          }}
+          onOpenLegal={(tab) => {
+            setLegalTab(tab);
+            setIsLegalModalOpen(true);
+          }}
+          onOpenCookiePrefs={() => setForceCookieBanner(true)}
+        />
+      ) : !userState.isLoggedIn ? (
         <AuthPage
           onLoginSuccess={handleLoginSuccess}
           currentUserState={userState}
@@ -590,6 +617,11 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
           onOpenLegal={(tab) => {
             setLegalTab(tab);
             setIsLegalModalOpen(true);
+          }}
+          onBackToPortal={() => {
+            sound.playTap();
+            setViewMode('portal');
+            window.location.hash = '';
           }}
         />
       ) : !userState.onboardingCompleted ? (
@@ -611,6 +643,11 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
             onOpenAuth={() => setIsAuthOpen(true)}
             onUpdateUsername={handleUpdateUsername}
             onUpdateLanguage={(l) => setUserState(prev => ({ ...prev, language: l }))}
+            onOpenPortal={() => {
+              sound.playTap();
+              setViewMode('portal');
+              window.location.hash = '';
+            }}
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}

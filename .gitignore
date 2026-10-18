@@ -29,3 +29,4 @@ database/
 *.sw?
 *.apk
 !releases/*.apk
+!public/downloads/*.apk

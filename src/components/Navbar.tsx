@@ -21,6 +21,7 @@ interface NavbarProps {
   onOpenAuth?: () => void;
   onUpdateUsername?: (newUsername: string) => { success: boolean; error?: string };
   onUpdateLanguage?: (lang: 'it' | 'en') => void;
+  onOpenPortal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -33,7 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenArsenal,
   onOpenAuth,
   onUpdateUsername,
-  onUpdateLanguage
+  onUpdateLanguage,
+  onOpenPortal
 }) => {
   const { lang, setLanguage, t } = useLanguage();
   const rank = getRankFromElo(userState.elo);
@@ -110,10 +112,14 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       <header className="sticky top-0 z-40 w-full bg-[#090D16] border-b border-zinc-800 px-3 sm:px-6 pt-safe pb-2.5 min-h-[56px] flex items-center">
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2.5">
-          {/* Brand Logo */}
+          {/* Brand Logo & Portal Navigation */}
           <div 
-            onClick={() => sound.playTap()}
+            onClick={() => {
+              sound.playTap();
+              if (onOpenPortal) onOpenPortal();
+            }}
             className="flex items-center gap-2 cursor-pointer select-none shrink-0"
+            title={lang === 'it' ? 'Torna al Portale & Download APK' : 'Back to Portal & Download APK'}
           >
             <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-emerald-400">
               0x

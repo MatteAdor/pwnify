@@ -26,6 +26,7 @@ interface AuthPageProps {
   onGuestAccess?: () => void;
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
   currentUserState?: UserState;
+  onBackToPortal?: () => void;
 }
 
 type AuthMode = 'login' | 'signup';
@@ -50,7 +51,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess,
   onGuestAccess,
   onOpenLegal,
-  currentUserState
+  currentUserState,
+  onBackToPortal
 }) => {
   const { lang, setLanguage, t } = useLanguage();
   const isEn = lang === 'en';
@@ -533,9 +535,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       >
         {/* Header with Brand & Language Switcher */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-          <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
-            0xDAY
-          </span>
+          <div className="flex items-center gap-2.5">
+            {onBackToPortal && (
+              <button
+                type="button"
+                onClick={onBackToPortal}
+                className="text-[11px] font-mono text-zinc-400 hover:text-white flex items-center gap-1 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-800"
+                title={isEn ? 'Back to Portal' : 'Torna al Portale'}
+              >
+                ← {isEn ? 'Portal' : 'Portale'}
+              </button>
+            )}
+            <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
+              0xDAY
+            </span>
+          </div>
 
           <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
             <button
