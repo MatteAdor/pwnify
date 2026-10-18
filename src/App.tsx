@@ -643,6 +643,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                 userState={userState}
                 onSelectNode={handleSelectNode}
                 onOpenPaywall={() => triggerPaywall('manual_upgrade')}
+                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
               />
             )}
 
