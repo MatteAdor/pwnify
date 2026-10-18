@@ -83,45 +83,48 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
       </div>
 
       {/* 1. DEFCON 1 · Daily 0xBreach Hero Card */}
-      <div className="rounded-2xl bg-gradient-to-r from-[#200e12] via-[#161224] to-[#0c1424] border-2 border-red-500/40 p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
-        <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
-              <AlertTriangle className="w-5 h-5 animate-pulse" />
+      <div className="rounded-2xl bg-gradient-to-r from-[#1c0c10] via-[#14101e] to-[#0a101c] border-2 border-red-500/40 p-4 sm:p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
+        <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        {/* Top row: Status, Title, Streak */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
+              <AlertTriangle className="w-4 h-4 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
-                  DEFCON 1 · ACTIVE BREACH
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-red-500/30 text-red-300 border border-red-500/40">
+                  DEFCON 1
                 </span>
-                <span className="text-xs font-mono text-slate-400">1 Tentativo al Giorno</span>
+                <h2 className="text-xs sm:text-sm font-black text-white">
+                  Daily 0xBreach
+                </h2>
               </div>
-              <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
-                Daily 0xBreach Challenge
-              </h2>
             </div>
           </div>
 
-          <div className="text-right font-mono">
-            <span className="text-[10px] text-slate-400 block">SERIE TRIAGE</span>
-            <span className="text-xs font-bold text-amber-400">
-              🔥 x{userState.dailyBreachStreak || 0}
+          {/* Triage streak */}
+          <div className="font-mono text-right shrink-0">
+            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+              🔥 x{userState.dailyBreachStreak || 0} TRIAGE
             </span>
           </div>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Un exploit critico del mondo reale richiede analisi immediata. Ispeziona il frammento di codice, identifica la root cause e ottieni XP doppi e la scheda condivisibile in stile Wordle.
+        {/* Short, non-overwhelming summary */}
+        <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+          Analizza l'incidente CVE quotidiano nel frammento di codice e individua la root cause per ottenere XP doppi.
         </p>
 
-        <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
+        {/* Action CTA */}
+        <div className="pt-0.5 space-y-2">
           <button
             onClick={() => {
               sound.playTap();
               onOpenDailyBreach();
             }}
-            className={`py-3 px-5 rounded-xl font-mono font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 ${
+            className={`w-full py-2.5 px-4 rounded-xl font-mono font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer ${
               isBreachSolvedToday
                 ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60'
                 : 'bg-gradient-to-r from-red-500 via-amber-500 to-emerald-400 hover:from-red-400 hover:to-emerald-300 text-slate-950 font-black'
@@ -129,21 +132,24 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
           >
             {isBreachSolvedToday ? (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
                 <span>TRIAGE COMPLETATO OGGI (RIVEDI ANALISI)</span>
               </>
             ) : (
               <>
-                <Zap className="w-4 h-4 fill-slate-950" />
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
                 <span>AVVIA TRIAGE ZERO-DAY (+150 XP)</span>
               </>
             )}
           </button>
 
-          <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
-            <span>Nuovo breach alle 00:00</span>
-          </span>
+          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-1">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3 text-slate-500" />
+              <span>Nuovo breach alle 00:00</span>
+            </span>
+            <span>1 tentativo al giorno</span>
+          </div>
         </div>
       </div>
 

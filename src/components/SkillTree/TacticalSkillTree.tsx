@@ -6,7 +6,7 @@ import {
   Lock, CheckCircle2, Play, Sparkles, Shield, 
   Terminal, Globe, Network, Cpu, Key, Server, 
   ArrowLeft, ChevronRight, Zap, BookOpen, 
-  Check, Copy, FileText, HelpCircle, Flame, Target,
+  Check, Copy, FileText, Flame, Target,
   AlertTriangle, Clock
 } from 'lucide-react';
 
@@ -16,6 +16,11 @@ interface TacticalSkillTreeProps {
   onOpenPaywall: () => void;
   onOpenDailyBreach?: () => void;
 }
+
+// Helper to strip redundant "Modulo X:" prefix when displaying chapter titles
+const cleanModuleName = (title: string): string => {
+  return title.replace(/^Modulo\s*\d+:\s*/i, '').trim();
+};
 
 // Icon and color mapper for chapters
 const CHAPTER_METADATA: Record<string, { icon: React.ElementType; tag: string; label: string; accentColor: string }> = {
@@ -33,19 +38,19 @@ const CHAPTER_METADATA: Record<string, { icon: React.ElementType; tag: string; l
   },
   mod_networking: {
     icon: Network,
-    tag: 'INFRASTRUTTURA',
+    tag: 'NETWORKING',
     label: 'Packet Dissection & CCNA',
     accentColor: 'from-blue-500/20 to-indigo-500/10 border-blue-500/30 text-blue-400'
   },
   mod_linux: {
     icon: Cpu,
-    tag: 'LOW LEVEL & OS',
+    tag: 'LOW LEVEL',
     label: 'Kernel & Linux PrivEsc',
     accentColor: 'from-amber-500/20 to-yellow-500/10 border-amber-500/30 text-amber-400'
   },
   mod_defense_soc: {
     icon: Shield,
-    tag: 'BLUE TEAM & SOC',
+    tag: 'BLUE TEAM',
     label: 'Threat Hunting & SIEM',
     accentColor: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400'
   },
@@ -57,7 +62,7 @@ const CHAPTER_METADATA: Record<string, { icon: React.ElementType; tag: string; l
   },
   mod_active_directory: {
     icon: Server,
-    tag: 'ENTERPRISE RED TEAM',
+    tag: 'ENTERPRISE',
     label: 'Active Directory & Kerberos',
     accentColor: 'from-red-500/20 to-orange-500/10 border-red-500/30 text-red-400'
   }
@@ -79,7 +84,7 @@ const CHAPTER_TOOLS: Record<string, {
       'chmod 600 id_rsa            # Permessi restrittivi (lettura/scrittura solo owner)',
       'chown root:root /etc/shadow # Assegna proprietà superuser'
     ],
-    keyTakeaway: 'Nello standard FHS, i file di configurazione risiedono in /etc/, i file variabili e log in /var/log/. Mai memorizzare chiavi in world-readable /tmp/.',
+    keyTakeaway: 'Nello standard FHS, i file di configurazione risiedono in /etc/, i log in /var/log/. Mai memorizzare chiavi in world-readable /tmp/.',
     recommendedLab: 'Sandbox Linux Shell: Navigazione permessi e ispezione log di sistema'
   },
   mod_web_sqli: {
@@ -91,7 +96,7 @@ const CHAPTER_TOOLS: Record<string, {
       '"><img src=x onerror=alert(1)>                    # Filter Evasion XSS',
       'admin\' --                  # Comment-out password check in SQL queries'
     ],
-    keyTakeaway: 'L\'unica difesa infallibile contro SQLi sono i Prepared Statements (Query Parametrizzate). Per XSS è obbligatorio il Context-Aware Output Encoding e CSP restrittivo.',
+    keyTakeaway: 'L\'unica difesa infallibile contro SQLi sono i Prepared Statements. Per XSS è obbligatorio il Context-Aware Output Encoding e CSP restrittivo.',
     recommendedLab: 'Web App Pentesting: Bypass del modulo di autenticazione e estrazione DB'
   },
   mod_networking: {
@@ -103,7 +108,7 @@ const CHAPTER_TOOLS: Record<string, {
       'arp -a                                    # Tabella mappatura IP -> MAC locale',
       'netstat -tulpn                            # Porte TCP/UDP in ascolto e PID associati'
     ],
-    keyTakeaway: 'Il Three-Way Handshake TCP è composto da SYN -> SYN-ACK -> ACK. Un flag RST chiude bruscamente la connessione senza negoziazione di teardown.',
+    keyTakeaway: 'Il Three-Way Handshake TCP è composto da SYN -> SYN-ACK -> ACK. Un flag RST chiude bruscamente la connessione senza teardown.',
     recommendedLab: 'Packet Capture Lab: Ispezione PCAP e ricostruzione flussi di sessione'
   },
   mod_linux: {
@@ -115,7 +120,7 @@ const CHAPTER_TOOLS: Record<string, {
       'cat /etc/crontab                         # Ispezione task pianificati vulnerabili',
       'ls -ld /tmp /var/tmp                     # Verifica sticky bit su cartelle temporanee'
     ],
-    keyTakeaway: 'I binari SUID mantengono i privilegi del file owner all\'esecuzione. Se un binario SUID richiama script relativi o permette shell escape, l\'escalation a root è immediata.',
+    keyTakeaway: 'I binari SUID mantengono i privilegi del file owner. Se un binario SUID richiama script relativi o permette shell escape, root è immediato.',
     recommendedLab: 'PrivEsc Arena: Sfruttamento misconfiguration SUID e GTFOBins'
   },
   mod_defense_soc: {
@@ -127,7 +132,7 @@ const CHAPTER_TOOLS: Record<string, {
       'EventID 4688  # Nuovo processo creato (CommandLine auditing abilitato)',
       'EventID 1102  # Il registro Security Event Log è stato cancellato'
     ],
-    keyTakeaway: 'Una raffica di EventID 4625 concentrata seguita da un 4624 dallo stesso IP segnala un attacco di brute force o password spray andato a buon fine.',
+    keyTakeaway: 'Una raffica di EventID 4625 concentrata seguita da un 4624 dallo stesso IP segnala un attacco brute force / spray riuscito.',
     recommendedLab: 'SOC Triage: Analisi incident timeline e isolamento endpoint compromesso'
   },
   mod_api_jwt: {
@@ -139,7 +144,7 @@ const CHAPTER_TOOLS: Record<string, {
       'Authorization: Bearer <tampered_token>   # Test validazione server-side signature',
       'Content-Type: application/json; charset=utf-8'
     ],
-    keyTakeaway: 'Non fidarsi mai dell\'header "alg" nel payload JWT. L\'algoritmo di firma deve essere forzato e controllato rigidamente sul backend, non scelto dal client.',
+    keyTakeaway: 'Non fidarsi mai dell\'header "alg" nel payload JWT. L\'algoritmo di firma deve essere forzato e controllato rigidamente sul backend.',
     recommendedLab: 'API Security Lab: Manipolazione JWT e BOLA IDOR Exploitation'
   },
   mod_active_directory: {
@@ -151,7 +156,7 @@ const CHAPTER_TOOLS: Record<string, {
       'bloodhound-python -d domain.local -u user # Raccolta grafo privilegi AD',
       'pth-winexe -U domain/admin%aad3... //host cmd.exe # Pass-The-Hash'
     ],
-    keyTakeaway: 'Proteggi gli account di servizio enterprise disabilitando la cifratura RC4 su Kerberos e adottando password di almeno 25 caratteri per resistere al cracking offline dei ticket TGS.',
+    keyTakeaway: 'Proteggi gli account di servizio enterprise disabilitando la cifratura RC4 su Kerberos e adottando password lunghe contro l\'offline cracking.',
     recommendedLab: 'Active Directory Domain Dominion: Kerberoasting e privilege graph escalation'
   }
 };
@@ -197,13 +202,13 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-24 sm:pb-32 space-y-4 sm:space-y-6">
+    <div className="w-full max-w-2xl mx-auto px-3.5 sm:px-4 py-4 sm:py-6 pb-28 space-y-4 sm:space-y-6">
       
       {/* ========================================================================= */}
       {/* VISTA 1: DETTAGLIO CAPITOLO (DRILL-DOWN NELLE LEZIONI & POTENZIAMENTI)    */}
       {/* ========================================================================= */}
       {selectedChapterId && activeModule ? (
-        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <div className="space-y-4 sm:space-y-5 animate-fade-in">
           
           {/* Breadcrumb & Navigation Back Bar */}
           <div className="flex items-center justify-between">
@@ -212,14 +217,14 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                 sound.playTap();
                 setSelectedChapterId(null);
               }}
-              className="group flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111726] border border-white/10 hover:border-emerald-500/50 hover:bg-white/5 text-slate-300 hover:text-white transition-all text-xs font-mono font-bold cursor-pointer"
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-white/10 hover:border-emerald-500/40 text-slate-300 hover:text-white transition-all text-xs font-mono font-bold cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1 text-emerald-400" />
               <span>← Panoramica Capitoli</span>
             </button>
 
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-slate-400">
-              MODULO: {activeModule.id.replace('mod_', '').toUpperCase()}
+              MODULO 0{SKILL_MODULES.findIndex(m => m.id === activeModule.id)}
             </span>
           </div>
 
@@ -233,78 +238,69 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
             };
             const stats = getModuleStats(activeModule);
             const ChapterIcon = meta.icon;
+            const cleanTitle = cleanModuleName(activeModule.title);
 
             return (
-              <div className="relative rounded-2xl bg-gradient-to-r from-[#111726] via-[#131c2e] to-[#0d1522] border border-white/15 p-4 sm:p-6 shadow-2xl overflow-hidden">
-                <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3.5 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-900/90 border border-white/15 flex items-center justify-center shrink-0 shadow-lg text-emerald-400">
-                      <ChapterIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold">
-                          {meta.tag}
-                        </span>
-                        <span className="text-[10px] font-mono text-slate-400">
-                          {activeModule.certificationFocus}
-                        </span>
-                      </div>
-                      <h1 className="text-lg sm:text-2xl font-black text-white">
-                        {activeModule.title}
-                      </h1>
-                      <p className="text-xs text-slate-300 mt-1 max-w-lg">
-                        Completa tutte le lezioni, individua i bug nei sorgenti e sblocca i cheat sheet tattici per dominare l'esame.
-                      </p>
-                    </div>
+              <div className="rounded-2xl bg-gradient-to-r from-surface via-[#121929] to-[#0b121e] border border-white/15 p-4 sm:p-5 shadow-cyber-glass space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-slate-900/90 border border-white/15 flex items-center justify-center shrink-0 shadow text-emerald-400 mt-0.5">
+                    <ChapterIcon className="w-5 h-5" />
                   </div>
 
-                  <div className="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 border-white/10 pt-3 sm:pt-0">
-                    <div className="text-left sm:text-right">
-                      <span className="text-[10px] font-mono text-slate-400 block">PROGRESSO CAPITOLO</span>
-                      <span className="text-lg sm:text-2xl font-mono font-extrabold text-emerald-400">
-                        {stats.completedCount}/{stats.totalNodes} <span className="text-xs text-slate-400">({stats.progressPercent}%)</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                        {meta.tag}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {activeModule.certificationFocus}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-1 font-mono text-[11px] text-slate-400">
-                      <span className="text-emerald-400 font-bold">+{stats.totalXp} XP</span>
-                      <span>·</span>
-                      <span className="text-indigo-400 font-bold">+{stats.totalElo} ELO</span>
-                    </div>
+                    <h1 className="text-base sm:text-xl font-extrabold text-white leading-tight">
+                      {cleanTitle}
+                    </h1>
                   </div>
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-slate-800/80 overflow-hidden mt-4">
-                  <div 
-                    className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-                    style={{ width: `${stats.progressPercent}%` }}
-                  />
+                {/* Progress bar + Stats summary */}
+                <div className="pt-2 border-t border-white/5 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-slate-400">
+                      Progresso: <strong className="text-emerald-400">{stats.completedCount}/{stats.totalNodes}</strong> ({stats.progressPercent}%)
+                    </span>
+                    <span className="text-slate-300">
+                      +{stats.totalXp} XP · <span className="text-indigo-400">+{stats.totalElo} ELO</span>
+                    </span>
+                  </div>
+
+                  <div className="w-full h-1.5 rounded-full bg-slate-800/80 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-500 shadow-neon-emerald"
+                      style={{ width: `${stats.progressPercent}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             );
           })()}
 
           {/* Section: Lezioni del Capitolo (Vertical Lesson Tree) */}
-          <div className="space-y-3.5 sm:space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Target className="w-4 h-4 text-emerald-400" />
-                Nodi & Lezioni Operative ({activeModule.nodes.length})
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Nodi & Lezioni ({activeModule.nodes.length})</span>
               </h2>
-              <span className="text-[10px] sm:text-[11px] font-mono text-slate-400">
+              <span className="text-[10px] font-mono text-slate-400">
                 Tocca per avviare il quiz
               </span>
             </div>
 
             {/* Vertical Path Nodes */}
-            <div className="relative flex flex-col items-center space-y-3.5 sm:space-y-4 py-2">
-              {/* Vertical connection line */}
-              <div className="absolute top-6 bottom-6 w-0.5 bg-gradient-to-b from-emerald-500/50 via-indigo-500/30 to-slate-800 -z-0" />
+            <div className="relative flex flex-col items-center space-y-3.5 py-1">
+              {/* Vertical connection bus */}
+              <div className="absolute top-4 bottom-4 w-1 bg-gradient-to-b from-emerald-500/40 via-indigo-500/20 to-slate-800 -z-0" />
 
               {activeModule.nodes.map((node, nodeIdx) => {
                 const isCompleted = userState.completedNodeIds.includes(node.id);
@@ -313,9 +309,9 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                 return (
                   <div 
                     key={node.id} 
-                    className="relative z-10 w-full flex flex-col items-center"
+                    className="relative z-10 w-full"
                   >
-                    {/* Interactive Node Button */}
+                    {/* Interactive Node Card */}
                     <div
                       onClick={() => {
                         sound.playTap();
@@ -325,67 +321,76 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                           onSelectNode(node);
                         }
                       }}
-                      className={`cursor-pointer group relative w-full p-3.5 sm:p-4 rounded-2xl border transition-all duration-300 flex items-center gap-3.5 sm:gap-4 ${
+                      className={`cursor-pointer group relative w-full p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 flex items-start gap-3.5 ${
                         isCompleted
-                          ? 'bg-emerald-950/25 border-emerald-500/50 hover:border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                          ? 'bg-emerald-950/25 border-emerald-500/50 hover:border-emerald-400 shadow-neon-emerald'
                           : isLocked
-                          ? 'bg-[#111726]/50 border-white/5 opacity-75 hover:opacity-100 hover:border-amber-500/30'
-                          : 'bg-[#111726] border-white/15 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                          ? 'bg-surface/50 border-white/5 opacity-80 hover:opacity-100 hover:border-amber-500/30'
+                          : 'bg-surface border-white/10 hover:border-emerald-500/40 hover:shadow-neon-emerald'
                       }`}
                     >
                       {/* Node Index / Status Circle */}
-                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105 ${
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105 mt-0.5 ${
                         isCompleted
                           ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
                           : isLocked
                           ? 'bg-slate-900 border-slate-700 text-slate-500'
-                          : 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.25)]'
+                          : 'bg-indigo-500/20 border-indigo-500 text-indigo-400 shadow-neon-indigo'
                       }`}>
                         {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                         ) : isLocked ? (
-                          <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500/80" />
+                          <Lock className="w-4 h-4 text-amber-500/80" />
                         ) : (
-                          <Play className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 fill-indigo-400 ml-0.5" />
+                          <Play className="w-4 h-4 text-indigo-400 fill-indigo-400 ml-0.5" />
                         )}
                       </div>
 
-                      {/* Node Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900/80 text-slate-300 border border-white/5">
-                            LEZIONE 0{nodeIdx + 1}
-                          </span>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900/80 text-cyan-300 border border-white/5">
-                            {node.domain}
-                          </span>
-                          {isCompleted && (
-                            <span className="text-[9px] font-mono text-emerald-400 font-bold">
-                              COMPLETATO
+                      {/* Node Content */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {/* Badges + Rewards row */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-900 text-slate-300 border border-white/5 font-semibold">
+                              LEZIONE 0{nodeIdx + 1}
                             </span>
-                          )}
-                          {isLocked && (
-                            <span className="text-[9px] font-mono text-amber-400 font-bold flex items-center gap-1">
-                              <Sparkles className="w-2.5 h-2.5" /> PRO ONLY
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-900 text-cyan-300 border border-white/5">
+                              {node.domain}
                             </span>
-                          )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold shrink-0">
+                            <span className="text-emerald-400">+{node.xpReward} XP</span>
+                            <span className="text-slate-600">·</span>
+                            <span className="text-indigo-400">+{node.eloReward} ELO</span>
+                          </div>
                         </div>
-                        <h4 className="font-bold text-xs sm:text-base text-white truncate">
+
+                        {/* Title - Non-truncated, elegant multi-line */}
+                        <h4 className="font-bold text-xs sm:text-sm text-white leading-snug">
                           {node.title}
                         </h4>
-                        <p className="text-[11px] sm:text-xs text-slate-400 truncate mt-0.5">
+
+                        {/* Subtitle - Non-truncated readable explanation */}
+                        <p className="text-[11px] text-slate-400 leading-normal">
                           {node.subtitle}
                         </p>
-                      </div>
 
-                      {/* Rewards / Status Action */}
-                      <div className="flex flex-col items-end shrink-0 font-mono text-right">
-                        <span className="text-xs text-emerald-400 font-bold">
-                          +{node.xpReward} XP
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          +{node.eloReward} ELO
-                        </span>
+                        {/* Status tag */}
+                        {(isCompleted || isLocked) && (
+                          <div className="pt-1.5 flex items-center justify-between text-[10px] font-mono font-bold">
+                            {isCompleted && (
+                              <span className="text-emerald-400 flex items-center gap-1">
+                                <Check className="w-3 h-3" /> COMPLETATO CON SUCCESSO
+                              </span>
+                            )}
+                            {isLocked && (
+                              <span className="text-amber-400 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> CONTENUTO ZERO-DAY PRO
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -395,45 +400,44 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
           </div>
 
           {/* Section: Potenziamenti & Laboratori Pratici del Capitolo */}
-          <div className="rounded-2xl bg-[#111726] border border-white/10 p-4 sm:p-5 space-y-3.5 sm:space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-xs sm:text-base text-white flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-400" />
-                  Potenziamenti & Tool Tattici del Capitolo
-                </h3>
-                <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                  Cheat sheet, laboratori sandbox e simulazioni esame focalizzate su questo argomento.
-                </p>
-              </div>
+          <div className="rounded-2xl bg-surface border border-white/10 p-4 space-y-3">
+            <div>
+              <h3 className="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span>Tool & Potenziamenti del Capitolo</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Risorse tattiche per consolidare la preparazione all'esame.
+              </p>
             </div>
 
-            {/* Grid of 4 Tactical Enhancers */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               
-              {/* Tool 1: Cheat Sheet Modulo */}
+              {/* Tool 1: Cheat Sheet & Comandi Rapidi */}
               <div 
                 onClick={() => {
                   sound.playTap();
                   setActiveCheatSheetModuleId(activeModule.id);
                 }}
-                className="cursor-pointer p-3.5 rounded-xl bg-[#090D16] border border-white/10 hover:border-cyan-500/40 hover:bg-cyan-950/20 transition-all group"
+                className="cursor-pointer p-3 rounded-xl bg-[#090D16] border border-white/10 hover:border-cyan-500/40 hover:bg-cyan-950/20 transition-all group space-y-1.5"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
-                    <Terminal className="w-4 h-4" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+                      <FileText className="w-3.5 h-3.5" />
+                    </div>
+                    <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">
+                      Cheat Sheet Comandi
+                    </h4>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
                     CHEAT SHEET
                   </span>
                 </div>
-                <h4 className="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">
-                  Cheat Sheet & Payload Tattico
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                  {CHAPTER_TOOLS[activeModule.id]?.cheatSheetTitle || 'Comandi rapidi, payload e regole di ingaggio.'}
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  {CHAPTER_TOOLS[activeModule.id]?.cheatSheetTitle || 'Comandi rapidi, payload e regole.'}
                 </p>
-                <span className="text-[10px] font-mono text-cyan-400 font-bold mt-2.5 inline-flex items-center gap-1">
+                <span className="text-[10px] font-mono text-cyan-400 font-bold inline-flex items-center gap-1 pt-0.5">
                   APRI COMANDI →
                 </span>
               </div>
@@ -448,71 +452,27 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                     alert(`Laboratorio attivo: ${CHAPTER_TOOLS[activeModule.id]?.recommendedLab || 'Scenario pratico pronto'}`);
                   }
                 }}
-                className="cursor-pointer p-3.5 rounded-xl bg-[#090D16] border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-950/20 transition-all group"
+                className="cursor-pointer p-3 rounded-xl bg-[#090D16] border border-white/10 hover:border-emerald-500/40 hover:bg-emerald-950/20 transition-all group space-y-1.5"
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-                    <Terminal className="w-4 h-4" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                      <Terminal className="w-3.5 h-3.5" />
+                    </div>
+                    <h4 className="font-bold text-xs text-white group-hover:text-emerald-300 transition-colors">
+                      Lab Sandbox 0-Day
+                    </h4>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-                    LAB SANDBOX
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                    SANDBOX
                   </span>
                 </div>
-                <h4 className="font-bold text-xs text-white group-hover:text-emerald-300 transition-colors">
-                  Laboratorio Sandbox Zero-Day
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                  {CHAPTER_TOOLS[activeModule.id]?.recommendedLab || 'Esercitazione guidata con validazione payload in tempo reale.'}
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  {CHAPTER_TOOLS[activeModule.id]?.recommendedLab || 'Esercitazione guidata con validazione payload.'}
                 </p>
-                <span className="text-[10px] font-mono text-emerald-400 font-bold mt-2.5 inline-flex items-center gap-1">
+                <span className="text-[10px] font-mono text-emerald-400 font-bold inline-flex items-center gap-1 pt-0.5">
                   {userState.isPro ? 'ACCEDI AL LAB →' : 'SBLOCCA CON PRO 🔒'}
                 </span>
-              </div>
-
-              {/* Tool 3: XP Booster x2 Capitolo */}
-              <div 
-                onClick={() => {
-                  sound.playTap();
-                  sound.playExploitSuccess();
-                  alert(`Booster x2 XP per il Capitolo attivato per 30 minuti! I tuoi quiz assegneranno doppi punti.`);
-                }}
-                className="cursor-pointer p-3.5 rounded-xl bg-[#090D16] border border-white/10 hover:border-amber-500/40 hover:bg-amber-950/20 transition-all group"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
-                    <Flame className="w-4 h-4" />
-                  </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                    BOOSTER
-                  </span>
-                </div>
-                <h4 className="font-bold text-xs text-white group-hover:text-amber-300 transition-colors">
-                  Booster XP x2 Modulo
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Raddoppia i punti XP guadagnati per le lezioni di questo modulo nelle prossime sessioni.
-                </p>
-                <span className="text-[10px] font-mono text-amber-400 font-bold mt-2.5 inline-flex items-center gap-1">
-                  ATTIVA BOOSTER 🔥
-                </span>
-              </div>
-
-              {/* Tool 4: Regola d'Oro di Sicurezza */}
-              <div className="p-3.5 rounded-xl bg-[#090D16] border border-white/10">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
-                    ESAME TIPS
-                  </span>
-                </div>
-                <h4 className="font-bold text-xs text-white">
-                  Regola Chiave Esame
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  {CHAPTER_TOOLS[activeModule.id]?.keyTakeaway || 'Memorizza i vettori di attacco primari e i meccanismi di mitigazione consigliati da OWASP e NIST.'}
-                </p>
               </div>
 
             </div>
@@ -524,94 +484,74 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
         /* ========================================================================= */
         /* VISTA 2: PANORAMICA GENERALE CAPITOLI (HOME CON SUDDIVISIONE IN CAPITOLI) */
         /* ========================================================================= */
-        <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <div className="space-y-4 sm:space-y-5 animate-fade-in">
 
-          {/* Tactical Header Banner */}
-          <div className="relative rounded-2xl bg-gradient-to-r from-[#111726] to-[#1B2640] border border-white/10 p-4 sm:p-5 shadow-2xl overflow-hidden">
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-                    ACTIVE_CAMPAIGN
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    CompTIA Security+ · CCNA · CEH · OSCP
-                  </span>
-                  {/* Cyber Streak Shield Indicator */}
-                  <div 
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                      userState.streakShieldActive
-                        ? 'bg-cyan-950/70 text-cyan-300 border-cyan-400/50 shadow-sm'
-                        : 'bg-slate-900/60 text-slate-400 border-slate-700'
-                    }`}
-                    title="Protezione Streak Giornaliera anticaduta"
-                  >
-                    <Shield className="w-3 h-3 text-cyan-400" />
-                    <span>{userState.streakShieldActive ? 'SHIELD ATTIVO' : 'SHIELD OFF'}</span>
-                  </div>
-                </div>
-
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-                  Capitoli Tattici & Roadmap
-                </h1>
-                <p className="text-xs text-slate-300 mt-1 max-w-md">
-                  Seleziona un capitolo per esplorare le lezioni pratiche, i quiz "Spot the Zero-Day" e i potenziamenti dedicati.
-                </p>
-              </div>
-
-              <div className="hidden sm:flex flex-col items-end text-right">
-                <span className="text-[10px] font-mono text-slate-400">READINESS GLOBALE</span>
-                <span className="text-2xl font-mono font-extrabold text-emerald-400">
-                  {userState.readinessScore}%
-                </span>
-                <span className="text-[10px] font-mono text-slate-500">
-                  {userState.completedNodeIds.length} nodi completati
-                </span>
+          {/* Tactical Header Banner - Clean, calm and breathable */}
+          <div className="relative rounded-2xl bg-gradient-to-r from-surface to-[#151e33] border border-white/10 p-4 sm:p-5 shadow-cyber-glass overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                ROADMAP CERTIFICAZIONI
+              </span>
+              
+              <div className="flex items-center gap-2 font-mono text-[10px]">
+                <span className="text-slate-400">READINESS:</span>
+                <span className="text-emerald-400 font-bold text-xs">{userState.readinessScore}%</span>
               </div>
             </div>
+
+            <h1 className="text-lg sm:text-2xl font-black text-white leading-tight">
+              Capitoli Tattici
+            </h1>
+            <p className="text-xs text-slate-300 mt-1">
+              Seleziona un capitolo operativo per affrontare le lezioni e i lab pratici.
+            </p>
           </div>
 
-          {/* Daily 0xBreach Challenge Hero Card */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#200e12] via-[#161224] to-[#0c1424] border-2 border-red-500/40 p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
-                  <AlertTriangle className="w-5 h-5 animate-pulse" />
+          {/* Daily 0xBreach Challenge Hero Card - Cleaned up to eliminate mobile text collisions */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#1c0c10] via-[#14101e] to-[#0a101c] border-2 border-red-500/40 p-4 sm:p-5 shadow-neon-crimson relative overflow-hidden space-y-3">
+            <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+            
+            {/* Top row: Status, Title, Streak */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-400 shadow-neon-crimson shrink-0">
+                  <AlertTriangle className="w-4 h-4 animate-pulse" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/30 text-red-300 border border-red-500/40 animate-pulse">
-                      DEFCON 1 · ACTIVE BREACH
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-red-500/30 text-red-300 border border-red-500/40">
+                      DEFCON 1
                     </span>
-                    <span className="text-xs font-mono text-slate-400">1 Tentativo al Giorno</span>
+                    <h2 className="text-xs sm:text-sm font-black text-white">
+                      Daily 0xBreach
+                    </h2>
                   </div>
-                  <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
-                    Daily 0xBreach Challenge
-                  </h2>
                 </div>
               </div>
 
-              <div className="text-right font-mono">
-                <span className="text-[10px] text-slate-400 block">SERIE TRIAGE</span>
-                <span className="text-xs font-bold text-amber-400">
-                  🔥 x{userState.dailyBreachStreak || 0}
+              {/* Triage streak */}
+              <div className="font-mono text-right shrink-0">
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  🔥 x{userState.dailyBreachStreak || 0} TRIAGE
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Un exploit critico del mondo reale richiede analisi immediata. Ispeziona il frammento di codice, identifica la root cause e ottieni XP doppi e la scheda condivisibile in stile Wordle.
+            {/* Short, non-overwhelming summary */}
+            <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+              Analizza l'incidente CVE quotidiano nel frammento di codice e individua la root cause per ottenere XP doppi.
             </p>
 
-            <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
+            {/* Action CTA */}
+            <div className="pt-0.5 space-y-2">
               <button
                 onClick={() => {
                   sound.playTap();
                   if (onOpenDailyBreach) onOpenDailyBreach();
                 }}
-                className={`py-3 px-5 rounded-xl font-mono font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer ${
+                className={`w-full py-2.5 px-4 rounded-xl font-mono font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-neon-emerald transform active:scale-98 cursor-pointer ${
                   isBreachSolvedToday
                     ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60'
                     : 'bg-gradient-to-r from-red-500 via-amber-500 to-emerald-400 hover:from-red-400 hover:to-emerald-300 text-slate-950 font-black'
@@ -619,42 +559,39 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
               >
                 {isBreachSolvedToday ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
                     <span>TRIAGE COMPLETATO OGGI (RIVEDI ANALISI)</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 fill-slate-950" />
+                    <Zap className="w-3.5 h-3.5 fill-slate-950" />
                     <span>AVVIA TRIAGE ZERO-DAY (+150 XP)</span>
                   </>
                 )}
               </button>
 
-              <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Nuovo breach alle 00:00</span>
-              </span>
+              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-1">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-slate-500" />
+                  <span>Nuovo breach alle 00:00</span>
+                </span>
+                <span>1 tentativo al giorno</span>
+              </div>
             </div>
           </div>
 
-          {/* Quick Chapters Counter Header */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Capitoli Operativi
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-white/10 text-emerald-400 font-bold">
-                {SKILL_MODULES.length}
-              </span>
-            </div>
-
-            <span className="text-[11px] font-mono text-slate-400">
+          {/* Section Header */}
+          <div className="flex items-center justify-between px-1 pt-1">
+            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+              Capitoli Operativi ({SKILL_MODULES.length})
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">
               Tocca per aprire →
             </span>
           </div>
 
-          {/* Chapter Cards List */}
-          <div className="space-y-3">
+          {/* Chapters Grid - Re-architected with calm whitespace & no collisions */}
+          <div className="grid grid-cols-1 gap-3">
             {SKILL_MODULES.map((module, mIndex) => {
               const meta = CHAPTER_METADATA[module.id] || {
                 icon: Terminal,
@@ -662,8 +599,9 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                 label: module.title,
                 accentColor: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-400'
               };
-              const stats = getModuleStats(module);
               const ChapterIcon = meta.icon;
+              const stats = getModuleStats(module);
+              const cleanTitle = cleanModuleName(module.title);
 
               return (
                 <div
@@ -672,78 +610,74 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                     sound.playTap();
                     setSelectedChapterId(module.id);
                   }}
-                  className="cursor-pointer group relative rounded-2xl bg-[#111726] border border-white/10 hover:border-emerald-500/50 p-4 sm:p-5 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] overflow-hidden"
+                  className="cursor-pointer group relative rounded-2xl bg-surface border border-white/10 hover:border-emerald-500/40 p-4 transition-all duration-200 shadow-cyber-glass space-y-3"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    
-                    {/* Chapter Icon & Info */}
-                    <div className="flex items-start gap-3.5 sm:gap-4">
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#090D16] border border-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-emerald-400 shadow-sm">
-                        <ChapterIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                          <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.2 rounded bg-slate-900 text-slate-300 border border-white/10 font-bold">
-                            CAPITOLO {mIndex}
-                          </span>
-                          <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">
-                            {meta.tag}
-                          </span>
-                          {stats.isCompleted && (
-                            <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center gap-1 border border-emerald-500/30">
-                              <Check className="w-2.5 h-2.5" /> COMPLETATO
-                            </span>
-                          )}
-                          {stats.isInProgress && (
-                            <span className="text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
-                              IN CORSO ({stats.completedCount}/{stats.totalNodes})
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="text-sm sm:text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
-                          {module.title}
-                        </h3>
-
-                        <p className="text-xs text-slate-400 mt-0.5 truncate max-w-md">
-                          {module.certificationFocus}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Stats & CTA */}
-                    <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                      <div className="text-left sm:text-right">
-                        <span className="text-[10px] font-mono text-slate-400 block">
-                          {stats.totalNodes} LEZIONI & LAB
+                  {/* Top Row: Chapter Badge, Domain Tag, Rewards */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-900 text-slate-300 border border-white/10 font-bold">
+                        CAPITOLO {mIndex}
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold">
+                        {meta.tag}
+                      </span>
+                      {stats.isCompleted && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center gap-1 border border-emerald-500/30">
+                          <Check className="w-2.5 h-2.5" /> COMPLETATO
                         </span>
-                        <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400">
-                          <span>+{stats.totalXp} XP</span>
-                          <span className="text-slate-500">·</span>
-                          <span className="text-indigo-400">+{stats.totalElo} ELO</span>
-                        </div>
-                      </div>
-
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 group-hover:bg-emerald-950/30 transition-all">
-                        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-0.5" />
-                      </div>
+                      )}
+                      {stats.isInProgress && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                          {stats.completedCount}/{stats.totalNodes} FATTE
+                        </span>
+                      )}
                     </div>
 
+                    <div className="flex items-center gap-1 font-mono text-[11px] font-bold text-emerald-400 shrink-0">
+                      <span>+{stats.totalXp} XP</span>
+                      <span className="text-slate-600">·</span>
+                      <span className="text-indigo-400">+{stats.totalElo} ELO</span>
+                    </div>
                   </div>
 
-                  {/* Module Progress Bar */}
-                  <div className="w-full h-1.5 rounded-full bg-slate-800/80 overflow-hidden mt-3 sm:mt-4">
-                    <div 
-                      className={`h-full transition-all duration-300 ${
-                        stats.isCompleted 
-                          ? 'bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]' 
-                          : stats.isInProgress 
-                          ? 'bg-cyan-400' 
-                          : 'bg-slate-700'
-                      }`}
-                      style={{ width: `${Math.max(stats.progressPercent, 4)}%` }}
-                    />
+                  {/* Middle Row: Icon + Title + Certification */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#090D16] border border-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform text-emerald-400 shadow-sm">
+                      <ChapterIcon className="w-5 h-5" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
+                        {cleanTitle}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-tight truncate">
+                        {module.certificationFocus}
+                      </p>
+                    </div>
+
+                    <div className="w-7 h-7 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 shrink-0">
+                      <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: Progress Bar + Lessons Count */}
+                  <div className="space-y-1.5 pt-1 border-t border-white/5">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>{stats.totalNodes} LEZIONI OPERATIVE</span>
+                      <span className="font-bold text-slate-300">{stats.progressPercent}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-slate-800/80 overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          stats.isCompleted 
+                            ? 'bg-emerald-400 shadow-neon-emerald' 
+                            : stats.isInProgress 
+                            ? 'bg-cyan-400' 
+                            : 'bg-slate-700'
+                        }`}
+                        style={{ width: `${Math.max(stats.progressPercent, 4)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -758,15 +692,15 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
       {/* ========================================================================= */}
       {activeCheatSheetModuleId && CHAPTER_TOOLS[activeCheatSheetModuleId] && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-[#0B0F19] border border-white/15 p-5 sm:p-6 shadow-2xl space-y-4">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#0B0F19] border border-white/15 p-4 sm:p-6 shadow-2xl space-y-4">
             
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center">
-                  <Terminal className="w-5 h-5" />
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center">
+                  <Terminal className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-mono font-bold text-sm text-white">
+                  <h3 className="font-mono font-bold text-xs sm:text-sm text-white">
                     {CHAPTER_TOOLS[activeCheatSheetModuleId].cheatSheetTitle}
                   </h3>
                   <span className="text-[10px] text-slate-400 font-mono">
@@ -777,7 +711,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
 
               <button
                 onClick={() => setActiveCheatSheetModuleId(null)}
-                className="p-1 rounded text-slate-400 hover:text-white"
+                className="p-1.5 rounded text-slate-400 hover:text-white"
               >
                 ✕
               </button>
@@ -791,7 +725,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   <div 
                     key={idx}
                     onClick={() => handleCopyCommand(cmd, idx)}
-                    className="cursor-pointer group flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[#050811] border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-950/20 transition-all font-mono text-xs"
+                    className="cursor-pointer group flex items-center justify-between gap-2 p-2 rounded-lg bg-[#050811] border border-white/10 hover:border-cyan-500/50 hover:bg-cyan-950/20 transition-all font-mono text-xs"
                   >
                     <span className="text-slate-200 select-all font-mono break-all text-[11px]">
                       {cmd}
@@ -815,7 +749,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
               {CHAPTER_TOOLS[activeCheatSheetModuleId].keyTakeaway}
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-1">
               <button
                 onClick={() => setActiveCheatSheetModuleId(null)}
                 className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-white/10 hover:bg-white/15 text-white transition-all cursor-pointer"
@@ -831,5 +765,3 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
     </div>
   );
 };
-
-export default TacticalSkillTree;

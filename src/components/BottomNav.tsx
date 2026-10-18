@@ -40,7 +40,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       label: t.navMissions,
       sublabel: t.navMissionsSub,
       icon: Target,
-      badge: '3 TAGLIE',
+      badge: '3',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     },
     {
