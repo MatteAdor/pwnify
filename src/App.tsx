@@ -254,24 +254,24 @@ export const App: React.FC = () => {
     sound.playTap();
     const fileContent = `=====================================================
 ZERODAY // 0xDAY CYBER WARFARE ACADEMY
-PRO OPERATOR LICENSE CERTIFICATE
+PRO LICENSE CERTIFICATE
 =====================================================
-Operator Callsign: ${userState.username}
-License Key:       ${key}
-Status:            AUTHENTICATED & ACTIVE
+Username / Callsign: ${userState.username}
+License Key:         ${key}
+Status:              AUTHENTICATED & ACTIVE
 Features Unlocked:
   - Full Official Exam Simulators (CompTIA Sec+, CCNA, CEH)
   - Interactive PBQ Labs with Real-Time Validation
   - Unlimited 1v1 Blitz Arena Tickets & Win Streak Shields
   - Uncensored Root Cause Exploit Breakdowns & PoCs
   - 2x XP Multiplier & Weekly League Safe Shield
-Issued:            ${new Date().toISOString()}
-Verification:      Zero-Knowledge Algorithmic Checksum Passed
+Issued:              ${new Date().toISOString()}
+Verification:        Zero-Knowledge Algorithmic Checksum Passed
 =====================================================`;
 
     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const safeUser = sanitizeAlphanumeric(userState.username, 24, 'operator');
+    const safeUser = sanitizeAlphanumeric(userState.username, 24, 'user');
     const link = document.createElement('a');
     link.href = url;
     link.download = `zeroday_pro_license_${safeUser}.txt`;
@@ -424,7 +424,7 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
         data.goal === 'soc_blue' ? 'SOC Analyst' :
         data.goal === 'web_hacking' ? 'Penetration Tester' :
         data.goal === 'linux_bash' ? 'Linux Systems Specialist' :
-        'Cyber Warfare Operator'
+        'Security Specialist'
       );
 
       const updated: UserState = {
@@ -935,9 +935,9 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                   </h2>
                   <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
                     {isEn ? (
-                      <>Operator <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) has challenged you on seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> with a target score of <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
+                      <>Opponent <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) has challenged you on seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> with a target score of <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
                     ) : (
-                      <>L'operatore <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) ti ha sfidato sul seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> con un punteggio di <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
+                      <>Il giocatore <strong className="text-white font-mono">{incomingDuel.challenger}</strong> (ELO <strong className="text-zinc-200 font-mono">{incomingDuel.elo}</strong>) ti ha sfidato sul seed <span className="font-mono text-zinc-400">#{incomingDuel.seed}</span> con un punteggio di <strong className="text-white font-mono">{incomingDuel.score}/5</strong>.</>
                     )}
                   </p>
                 </div>
@@ -991,9 +991,9 @@ Verification:      Zero-Knowledge Algorithmic Checksum Passed
                   </h2>
                   <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
                     {isEn ? (
-                      <>Welcome, operator <strong className="text-white font-mono">{userState.username}</strong>. All exam simulators, PBQ labs, and features are unlocked.</>
+                      <>Welcome, <strong className="text-white font-mono">{userState.username}</strong>. All exam simulators, PBQ labs, and features are unlocked.</>
                     ) : (
-                      <>Benvenuto, operatore <strong className="text-white font-mono">{userState.username}</strong>. Tutti i simulatori d'esame, i laboratori PBQ e le funzionalità sono sbloccati.</>
+                      <>Benvenuto, <strong className="text-white font-mono">{userState.username}</strong>. Tutti i simulatori d'esame, i laboratori PBQ e le funzionalità sono sbloccati.</>
                     )}
                   </p>
                 </div>

@@ -87,8 +87,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (!usernameInput || usernameInput.trim().length < 3) {
       setUsernameError(
         lang === 'it' 
-          ? 'Il nome operatore deve avere almeno 3 caratteri.' 
-          : 'Callsign must be at least 3 characters.'
+          ? 'Il nome utente deve avere almeno 3 caratteri.' 
+          : 'Username must be at least 3 characters.'
       );
       return;
     }
@@ -321,7 +321,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="pt-2 border-t border-zinc-800 space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase">
-                      Cambia Nome Operatore:
+                      {lang === 'it' ? 'Cambia Username:' : 'Change Username:'}
                     </label>
                     {isUsernameCooldownActive && (
                       <span className="text-[10px] font-mono text-amber-400 font-bold flex items-center gap-1">

@@ -464,7 +464,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <div className="font-semibold text-slate-300">{isEn ? 'Install guide:' : 'Guida installazione:'}</div>
                 <div>1. {isEn ? 'Tap Download APK and confirm browser prompt.' : 'Tocca Scarica APK e conferma il download nel browser.'}</div>
                 <div>2. {isEn ? 'Enable "Install unknown apps" for your browser if prompted.' : 'Consenti "Installa app sconosciute" per il browser se richiesto.'}</div>
-                <div>3. {isEn ? 'Open APK and sign in with your operator callsign.' : 'Apri l\'APK e accedi con il tuo callsign operatore.'}</div>
+                <div>3. {isEn ? 'Open APK and sign in with your username.' : 'Apri l\'APK e accedi con il tuo username.'}</div>
               </div>
 
             </div>

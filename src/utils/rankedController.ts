@@ -171,7 +171,7 @@ export class RankedMatchController {
     }
     this.userId = user.id;
 
-    this.callbacks.onStatusChange?.('queued', 'Ricerca operatore nel bracket ELO...');
+    this.callbacks.onStatusChange?.('queued', 'Ricerca avversario nel bracket ELO...');
 
     const { data, error } = await this.supabase.rpc('find_or_create_match');
     if (error) {

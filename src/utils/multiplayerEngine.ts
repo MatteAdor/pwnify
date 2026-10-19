@@ -199,7 +199,7 @@ export function hostOnlineDuel(
 }
 
 /**
- * Joins an active online Duel room created by another operator (Casual mode).
+ * Joins an active online Duel room created by another player (Casual mode).
  */
 export function joinOnlineDuel(
   roomCode: string,
@@ -301,7 +301,7 @@ function setupSession(
   let disconnectCallback: (() => void) | null = null;
   let opponentPlayer: PvPPlayer = initialOpponent || {
     id: `opp_${Date.now()}`,
-    name: 'Operatore Online',
+    name: 'Avversario Online',
     elo: 1200,
     rank: 'Red Teamer',
     avatar: 'OP',

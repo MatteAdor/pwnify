@@ -476,7 +476,7 @@ export function loginWithOAuth(
 ): { success: boolean; account: UserAccount } {
   const cleanEmail = profile.email.trim().toLowerCase();
   const rawChosenName = (profile.customUsername && profile.customUsername.trim()) || profile.name;
-  const baseName = sanitizeCallsign(rawChosenName.replace(/\s+/g, '_'), provider === 'google' ? 'Google_Op' : 'GitHub_Op');
+  const baseName = sanitizeCallsign(rawChosenName.replace(/\s+/g, '_'), provider === 'google' ? 'Google_User' : 'GitHub_User');
   const accounts = getRegisteredAccounts();
 
   let existing = accounts.find(a => 
@@ -541,7 +541,7 @@ export function loginWithEmailOtp(
   const existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
 
   if (!existing) {
-    return { success: false, error: `No operator registered with email ${cleanEmail}. Please sign up first!` };
+    return { success: false, error: `No account registered with email ${cleanEmail}. Please sign up first!` };
   }
 
   const guestFallback = currentProgress || getCachedGuestState();
@@ -661,7 +661,7 @@ export function updateOperatorUsername(
 ): { success: boolean; error?: string; updatedState?: UserState } {
   const clean = sanitizeCallsign(newUsername, '').trim();
   if (clean.length < 3) {
-    return { success: false, error: 'Il nome operatore deve avere almeno 3 caratteri.' };
+    return { success: false, error: 'Il nome utente deve avere almeno 3 caratteri.' };
   }
 
   // Check 7 days cooldown (7 * 24 * 60 * 60 * 1000 ms)
@@ -672,7 +672,7 @@ export function updateOperatorUsername(
       const remainingDays = Math.ceil((COOLDOWN_MS - elapsed) / (24 * 60 * 60 * 1000));
       return { 
         success: false, 
-        error: `Puoi cambiare nome operatore solo una volta a settimana. Riprova tra ${remainingDays} giorni.` 
+        error: `Puoi cambiare username solo una volta a settimana. Riprova tra ${remainingDays} giorni.` 
       };
     }
   }
@@ -684,7 +684,7 @@ export function updateOperatorUsername(
     a => a.id !== session?.id && a.username.toLowerCase() === clean.toLowerCase()
   );
   if (duplicate) {
-    return { success: false, error: 'Questo callsign è già in uso da un altro operatore.' };
+    return { success: false, error: 'Questo callsign è già in uso da un altro utente.' };
   }
 
   const updatedState: UserState = {

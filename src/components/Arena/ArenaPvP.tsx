@@ -231,7 +231,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         return;
       }
     } catch (err) {
-      setAuthNotice('Errore durante la verifica delle credenziali operatore.');
+      setAuthNotice('Errore durante la verifica delle credenziali utente.');
       return;
     }
 
@@ -250,7 +250,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     setMatchMode('ranked');
     setSearchTimer(0);
     setPhase('searching');
-    setRankedStatusMsg(isEn ? 'Broadcasting ELO bracket handshake...' : 'Ricerca operatore nel bracket ELO...');
+    setRankedStatusMsg(isEn ? 'Broadcasting ELO bracket handshake...' : 'Ricerca avversario nel bracket ELO...');
 
     // Initialize controller
     const controller = new RankedMatchController({
@@ -309,7 +309,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             }
             await controller.cancelQueue();
             setPhase('idle');
-            setOnlineError(isEn ? 'No operator found in bracket. Try again shortly.' : 'Nessun operatore disponibile nella fascia ELO. Riprova tra poco.');
+            setOnlineError(isEn ? 'No opponent found in bracket. Try again shortly.' : 'Nessun avversario disponibile nella fascia ELO. Riprova tra poco.');
           }
         } catch (pollErr: unknown) {
           if (rankedPollTimerRef.current) {
@@ -333,7 +333,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
     const opponentPlayer: PvPPlayer = {
       id: opp?.id || `opp_${Date.now()}`,
-      name: opp?.nick || 'Operatore Ranked',
+      name: opp?.nick || (isEn ? 'Ranked Opponent' : 'Avversario Ranked'),
       elo: opp?.elo || 1000,
       rank: (opp?.rank || 'Bronze Recruit') as PvPPlayer['rank'],
       avatar: opp?.avatar || 'OP',

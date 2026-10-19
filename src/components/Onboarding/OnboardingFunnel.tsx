@@ -705,10 +705,10 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
                   </p>
                 </div>
 
-                {/* Operator Callsign Selection */}
+                {/* Username Selection */}
                 <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-left space-y-2">
                   <label className="text-xs font-mono font-bold text-zinc-300 block">
-                    {lang === 'it' ? 'Callsign / Nome Operatore:' : 'Operator Callsign:'}
+                    {lang === 'it' ? 'Username / Callsign:' : 'Username / Callsign:'}
                   </label>
                   <input
                     type="text"

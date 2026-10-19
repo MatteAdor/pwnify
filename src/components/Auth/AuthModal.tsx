@@ -82,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     sound.playVictoryFanfare();
     confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
     onLoginSuccess(res.account);
-    setSuccessMsg(isEn ? `Operator profile ${res.account.username} created successfully!` : `Profilo operatore ${res.account.username} creato con successo!`);
+    setSuccessMsg(isEn ? `Account ${res.account.username} created successfully!` : `Account ${res.account.username} creato con successo!`);
     setTimeout(() => {
       onClose();
     }, 1200);
@@ -95,13 +95,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const identifier = callsign.trim();
     if (!identifier) {
-      setErrorMsg(isEn ? 'Please enter your Callsign or Email.' : 'Inserisci il tuo Callsign o la tua Email.');
+      setErrorMsg(isEn ? 'Please enter your Username or Email.' : 'Inserisci il tuo Username o la tua Email.');
       sound.playPayloadBlocked();
       return;
     }
 
     if (!password) {
-      setErrorMsg(isEn ? 'Please enter your authentication password.' : 'Inserisci la password di autenticazione.');
+      setErrorMsg(isEn ? 'Please enter your password.' : 'Inserisci la tua password.');
       sound.playPayloadBlocked();
       return;
     }
@@ -115,7 +115,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     sound.playExploitSuccess();
     onLoginSuccess(res.account);
-    setSuccessMsg(isEn ? `Access granted. Welcome, operator ${res.account.username}.` : `Accesso autorizzato. Benvenuto, operatore ${res.account.username}.`);
+    setSuccessMsg(isEn ? `Welcome back, ${res.account.username}.` : `Bentornato, ${res.account.username}.`);
     setTimeout(() => {
       onClose();
     }, 1000);
@@ -145,7 +145,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               ? t.activeProfileTitle 
               : mode === 'login' 
               ? (isEn ? 'Log in to Your Account' : 'Accedi al Tuo Account') 
-              : (isEn ? 'Register New Operator' : 'Registra Nuovo Operatore')}
+              : (isEn ? 'Create an Account' : 'Crea un Account')}
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
             {userState.isLoggedIn 
@@ -381,7 +381,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={isEn ? 'operator@redteam.org' : 'operatore@dominio.it'}
+                      placeholder={isEn ? 'user@example.com' : 'utente@dominio.it'}
                       className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#090D16] border border-white/10 focus:border-emerald-500/60 text-slate-100 font-mono text-xs outline-none transition-colors"
                     />
                   </div>

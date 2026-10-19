@@ -90,7 +90,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             <div className="flex items-center gap-2">
               <span className="font-mono text-xs font-bold text-emerald-400">0x</span>
               <span className="font-mono text-[11px] font-extrabold tracking-widest text-zinc-200">
-                ZERODAY // OPERATOR ID
+                ZERODAY // SECURITY ID
               </span>
             </div>
             <span className="font-mono text-[9px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-bold">
@@ -210,7 +210,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             className="w-full py-2.5 px-3 rounded-lg font-mono text-xs text-zinc-200 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isExporting ? 'Generating 9:16 PNG...' : 'Download Operator Card (.PNG)'}</span>
+            <span>{isExporting ? 'Generating 9:16 PNG...' : 'Download ID Card (.PNG)'}</span>
           </button>
         </div>
       </div>

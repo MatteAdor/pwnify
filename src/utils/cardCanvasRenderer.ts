@@ -86,7 +86,7 @@ export function renderHackerCardToCanvas(
 
   ctx.font = '600 24px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('TACTICAL RED TEAM OPERATOR DOSSIER', margin + 60, margin + 155);
+  ctx.fillText('CYBERSECURITY DOSSIER', margin + 60, margin + 155);
 
   // Header Status Tag
   ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
@@ -244,7 +244,7 @@ export function renderHackerCardToCanvas(
 
   ctx.font = '22px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('0x7F4A-B902-E81C-0xDAY-VERIFIED-OPERATOR', margin + 60, footerY + 36);
+  ctx.fillText('0x7F4A-B902-E81C-0xDAY-VERIFIED-MEMBER', margin + 60, footerY + 36);
 
   ctx.textAlign = 'right';
   ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
@@ -282,10 +282,10 @@ export function downloadHackerCardImage(
   canvas.toBlob((blob) => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
-    const safeName = sanitizeAlphanumeric(userState.username, 24, 'operator');
+    const safeName = sanitizeAlphanumeric(userState.username, 24, 'user');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zeroday_operator_${safeName}.png`;
+    link.download = `zeroday_id_${safeName}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

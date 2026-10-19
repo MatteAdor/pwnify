@@ -289,7 +289,7 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
                 Operazioni Speciali Settimanali
               </h2>
               <span className="text-[11px] text-zinc-400">
-                Traguardi cumulativi per l'assegnazione di badge operatore
+                Traguardi cumulativi per l'assegnazione dei badge
               </span>
             </div>
           </div>

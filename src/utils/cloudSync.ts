@@ -147,7 +147,7 @@ export function resolveProfileConflict(
     rank: serverProfile.rank,
     xp: serverProfile.xp,
     inventory: mergedInventory,
-    profession: serverProfile.profession || 'Cyber Warfare Operator',
+    profession: serverProfile.profession || 'Security Specialist',
     flagged: serverProfile.flagged,
     legacyImported: serverProfile.legacy_imported,
     syncedAt: Date.now()
@@ -184,7 +184,7 @@ export async function executeOneShotMigration(
   const rawXp = typeof localState.xp === 'number' ? localState.xp : 0;
   const cappedXp = Math.min(Math.max(rawXp, 0), 15000);
   const cosmetics = extractLegacyCosmetics(localState);
-  const profession = (localState.profession || 'Cyber Warfare Operator').slice(0, 40);
+  const profession = (localState.profession || 'Security Specialist').slice(0, 40);
 
   // Invoke RPC migrate_my_legacy_progress
   const { data, error } = await supabase.rpc('migrate_my_legacy_progress', {

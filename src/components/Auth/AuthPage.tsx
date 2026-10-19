@@ -11,6 +11,7 @@ import {
   syncDatabaseWithBackend,
   UserAccount 
 } from '../../utils/userDatabase';
+import { supabase, isSupabaseConfigured } from '../../config/supabase';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 import { 
@@ -128,7 +129,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         }
       }).catch(() => {});
 
-      // 3. Check for Google OAuth Token in URL hash (#access_token=...)
+      // 3. Listen for Supabase OAuth login events
+      if (isSupabaseConfigured) {
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            const user = session.user;
+            const userEmail = user.email || '';
+            const metaName = (user.user_metadata?.full_name as string) || 
+                             (user.user_metadata?.name as string) || 
+                             (user.user_metadata?.user_name as string) ||
+                             userEmail.split('@')[0] || 
+                             'Player';
+            const provider = (user.app_metadata?.provider as 'google' | 'github') || 'google';
+            const res = loginWithOAuth(provider, { name: metaName, email: userEmail }, currentUserState);
+            sound.playVictoryFanfare();
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+            onLoginSuccess(res.account);
+          }
+        });
+      }
+
+      // 4. Check for direct Google OAuth Token in URL hash (#access_token=...)
       if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
         const token = hashParams.get('access_token');
@@ -140,7 +161,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             .then(r => r.json())
             .then(data => {
               if (data && (data.email || data.sub)) {
-                const mail = data.email || 'operator.google@gmail.com';
+                const mail = data.email || 'user.google@gmail.com';
                 const name = data.name || mail.split('@')[0];
                 const res = loginWithOAuth('google', { name, email: mail }, currentUserState);
                 sound.playVictoryFanfare();
@@ -284,7 +305,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       sound.playVictoryFanfare();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setSuccessMsg(isEn ? `Account for operator ${res.account.username} created successfully!` : `Account per l'operatore ${res.account.username} creato con successo!`);
+      setSuccessMsg(isEn ? `Account ${res.account.username} created successfully!` : `Account per ${res.account.username} creato con successo!`);
       
       setTimeout(() => {
         onLoginSuccess(res.account!);
@@ -344,7 +365,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setFailedAttempts(0);
       setLockoutTimer(0);
       sound.playExploitSuccess();
-      setSuccessMsg(isEn ? `Welcome back, operator ${res.account.username}. Access granted.` : `Bentornato, operatore ${res.account.username}. Accesso eseguito.`);
+      setSuccessMsg(isEn ? `Welcome back, ${res.account.username}. Access granted.` : `Bentornato, ${res.account.username}. Accesso eseguito.`);
       setTimeout(() => {
         onLoginSuccess(res.account!);
       }, 600);
@@ -354,10 +375,34 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   // ---------------------------------------------------------------------------
   // GOOGLE OAUTH TRIGGERS & HANDLERS
   // ---------------------------------------------------------------------------
-  const handleGoogleClick = () => {
+  const handleGoogleClick = async () => {
     sound.playTap();
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    if (isSupabaseConfigured) {
+      setIsProcessing(true);
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          console.warn('Supabase Google OAuth error:', error.message);
+          setErrorMsg(error.message);
+          setIsProcessing(false);
+          setIsGoogleModalOpen(true);
+          return;
+        }
+        return;
+      } catch (err: unknown) {
+        setIsProcessing(false);
+        setIsGoogleModalOpen(true);
+        return;
+      }
+    }
 
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (googleClientId && googleClientId.trim()) {
@@ -403,10 +448,34 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   // ---------------------------------------------------------------------------
   // GITHUB OAUTH TRIGGERS & HANDLERS
   // ---------------------------------------------------------------------------
-  const handleGitHubClick = () => {
+  const handleGitHubClick = async () => {
     sound.playTap();
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    if (isSupabaseConfigured) {
+      setIsProcessing(true);
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: window.location.origin
+          }
+        });
+        if (error) {
+          console.warn('Supabase GitHub OAuth error:', error.message);
+          setErrorMsg(error.message);
+          setIsProcessing(false);
+          setIsGitHubModalOpen(true);
+          return;
+        }
+        return;
+      } catch (err: unknown) {
+        setIsProcessing(false);
+        setIsGitHubModalOpen(true);
+        return;
+      }
+    }
 
     const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
     if (githubClientId && githubClientId.trim()) {
@@ -689,7 +758,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder={isEn ? 'operator@domain.com' : 'operatore@dominio.com'}
+                    placeholder={isEn ? 'user@domain.com' : 'utente@dominio.it'}
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800 focus:border-emerald-500 text-sm text-white placeholder-zinc-600 font-mono transition-colors"
@@ -777,7 +846,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     <input
                       type="email"
                       required
-                      placeholder="operator@redteam.org"
+                      placeholder={isEn ? 'user@example.com' : 'utente@dominio.it'}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm text-white placeholder-slate-600 font-mono transition-colors"
@@ -1076,7 +1145,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 />
                 <input
                   type="text"
-                  placeholder="Scegli il tuo nome operatore (Callsign)"
+                  placeholder={isEn ? 'Choose username / callsign' : 'Scegli username / callsign'}
                   value={googleInputCallsign}
                   onChange={(e) => setGoogleInputCallsign(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
@@ -1139,7 +1208,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 />
                 <input
                   type="text"
-                  placeholder="Scegli il tuo nome operatore (Callsign)"
+                  placeholder={isEn ? 'Choose username / callsign' : 'Scegli username / callsign'}
                   value={githubInputCallsign}
                   onChange={(e) => setGithubInputCallsign(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
@@ -1197,12 +1266,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <form onSubmit={handleOtpLoginRequest} className="space-y-3">
                 <div>
                   <label className="text-[11px] font-mono text-slate-300 block mb-1">
-                    {t.yourOperatorEmail}
+                    {t.yourEmail}
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="operator@redteam.org"
+                    placeholder={isEn ? 'user@example.com' : 'utente@dominio.it'}
                     value={otpLoginEmail}
                     onChange={(e) => setOtpLoginEmail(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-cyan-500 text-xs text-white font-mono"
