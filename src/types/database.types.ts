@@ -141,14 +141,14 @@ isOneToOne: true
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"elo": number,"flagged": boolean,"id": string,"inventory": NonNullable<Json>,"last_ranked_at": string | null,"legacy_imported": boolean,"matchmaking_cooldown_until": string | null,"nick": string,"profession": string | null,"rank": string,"updated_at": string,"xp": number
+                    "created_at": string,"elo": number,"flagged": boolean,"id": string,"inventory": NonNullable<Json>,"is_pro": boolean,"last_ranked_at": string | null,"legacy_imported": boolean,"matchmaking_cooldown_until": string | null,"nick": string,"profession": string | null,"rank": string,"updated_at": string,"xp": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id": string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick": string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
+                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id": string,"inventory"?: NonNullable<Json>,"is_pro"?: boolean,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick": string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
                   }
                   Update: {
-                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id"?: string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick"?: string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
+                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id"?: string,"inventory"?: NonNullable<Json>,"is_pro"?: boolean,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick"?: string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
                   }
                   Relationships: [
                     
@@ -181,6 +181,26 @@ isOneToOne: true
                   Relationships: [
                     {
       foreignKeyName: "rpc_rate_limits_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"user_licenses": {
+                  Row: {
+                    "activated_at": string,"expires_at": string | null,"id": string,"instance_id": string | null,"lemon_customer_id": string | null,"lemon_order_id": string | null,"lemon_subscription_id": string | null,"license_key_hash": string,"status": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "activated_at"?: string,"expires_at"?: string | null,"id"?: string,"instance_id"?: string | null,"lemon_customer_id"?: string | null,"lemon_order_id"?: string | null,"lemon_subscription_id"?: string | null,"license_key_hash": string,"status"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "activated_at"?: string,"expires_at"?: string | null,"id"?: string,"instance_id"?: string | null,"lemon_customer_id"?: string | null,"lemon_order_id"?: string | null,"lemon_subscription_id"?: string | null,"license_key_hash"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "user_licenses_user_id_fkey"
       columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -233,6 +253,9 @@ isOneToOne: false
                            },
 "poll_matchmaking":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"set_profile_pro_status":
+{ Args: { "p_expires_at"?: string,"p_instance_id"?: string,"p_is_pro": boolean,"p_lemon_cust_id"?: string,"p_lemon_order_id"?: string,"p_lemon_sub_id"?: string,"p_license_key_hash"?: string,"p_user_id": string }; Returns: undefined
                            },
 "submit_answer":
 { Args: { "p_answer_index": number,"p_match_id": string,"p_question_id": string }; Returns: Json

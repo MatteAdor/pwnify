@@ -10,6 +10,7 @@ import {
 import confetti from 'canvas-confetti';
 import { verifyLicenseKey } from '../../utils/licenseEngine';
 import { isSafeRedirectUrl } from '../../utils/security';
+import { supabase, isSupabaseConfigured } from '../../config/supabase';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -39,8 +40,8 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Restore License Handler with genuine cryptographic verification
-  const handleVerifyAndRestore = () => {
+  // Restore License Handler with UX format check + server-authoritative Edge Function activation
+  const handleVerifyAndRestore = async () => {
     sound.playTap();
     const cleanKey = restoreInput.trim().toUpperCase();
     if (!cleanKey) {
@@ -48,22 +49,63 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       return;
     }
 
-    const isValid = verifyLicenseKey(cleanKey);
-    if (isValid) {
-      sound.playVictoryFanfare();
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      setRestoreError(null);
-      if (onRestoreLicense) {
-        onRestoreLicense(cleanKey);
-      } else {
-        onUpgradeSuccess();
-      }
-      setIsRestoreView(false);
-      onClose();
-    } else {
+    // 1. Immediate local UX check (prevents typo requests and validates key syntax)
+    const isValidFormat = verifyLicenseKey(cleanKey);
+    if (!isValidFormat) {
       sound.playPayloadBlocked();
       setRestoreError('Invalid license key format or checksum. Correct example: 0xPRO-8F9A-K2L1-77BC');
+      return;
     }
+
+    // 2. Server-Authoritative activation via Lemon Squeezy Edge Function
+    if (isSupabaseConfigured) {
+      setIsProcessing(true);
+      setRestoreError(null);
+      try {
+        const { data, error } = await supabase.functions.invoke('validate_license', {
+          body: { license_key: cleanKey }
+        });
+
+        if (error || !data?.valid || !data?.is_pro) {
+          sound.playPayloadBlocked();
+          setRestoreError(data?.error || error?.message || 'Server rejected license activation. Key may be invalid or at max activations.');
+          setIsProcessing(false);
+          return;
+        }
+
+        // Server confirmed active and updated profiles.is_pro
+        sound.playVictoryFanfare();
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        setRestoreError(null);
+        if (onRestoreLicense) {
+          onRestoreLicense(cleanKey);
+        } else {
+          onUpgradeSuccess();
+        }
+        setIsRestoreView(false);
+        setIsProcessing(false);
+        onClose();
+        return;
+      } catch (err: unknown) {
+        sound.playPayloadBlocked();
+        const msg = err instanceof Error ? err.message : 'Network error during license activation';
+        setRestoreError(msg);
+        setIsProcessing(false);
+        return;
+      }
+    }
+
+    // 3. Fallback for offline demo / local self-hosted mock
+    sound.playVictoryFanfare();
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    setRestoreError(null);
+    if (onRestoreLicense) {
+      onRestoreLicense(cleanKey);
+    } else {
+      onUpgradeSuccess();
+    }
+    setIsRestoreView(false);
+    onClose();
   };
 
   // Honest Checkout Handler: Redirects to real payment gateway or prompts for license key
