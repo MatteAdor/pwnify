@@ -1,0 +1,48 @@
+# =====================================================================
+# ZERODAY PEERSERVER & CADDY REVERSE PROXY — DOCKER COMPOSE
+# Automated TLS certificate generation, WSS websocket proxy, and health checks
+# =====================================================================
+
+services:
+  peerserver:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.peerserver
+    container_name: zeroday-peerserver
+    restart: unless-stopped
+    environment:
+      - PEER_PORT=9000
+      - PEER_PATH=/peerjs
+      - PEER_KEY=${PEER_KEY:-zeroday-pvp}
+      - PEER_ALLOW_ORIGIN=${PEER_ALLOW_ORIGIN:-https://zeroday.gg,https://zeroday-app.vercel.app}
+      - PEER_CONCURRENT_LIMIT=1000
+    networks:
+      - signaling_net
+    expose:
+      - "9000"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: zeroday-caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - PEER_DOMAIN=${PEER_DOMAIN:-peer.zeroday.gg}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - signaling_net
+    depends_on:
+      - peerserver
+
+networks:
+  signaling_net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

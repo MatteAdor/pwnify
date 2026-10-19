@@ -1,0 +1,61 @@
+name: Database Automated Backup
+
+on:
+  schedule:
+    # Run every day at 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  database-backup:
+    name: Backup Production Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL Client Tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client openssl
+
+      - name: Perform pg_dump and Encrypt Backup
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
+          DUMP_FILE="zeroday_prod_${TIMESTAMP}.dump"
+          ENC_FILE="${DUMP_FILE}.enc"
+
+          echo "Initiating authoritative database dump from Supabase Production..."
+          pg_dump "${SUPABASE_DB_URL}" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="${DUMP_FILE}"
+
+          DUMP_SIZE=$(stat -c%s "${DUMP_FILE}")
+          echo "Dump completed (${DUMP_SIZE} bytes). Encrypting with AES-256-CBC (PBKDF2 iter 600,000)..."
+
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 \
+            -in "${DUMP_FILE}" \
+            -out "${ENC_FILE}" \
+            -pass "pass:${BACKUP_KEY}"
+
+          rm -f "${DUMP_FILE}"
+          echo "Encrypted backup created: ${ENC_FILE}"
+          echo "BACKUP_PATH=${ENC_FILE}" >> $GITHUB_ENV
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+          BACKUP_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+
+      - name: Upload Encrypted Backup to Offsite Object Storage (S3 / Cloudflare R2)
+        run: |
+          echo "Transferring encrypted dump to offsite cold storage..."
+          aws s3 cp "${BACKUP_PATH}" "s3://${BACKUP_BUCKET_NAME}/backups/${BACKUP_PATH}" \
+            --endpoint-url "${BACKUP_S3_ENDPOINT}"
+
+          echo "Upload complete. Purging local encrypted dump from runner..."
+          rm -f "${BACKUP_PATH}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_BUCKET_NAME: ${{ secrets.BACKUP_BUCKET_NAME }}
