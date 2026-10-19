@@ -20,6 +20,10 @@ import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, APK_DOWNLOAD_URL } from './utils/platform';
+import { updateManager, type UpdateManagerState } from './utils/updateManager';
+import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
+import { FlexibleUpdateBanner } from './components/Update/FlexibleUpdateBanner';
+import { WhatsNewModal } from './components/Update/WhatsNewModal';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
@@ -126,6 +130,19 @@ export const App: React.FC = () => {
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
+
+  // In-App Update Engine State & Active Lifecycle
+  const [updateState, setUpdateState] = useState<UpdateManagerState>(() => updateManager.getState());
+
+  useEffect(() => {
+    updateManager.initialize();
+    const unsubscribe = updateManager.subscribe((st) => setUpdateState(st));
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    updateManager.setArenaDuelActive(activeTab === 'arena');
+  }, [activeTab]);
 
   // View Mode: 'portal' (Public Presentation & Download Hub) vs 'app' (Interactive Web Platform)
   const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
@@ -1071,6 +1088,17 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         forceOpen={forceCookieBanner}
         onCloseForce={() => setForceCookieBanner(false)}
       />
+
+      {/* In-App Update Gate (Force Update blocking modal) */}
+      {updateState.status === 'FORCE_REQUIRED' && (
+        <ForceUpdateModal state={updateState} />
+      )}
+
+      {/* Flexible Non-Blocking Update Discrete Banner */}
+      <FlexibleUpdateBanner state={updateState} />
+
+      {/* Post-Update "What's New" Highlights */}
+      <WhatsNewModal state={updateState} />
     </div>
   );
 };

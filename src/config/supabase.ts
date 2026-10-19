@@ -24,12 +24,51 @@ export const isSupabaseConfigured = Boolean(
   !supabaseUrl.includes('placeholder')
 );
 
+import { getCachedVersionInfo, isNativeApp } from '../utils/platform.ts';
+
+const versionAwareFetch: typeof fetch = async (input, init) => {
+  const versionInfo = getCachedVersionInfo();
+  const headers = new Headers(init?.headers || {});
+
+  // Inject client protocol headers into all Supabase requests
+  headers.set('X-App-Version', versionInfo.versionName);
+  headers.set('X-Build', String(versionInfo.versionCode));
+  headers.set('X-Platform', isNativeApp() ? 'android' : 'web');
+
+  const modifiedInit = {
+    ...init,
+    headers,
+  };
+
+  const response = await fetch(input, modifiedInit);
+
+  // Global 426 Upgrade Required interception
+  if (response.status === 426) {
+    try {
+      const clone = response.clone();
+      const body = await clone.json().catch(() => ({}));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zeroday_upgrade_required', { detail: body }));
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zeroday_upgrade_required', { detail: {} }));
+      }
+    }
+  }
+
+  return response;
+};
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storageKey: 'zeroday_supabase_auth_token_v1'
+  },
+  global: {
+    fetch: versionAwareFetch,
   },
   realtime: {
     params: {

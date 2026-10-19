@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
-import { APK_DOWNLOAD_URL, APK_SIZE, APK_VERSION, APK_SHA256 } from '../../utils/platform';
+import { APK_DOWNLOAD_URL, APK_SIZE, APK_SHA256, getCachedVersionInfo } from '../../utils/platform';
 
 interface ArenaWebLockedViewProps {
   onBackToSkillTree: () => void;
@@ -48,7 +48,7 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
               {isEn ? 'ARENA PVP · MOBILE EXCLUSIVE' : 'ARENA PVP · ESCLUSIVA APP NATIVA'}
             </span>
             <span className="text-xs font-mono text-zinc-500">
-              {APK_VERSION}
+              v{getCachedVersionInfo().versionName}
             </span>
           </div>
 

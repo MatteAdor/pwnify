@@ -30,12 +30,12 @@ interface LandingPortalProps {
   onOpenCookiePrefs?: () => void;
 }
 
+import { APK_SHA256, APK_SIZE, getCachedVersionInfo } from '../../utils/platform';
+
 const APK_FILENAME = 'zeroday.apk';
 const APK_DOWNLOAD_URL = '/downloads/zeroday.apk';
 const APK_GITHUB_MIRROR = 'https://github.com/MatteAdor/zeroday_app/raw/main/releases/zeroday-app-debug.apk';
-const APK_SHA256 = 'ea8c55f0c7563905ae58a58b33cf84222d03dbb19862c731c9410497811171b7';
-const APK_VERSION = 'v1.2.0';
-const APK_SIZE = '20.8 MB';
+
 
 export const LandingPortal: React.FC<LandingPortalProps> = ({
   onLaunchApp,
@@ -122,7 +122,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               <div className="flex items-center gap-2">
                 <span className="font-bold tracking-tight text-white font-mono text-sm sm:text-base">ZERODAY</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {APK_VERSION}
+                  v{getCachedVersionInfo().versionName}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-mono hidden sm:block">Cyber Warfare & Certifications</p>
@@ -399,7 +399,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   />
                   <div>
                     <h3 className="font-bold text-white text-base">ZeroDay for Android (APK)</h3>
-                    <p className="text-xs font-mono text-slate-400">Build: {APK_VERSION} · Size: {APK_SIZE}</p>
+                    <p className="text-xs font-mono text-slate-400">Build: v{getCachedVersionInfo().versionName} (build {getCachedVersionInfo().versionCode}) · Size: {APK_SIZE}</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
@@ -875,7 +875,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           
           <div className="space-y-1 text-center md:text-left">
             <div className="text-slate-300 font-bold">ZeroDay Cyber Warfare Academy</div>
-            <div>Official Application & Download Distribution Portal · {APK_VERSION}</div>
+            <div>Official Application & Download Distribution Portal · v{getCachedVersionInfo().versionName}</div>
           </div>
 
           {/* Legal Navigation */}
