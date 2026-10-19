@@ -7,7 +7,7 @@
 
 BEGIN;
 
-SELECT plan(37);
+SELECT plan(44);
 
 -- ---------------------------------------------------------------------
 -- FIXTURE SETUP
@@ -68,7 +68,7 @@ SELECT throws_ok(
 RESET ROLE;
 
 -- =====================================================================
--- TEST 3 & 4: RESTRICTED INTERNAL FUNCTIONS
+-- TEST 3 TO 8: RESTRICTED INTERNAL FUNCTIONS & PRIVILEGE AUDIT
 -- =====================================================================
 
 -- Test 3: authenticated cannot invoke finalize_match_internal
@@ -87,6 +87,44 @@ SELECT throws_ok(
     '42501',
     NULL,
     'Revoke audit: authenticated cannot execute import_legacy_progress'
+);
+
+RESET ROLE;
+
+-- Test 5: authenticated cannot invoke check_and_increment_rate_limit (service_role only)
+SELECT throws_ok(
+    'SET ROLE authenticated; SELECT public.check_and_increment_rate_limit(''11111111-1111-1111-1111-111111111111''::uuid, ''test'', 1, 60);',
+    '42501',
+    NULL,
+    'Revoke audit: authenticated cannot execute check_and_increment_rate_limit'
+);
+
+RESET ROLE;
+
+-- Test 6: anon cannot invoke check_and_increment_rate_limit (service_role only)
+SELECT throws_ok(
+    'SET ROLE anon; SELECT public.check_and_increment_rate_limit(''11111111-1111-1111-1111-111111111111''::uuid, ''test'', 1, 60);',
+    '42501',
+    NULL,
+    'Revoke audit: anon cannot execute check_and_increment_rate_limit'
+);
+
+RESET ROLE;
+
+-- Test 7: anon cannot invoke finalize_abandoned_match (authenticated only)
+SELECT throws_ok(
+    'SET ROLE anon; SELECT public.finalize_abandoned_match(''11111111-1111-1111-1111-111111111111''::uuid);',
+    '42501',
+    NULL,
+    'Revoke audit: anon cannot execute finalize_abandoned_match'
+);
+
+RESET ROLE;
+
+-- Test 8: authenticated has EXECUTE privilege on finalize_abandoned_match
+SELECT ok(
+    pg_catalog.has_function_privilege('authenticated', 'public.finalize_abandoned_match(uuid)', 'execute'),
+    'Privilege audit: authenticated possesses EXECUTE privilege on finalize_abandoned_match'
 );
 
 RESET ROLE;
@@ -540,8 +578,12 @@ SELECT throws_ok(
 RESET ROLE;
 
 -- =====================================================================
--- TEST 33: FINALIZE_ABANDONED_MATCH (INACTIVITY TIMEOUT)
+-- TEST 40, 41, 42, 43: FINALIZE_ABANDONED_MATCH (INACTIVITY TIMEOUT & FORFEIT PENALTY)
 -- =====================================================================
+
+-- Reset baseline ELO for Charlie and Delta
+UPDATE public.profiles SET elo = 1000, rank = 'Bronze Recruit' 
+WHERE id IN ('55555555-5555-5555-5555-555555555555', '66666666-6666-6666-6666-666666666666');
 
 INSERT INTO public.matches (id, p1_id, p2_id, question_ids, question_started_at, status)
 VALUES (
@@ -568,6 +610,26 @@ SELECT is(
 );
 
 RESET ROLE;
+
+-- Verify Delta (leaver) received -25 ELO forfeit penalty
+SELECT is(
+    (SELECT elo FROM public.profiles WHERE id = '66666666-6666-6666-6666-666666666666'),
+    975,
+    'Abandoning opponent Delta received exact -25 ELO forfeit penalty'
+);
+
+-- Verify Charlie (active caller) received +18 ELO award
+SELECT is(
+    (SELECT elo FROM public.profiles WHERE id = '55555555-5555-5555-5555-555555555555'),
+    1018,
+    'Active caller Charlie awarded +18 ELO'
+);
+
+-- Verify Delta abandonment recorded in forfeit_history
+SELECT ok(
+    EXISTS (SELECT 1 FROM public.forfeit_history WHERE user_id = '66666666-6666-6666-6666-666666666666' AND match_id = 'd0000000-0000-0000-0000-000000000003'),
+    'Abandonment logged in forfeit_history for leaver Delta'
+);
 
 -- =====================================================================
 -- TEST 34: ANOMALY SOFT-FLAG DETECTION
