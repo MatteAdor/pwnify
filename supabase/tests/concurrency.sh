@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+DB_URL="${SUPABASE_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 
 echo "[Concurrency Test] Initializing test fixture and clearing queues..."
 

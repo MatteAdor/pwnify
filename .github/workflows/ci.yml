@@ -1,0 +1,91 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-build-test:
+    name: Lint, Build & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Code quality linting
+        run: npm run lint
+
+      - name: Compile and build production bundle
+        run: npm run build
+
+      - name: Execute unit test suite
+        run: npm test
+
+      - name: Leak Detection — Audit dist bundle for sensitive strings
+        run: |
+          echo "Scanning dist/ for illegal internal secrets..."
+          if grep -ri "service_role" dist/; then
+            echo "::error::Found 'service_role' key in client distribution bundle!"
+            exit 1
+          fi
+          if grep -ri "correct_index" dist/; then
+            echo "::error::Found 'correct_index' in client distribution bundle!"
+            exit 1
+          fi
+          echo "dist/ bundle is clean of server-side keys."
+
+      - name: Secret Detection — Audit tracked repo files for GitHub token patterns
+        run: |
+          echo "Scanning repository for token leaks (gho_, ghp_, ghs_)..."
+          LEAKS=$(git grep -EI "gh[opsu]_[0-9a-zA-Z]{36}" || true)
+          if [ -n "$LEAKS" ]; then
+            echo "::error::Detected exposed GitHub token pattern in repository files:"
+            echo "$LEAKS"
+            exit 1
+          fi
+          echo "No exposed GitHub token patterns found."
+
+  database-regression:
+    name: Supabase pgTAP & Concurrency Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase container stack
+        run: supabase start
+
+      - name: Run pgTAP test suite
+        run: supabase test db
+
+      - name: Run parallel matchmaking concurrency harness
+        run: |
+          chmod +x supabase/tests/concurrency.sh
+          ./supabase/tests/concurrency.sh
+
+      - name: Teardown Supabase containers
+        if: always()
+        run: supabase stop --no-backup

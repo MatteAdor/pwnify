@@ -1,0 +1,53 @@
+name: Database Automated Backup
+
+on:
+  schedule:
+    # Run every day at 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  database-backup:
+    name: Backup Production Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL Client Tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client openssl
+
+      - name: Perform pg_dump and Encrypt Backup
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
+          DUMP_FILE="zeroday_prod_${TIMESTAMP}.dump"
+          ENC_FILE="${DUMP_FILE}.enc"
+
+          echo "Initiating authoritative database dump from Supabase Production..."
+          pg_dump "${SUPABASE_DB_URL}" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="${DUMP_FILE}"
+
+          DUMP_SIZE=$(stat -c%s "${DUMP_FILE}")
+          echo "Dump completed (${DUMP_SIZE} bytes). Encrypting with AES-256-CBC..."
+
+          openssl enc -aes-256-cbc -salt -pbkdf2 \
+            -in "${DUMP_FILE}" \
+            -out "${ENC_FILE}" \
+            -pass "pass:${BACKUP_KEY}"
+
+          rm -f "${DUMP_FILE}"
+          echo "Encrypted backup ready: ${ENC_FILE}"
+          echo "BACKUP_PATH=${ENC_FILE}" >> $GITHUB_ENV
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+          BACKUP_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+
+      - name: Upload Encrypted Backup Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-encrypted
+          path: ${{ env.BACKUP_PATH }}
+          retention-days: 90
