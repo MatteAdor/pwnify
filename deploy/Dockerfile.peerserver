@@ -1,0 +1,38 @@
+# =====================================================================
+# ZERODAY PEERSERVER — PRODUCTION DOCKERFILE
+# Lightweight, secure Node.js container for WebRTC signaling daemon
+# =====================================================================
+
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies with production flag only
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# Run as non-root user
+USER node
+
+# Copy node_modules and daemon script
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node server/peerServer.cjs ./server/peerServer.cjs
+
+# Signaling port
+EXPOSE 9000
+
+ENV NODE_ENV=production \
+    PEER_PORT=9000 \
+    PEER_PATH=/peerjs \
+    PEER_KEY=zeroday-pvp \
+    PEER_ALLOW_ORIGIN=* \
+    PEER_CONCURRENT_LIMIT=500
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://127.0.0.1:9000/peerjs', (r) => process.exit(r.statusCode === 200 || r.statusCode === 404 ? 0 : 1)).on('error', () => process.exit(1))"
+
+CMD ["node", "server/peerServer.cjs"]

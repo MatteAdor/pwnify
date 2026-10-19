@@ -1,13 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database.types';
+import type { Database } from '../types/database.types.ts';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+function getEnv(key: string): string | undefined {
+  if (typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: Record<string, string> }).env) {
+    return (import.meta as unknown as { env: Record<string, string> }).env[key];
+  }
+  if (typeof globalThis !== 'undefined' && 'process' in globalThis) {
+    const p = (globalThis as unknown as { process?: { env?: Record<string, string> } }).process;
+    return p?.env?.[key];
+  }
+  return undefined;
+}
+
+const supabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://placeholder-project.supabase.co';
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'placeholder-anon-key';
 
 export const isSupabaseConfigured = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && 
-  import.meta.env.VITE_SUPABASE_ANON_KEY &&
-  !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')
+  supabaseUrl &&
+  supabaseAnonKey &&
+  !supabaseUrl.includes('placeholder')
 );
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

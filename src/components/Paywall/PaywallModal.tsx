@@ -91,11 +91,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       return;
     }
 
-    // In local dev or self-hosted demo without Stripe keys:
+    // In local dev or self-hosted demo without checkout keys:
     // Do NOT simulate fake purchases. Open the authentic license key input instead.
     setIsRestoreView(true);
     setRestoreError(
-      'Stripe gateway not configured in this local environment. Enter a cryptographic license key to activate ZeroDay PRO.'
+      'Lemon Squeezy gateway not configured in this local environment. Enter a cryptographic license key to activate ZeroDay PRO.'
     );
   };
 
@@ -407,7 +407,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
               {isProcessing ? (
                 <span className="flex items-center gap-2 text-xs font-bold">
                   <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
-                  <span>Connecting to Stripe...</span>
+                  <span>Connecting to Lemon Squeezy...</span>
                 </span>
               ) : (
                 <>
