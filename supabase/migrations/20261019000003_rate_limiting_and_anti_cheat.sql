@@ -198,7 +198,8 @@ SET search_path = '';
 -- ---------------------------------------------------------------------
 -- 5. FINALIZE ABANDONED MATCH (OPPONENT INACTIVITY ON TIMEOUT)
 -- If opponent stops answering and deadline + timeout (>= 18s) has passed,
--- the match can be finalized server-side based on submitted answers.
+-- the abandoning opponent receives the exact forfeit penalty (-25 ELO)
+-- and the waiting operator is awarded +18 ELO.
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.finalize_abandoned_match(p_match_id UUID)
 RETURNS JSONB AS $$
@@ -207,6 +208,12 @@ DECLARE
     v_match RECORD;
     v_now TIMESTAMPTZ := pg_catalog.clock_timestamp();
     v_elapsed_since_q_start INTERVAL;
+    v_leaver_id UUID;
+    v_winner_id UUID;
+    v_loser_delta INT := -25;
+    v_winner_delta INT := 18;
+    v_recent_forfeits INT;
+    v_cooldown_until TIMESTAMPTZ := NULL;
 BEGIN
     IF v_caller_id IS NULL THEN
         RAISE EXCEPTION 'Unauthorized: authentication token required';
@@ -236,8 +243,57 @@ BEGIN
         RAISE EXCEPTION 'Inactivity timeout not yet reached (elapsed: %)', v_elapsed_since_q_start;
     END IF;
 
-    -- Finalize match idempotently via internal logic
-    RETURN public.finalize_match_internal(p_match_id);
+    v_leaver_id := CASE WHEN v_caller_id = v_match.p1_id THEN v_match.p2_id ELSE v_match.p1_id END;
+    v_winner_id := v_caller_id;
+
+    -- Record abandon as forfeit for the leaver
+    INSERT INTO public.forfeit_history (user_id, match_id, forfeited_at)
+    VALUES (v_leaver_id, p_match_id, pg_catalog.clock_timestamp());
+
+    -- Check for repeated forfeits/abandonments by leaver: >= 2 in last 1 hour
+    SELECT pg_catalog.count(*) INTO v_recent_forfeits
+    FROM public.forfeit_history
+    WHERE user_id = v_leaver_id
+      AND forfeited_at > (pg_catalog.clock_timestamp() - INTERVAL '1 hour');
+
+    IF v_recent_forfeits >= 2 THEN
+        v_cooldown_until := pg_catalog.clock_timestamp() + INTERVAL '15 minutes';
+    END IF;
+
+    -- Apply forfeit penalty to abandoning opponent
+    UPDATE public.profiles
+    SET elo = GREATEST(100, elo + v_loser_delta),
+        rank = public.get_tier_from_elo(GREATEST(100, elo + v_loser_delta)),
+        last_ranked_at = pg_catalog.clock_timestamp(),
+        matchmaking_cooldown_until = COALESCE(v_cooldown_until, matchmaking_cooldown_until),
+        updated_at = pg_catalog.clock_timestamp()
+    WHERE id = v_leaver_id;
+
+    -- Award winner (active caller)
+    UPDATE public.profiles
+    SET elo = elo + v_winner_delta,
+        rank = public.get_tier_from_elo(elo + v_winner_delta),
+        last_ranked_at = pg_catalog.clock_timestamp(),
+        updated_at = pg_catalog.clock_timestamp()
+    WHERE id = v_winner_id;
+
+    -- Mark match as forfeited / abandoned
+    UPDATE public.matches
+    SET status = 'forfeited',
+        winner_id = v_winner_id,
+        elo_delta_p1 = CASE WHEN v_caller_id = v_match.p1_id THEN v_winner_delta ELSE v_loser_delta END,
+        elo_delta_p2 = CASE WHEN v_caller_id = v_match.p2_id THEN v_loser_delta ELSE v_winner_delta END,
+        ended_at = pg_catalog.clock_timestamp()
+    WHERE id = p_match_id;
+
+    RETURN pg_catalog.jsonb_build_object(
+        'status', 'forfeited',
+        'winner_id', v_winner_id,
+        'abandoned_by', v_leaver_id,
+        'elo_delta_winner', v_winner_delta,
+        'elo_delta_loser', v_loser_delta,
+        'cooldown_active', (v_cooldown_until IS NOT NULL)
+    );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = '';
@@ -429,6 +485,7 @@ DECLARE
     v_caller_elo INT;
     v_is_verified BOOLEAN;
     v_cooldown_until TIMESTAMPTZ;
+    v_my_queued_at TIMESTAMPTZ;
     v_opponent RECORD;
     v_match_id UUID;
     v_q_ids JSONB;
@@ -468,10 +525,10 @@ BEGIN
         RAISE EXCEPTION 'Matchmaking Cooldown Active: Operator cooldown until % due to repeated forfeits.', v_cooldown_until;
     END IF;
 
-    -- 4. Check if already matched
-    SELECT q.matched_match_id INTO v_match_id
+    -- 4. Check if already queued or matched
+    SELECT q.matched_match_id, q.queued_at INTO v_match_id, v_my_queued_at
     FROM public.matchmaking_queue q
-    WHERE q.user_id = v_caller_id AND q.matched_match_id IS NOT NULL;
+    WHERE q.user_id = v_caller_id;
 
     IF v_match_id IS NOT NULL THEN
         DELETE FROM public.matchmaking_queue WHERE user_id = v_caller_id;
@@ -479,12 +536,19 @@ BEGIN
     END IF;
 
     -- 5. Search opponent with FOR UPDATE SKIP LOCKED
+    -- Unidirectional ordering strictly eliminates ABBA cross-lock deadlocks:
+    -- Queued operators only pair with strictly older entries.
     SELECT q.user_id, q.elo INTO v_opponent
     FROM public.matchmaking_queue q
     WHERE q.user_id != v_caller_id 
       AND q.matched_match_id IS NULL
       AND pg_catalog.abs(q.elo - v_caller_elo) <= v_window
-    ORDER BY q.queued_at ASC
+      AND (
+          v_my_queued_at IS NULL 
+          OR q.queued_at < v_my_queued_at 
+          OR (q.queued_at = v_my_queued_at AND q.user_id < v_caller_id)
+      )
+    ORDER BY q.queued_at ASC, q.user_id ASC
     LIMIT 1
     FOR UPDATE SKIP LOCKED;
 
