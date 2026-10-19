@@ -1,25 +1,32 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UserState, PvPPlayer, PvPChallenge, PaywallContext } from '../../types';
-import { SMART_BOTS, generatePvPMatchChallenges } from '../../data/pvpChallenges';
-import { getRankFromElo } from '../../data/ranks';
-import { sound } from '../../utils/soundEngine';
+import { UserState, PvPPlayer, PvPChallenge, PaywallContext } from '../../types/index.ts';
+import { SMART_BOTS, generatePvPMatchChallenges } from '../../data/pvpChallenges.ts';
+import { getRankFromElo } from '../../data/ranks.ts';
+import { sound } from '../../utils/soundEngine.ts';
 import { 
   Swords, Flame, Zap, Trophy, Timer, 
-  RotateCcw, Sparkles, CheckCircle2, Copy, Skull, Ticket,
-  Radio, Wifi, Users, Share2, Globe, Link2, X, AlertCircle, ArrowRight
+  RotateCcw, Sparkles, CheckCircle2, Copy, Skull,
+  Radio, Wifi, Users, Share2, Globe, Link2, X, AlertCircle, ArrowRight, ShieldAlert, ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-import { SurvivalModeModal } from './SurvivalModeModal';
-import { LeagueTab } from '../Leaderboard/LeagueTab';
-import { useLanguage } from '../../utils/language';
+import { SurvivalModeModal } from './SurvivalModeModal.tsx';
+import { LeagueTab } from '../Leaderboard/LeagueTab.tsx';
+import { useLanguage } from '../../utils/language.ts';
 import { 
   hostOnlineDuel, 
   joinOnlineDuel, 
   OnlineMatchSession, 
   generateRoomCode 
-} from '../../utils/multiplayerEngine';
-import { getDuelCodeFromUrl } from '../../utils/cloudSync';
+} from '../../utils/multiplayerEngine.ts';
+import { getDuelCodeFromUrl } from '../../utils/cloudSync.ts';
+import { 
+  RankedMatchController, 
+  RankedQuestion, 
+  RankedOpponentInfo, 
+  RankedMatchResult 
+} from '../../utils/rankedController.ts';
+import { supabase, isSupabaseConfigured } from '../../config/supabase.ts';
 
 export interface DuelChallengeData {
   seed: string;
@@ -30,7 +37,7 @@ export interface DuelChallengeData {
 
 interface ArenaPvPProps {
   userState: UserState;
-  onConsumeTicket: () => boolean; // returns true if has tickets or is pro
+  onConsumeTicket: () => boolean;
   onWinMatch: (eloGain: number) => void;
   onLossMatch: (eloLoss: number) => void;
   onOpenPaywall: (context: PaywallContext) => void;
@@ -41,6 +48,7 @@ interface ArenaPvPProps {
 }
 
 type MatchPhase = 'idle' | 'searching' | 'vs_screen' | 'battle' | 'post_match';
+type MatchMode = 'ranked' | 'casual' | 'bot';
 
 export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   userState,
@@ -48,7 +56,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   onWinMatch,
   onLossMatch,
   onOpenPaywall,
-  onOpenHackerCard,
   initialDuelChallenge,
   onClearInitialDuel,
   onUpdateSurvivalScore
@@ -56,11 +63,17 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   const { lang, t } = useLanguage();
   const isEn = lang === 'en';
   const [phase, setPhase] = useState<MatchPhase>('idle');
+  const [matchMode, setMatchMode] = useState<MatchMode>('ranked');
   const [isSurvivalOpen, setIsSurvivalOpen] = useState<boolean>(false);
   const [searchTimer, setSearchTimer] = useState<number>(0);
-  const [opponent, setOpponent] = useState<PvPPlayer | null>(null);
+  const [rankedStatusMsg, setRankedStatusMsg] = useState<string>('');
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
-  // Online P2P Multiplayer States
+  // Opponent Details
+  const [opponent, setOpponent] = useState<PvPPlayer | null>(null);
+  const [isOpponentLagging, setIsOpponentLagging] = useState<boolean>(false);
+
+  // Casual P2P Multiplayer States
   const [onlineSession, setOnlineSession] = useState<OnlineMatchSession | null>(null);
   const [isDuelModalOpen, setIsDuelModalOpen] = useState<boolean>(false);
   const [duelModalTab, setDuelModalTab] = useState<'host' | 'join'>('host');
@@ -72,28 +85,43 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   const [opponentAnswerFeedback, setOpponentAnswerFeedback] = useState<{ isCorrect: boolean; streak: number } | null>(null);
   const hostCancelRef = useRef<(() => void) | null>(null);
 
-  // Dynamic Match Challenges Pool
-  const [matchChallenges, setMatchChallenges] = useState<PvPChallenge[]>(() => 
+  // Ranked Controller
+  const rankedControllerRef = useRef<RankedMatchController | null>(null);
+  const rankedPollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Question State
+  const [casualChallenges, setCasualChallenges] = useState<PvPChallenge[]>(() =>
     generatePvPMatchChallenges(userState.elo, 5)
   );
+  const [rankedQuestions, setRankedQuestions] = useState<RankedQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
+  const [isAnswerGradedCorrect, setIsAnswerGradedCorrect] = useState<boolean | null>(null);
 
   // Battle State
-  const [currentChallengeIndex, setCurrentChallengeIndex] = useState<number>(0);
   const [userScore, setUserScore] = useState<number>(0);
   const [opponentScore, setOpponentScore] = useState<number>(0);
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [battleTimer, setBattleTimer] = useState<number>(60);
   const questionStartTimeRef = useRef<number>(0);
-  const radarPingCounterRef = useRef<number>(0);
 
-  // Post match stats
-  const [matchResult, setMatchResult] = useState<'win' | 'loss'>('win');
-  const [eloDelta, setEloDelta] = useState<number>(26);
+  // Post Match Results
+  const [matchResult, setMatchResult] = useState<'win' | 'loss' | 'tie'>('win');
+  const [eloDelta, setEloDelta] = useState<number>(0);
   const [copiedDuelLink, setCopiedDuelLink] = useState<boolean>(false);
 
   const userRank = getRankFromElo(userState.elo);
 
-  // Check URL parameters on mount for deep-linked duel
+  // Clean up timers and sessions on unmount
+  useEffect(() => {
+    return () => {
+      if (onlineSession) onlineSession.disconnect();
+      if (hostCancelRef.current) hostCancelRef.current();
+      if (rankedControllerRef.current) rankedControllerRef.current.destroy();
+      if (rankedPollTimerRef.current) clearInterval(rankedPollTimerRef.current);
+    };
+  }, [onlineSession]);
+
+  // Deep-linked casual duel check
   useEffect(() => {
     const duelCode = getDuelCodeFromUrl();
     if (duelCode && !onlineSession && phase === 'idle') {
@@ -103,38 +131,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     }
   }, []);
 
-  const endMatch = useCallback(() => {
-    const isWin = userScore >= opponentScore;
-    setMatchResult(isWin ? 'win' : 'loss');
-    const gained = isWin ? 26 + Math.floor(Math.random() * 8) : -18;
-    setEloDelta(gained);
-
-    if (onlineSession) {
-      onlineSession.sendFinished(userScore);
-    }
-
-    if (isWin) {
-      sound.playVictoryFanfare();
-      setTimeout(() => sound.playEloTick(), 400);
-      setTimeout(() => sound.playEloTick(), 550);
-      setTimeout(() => sound.playEloTick(), 700);
-      setTimeout(() => sound.playEloTick(), 850);
-      
-      onWinMatch(gained);
-      confetti({
-        particleCount: 60,
-        spread: 60,
-        origin: { y: 0.6 }
-      });
-    } else {
-      sound.playPayloadBlocked();
-      onLossMatch(Math.abs(gained));
-    }
-
-    setPhase('post_match');
-  }, [userScore, opponentScore, onWinMatch, onLossMatch, onlineSession]);
-
-  // Handle Incoming URL Duel Challenge fallback
+  // Handle incoming challenge fallback
   useEffect(() => {
     if (initialDuelChallenge) {
       const challengerRank = getRankFromElo(initialDuelChallenge.elo);
@@ -148,13 +145,16 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         isBot: true,
         targetScore: Math.min(5, initialDuelChallenge.score || 3)
       };
+
+      setMatchMode('casual');
       setOpponent(ghostOpponent);
       const generated = generatePvPMatchChallenges(initialDuelChallenge.elo, 5);
-      setMatchChallenges(generated);
+      setCasualChallenges(generated);
       setUserScore(0);
       setOpponentScore(0);
-      setCurrentChallengeIndex(0);
-      setSelectedOptionId(null);
+      setCurrentQuestionIndex(0);
+      setSelectedOptionIndex(null);
+      setIsAnswerGradedCorrect(null);
       setPhase('vs_screen');
       sound.playExploitSuccess();
 
@@ -168,82 +168,73 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     }
   }, [initialDuelChallenge, onClearInitialDuel]);
 
-  // Public Matchmaking Radar Timer
+  // 60-second Battle Countdown Timer
   useEffect(() => {
-    let interval: any;
-    if (phase === 'searching') {
-      sound.playRadarPing();
-      radarPingCounterRef.current = 0;
-      interval = setInterval(() => {
-        setSearchTimer(prev => {
-          const next = prev + 0.1;
-          radarPingCounterRef.current += 1;
-          if (radarPingCounterRef.current % 12 === 0) {
-            sound.playRadarPing();
-          }
-
-          // If no human connected after 2.8s, pair with a calibrated cyber sentinel
-          if (next >= 2.8) {
-            clearInterval(interval);
-            const pool = SMART_BOTS.filter(b => Math.abs(b.elo - userState.elo) < 350);
-            const matchedBot = pool.length > 0 
-              ? pool[Math.floor(Math.random() * pool.length)] 
-              : SMART_BOTS[0];
-
-            setOpponent(matchedBot);
-            const generated = generatePvPMatchChallenges(userState.elo, 5);
-            setMatchChallenges(generated);
-            setUserScore(0);
-            setOpponentScore(0);
-            setCurrentChallengeIndex(0);
-            setSelectedOptionId(null);
-            setPhase('vs_screen');
-            sound.playExploitSuccess();
-
-            setTimeout(() => {
-              setPhase('battle');
-              questionStartTimeRef.current = Date.now();
-            }, 2500);
-          }
-          return next;
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [phase, userState.elo]);
-
-  // 60-Second Battle Countdown
-  useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (phase === 'battle') {
       setBattleTimer(60);
       interval = setInterval(() => {
-        setBattleTimer(prev => {
+        setBattleTimer((prev) => {
           if (prev <= 1) {
-            clearInterval(interval);
-            endMatch();
+            if (interval) clearInterval(interval);
+            handleBattleTimeout();
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
-  }, [phase, endMatch]);
-
-  // Cleanup online session on unmount or return to lobby
-  useEffect(() => {
     return () => {
-      if (onlineSession) {
-        onlineSession.disconnect();
-      }
-      if (hostCancelRef.current) {
-        hostCancelRef.current();
-      }
+      if (interval) clearInterval(interval);
     };
-  }, [onlineSession]);
+  }, [phase]);
 
-  const handleStartQuickMatch = () => {
+  const handleBattleTimeout = () => {
+    if (matchMode === 'ranked') {
+      finalizeRankedMatch();
+    } else {
+      endCasualMatch();
+    }
+  };
+
+  // ---------------------------------------------------------------------
+  // 1. RANKED FLOW (SERVER-AUTHORITATIVE)
+  // ---------------------------------------------------------------------
+
+  const handleStartRankedMatchmaking = async () => {
+    sound.playTap();
+    setAuthNotice(null);
+    setOnlineError(null);
+
+    if (!isSupabaseConfigured) {
+      setAuthNotice('Configurazione server non disponibile per il PvP Ranked.');
+      return;
+    }
+
+    // Verify authentication and confirmed email
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      if (!user) {
+        setAuthNotice(isEn 
+          ? 'Authentication required: Log in to enter Competitive Ranked Duels.' 
+          : 'Accesso richiesto: effettua il login per accedere al PvP Ranked competitivo.');
+        sound.playPayloadBlocked();
+        return;
+      }
+
+      if (!user.email_confirmed_at) {
+        setAuthNotice(isEn
+          ? 'Email Verification Required: Confirm your email to participate in Ranked duels and protect ELO integrity.'
+          : 'Verifica Email Richiesta: Conferma l\'indirizzo email per partecipare ai duelli Ranked.');
+        sound.playPayloadBlocked();
+        return;
+      }
+    } catch (err) {
+      setAuthNotice('Errore durante la verifica delle credenziali operatore.');
+      return;
+    }
+
     const hasTicket = onConsumeTicket();
     if (!hasTicket) {
       sound.playPayloadBlocked();
@@ -251,20 +242,234 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       return;
     }
 
-    sound.playTap();
     if (onlineSession) {
       onlineSession.disconnect();
       setOnlineSession(null);
     }
+
+    setMatchMode('ranked');
     setSearchTimer(0);
     setPhase('searching');
+    setRankedStatusMsg(isEn ? 'Broadcasting ELO bracket handshake...' : 'Ricerca operatore nel bracket ELO...');
+
+    // Initialize controller
+    const controller = new RankedMatchController({
+      onStatusChange: (status, message) => {
+        if (message) setRankedStatusMsg(message);
+        if (status === 'ready') {
+          launchRankedBattle(controller);
+        }
+      },
+      onOpponentFeedback: (data) => {
+        setOpponentScore(data.score);
+        setOpponentAnswerFeedback({ isCorrect: !!data.isCorrect, streak: data.streak });
+        sound.playEloTick();
+        setTimeout(() => setOpponentAnswerFeedback(null), 2500);
+      },
+      onOpponentLagging: (isLagging) => {
+        setIsOpponentLagging(isLagging);
+      },
+      onOpponentForfeitTimeout: async () => {
+        setIsOpponentLagging(false);
+        await finalizeRankedMatch();
+      },
+      onError: (err) => {
+        setOnlineError(err.message);
+        setPhase('idle');
+      }
+    });
+
+    rankedControllerRef.current = controller;
+
+    try {
+      const enterRes = await controller.enterQueue();
+      if (enterRes.status === 'matched') {
+        // initializeMatch triggered automatically by controller
+        return;
+      }
+
+      // Start queue poll loop
+      let attempts = 0;
+      rankedPollTimerRef.current = setInterval(async () => {
+        attempts += 1;
+        setSearchTimer((prev) => prev + 1.5);
+
+        try {
+          const pollRes = await controller.pollQueue();
+          if (pollRes.status === 'matched') {
+            if (rankedPollTimerRef.current) {
+              clearInterval(rankedPollTimerRef.current);
+              rankedPollTimerRef.current = null;
+            }
+          } else if (attempts >= 25) {
+            // 37.5s search limit -> abort queue
+            if (rankedPollTimerRef.current) {
+              clearInterval(rankedPollTimerRef.current);
+              rankedPollTimerRef.current = null;
+            }
+            await controller.cancelQueue();
+            setPhase('idle');
+            setOnlineError(isEn ? 'No operator found in bracket. Try again shortly.' : 'Nessun operatore disponibile nella fascia ELO. Riprova tra poco.');
+          }
+        } catch (pollErr: unknown) {
+          if (rankedPollTimerRef.current) {
+            clearInterval(rankedPollTimerRef.current);
+            rankedPollTimerRef.current = null;
+          }
+          setOnlineError(pollErr instanceof Error ? pollErr.message : String(pollErr));
+          setPhase('idle');
+        }
+      }, 1500);
+
+    } catch (queueErr: unknown) {
+      setOnlineError(queueErr instanceof Error ? queueErr.message : String(queueErr));
+      setPhase('idle');
+    }
   };
 
-  // --- ONLINE DUEL: HOST ROOM ---
+  const launchRankedBattle = (controller: RankedMatchController) => {
+    const opp = controller.getOpponent();
+    const qList = controller.getQuestions();
+
+    const opponentPlayer: PvPPlayer = {
+      id: opp?.id || `opp_${Date.now()}`,
+      name: opp?.nick || 'Operatore Ranked',
+      elo: opp?.elo || 1000,
+      rank: (opp?.rank || 'Bronze Recruit') as PvPPlayer['rank'],
+      avatar: opp?.avatar || 'OP',
+      isBot: false,
+      winStreak: 0
+    };
+
+    setOpponent(opponentPlayer);
+    setRankedQuestions(qList);
+    setUserScore(0);
+    setOpponentScore(0);
+    setCurrentQuestionIndex(0);
+    setSelectedOptionIndex(null);
+    setIsAnswerGradedCorrect(null);
+    setPhase('vs_screen');
+    sound.playExploitSuccess();
+
+    setTimeout(() => {
+      setPhase('battle');
+      questionStartTimeRef.current = Date.now();
+    }, 2500);
+  };
+
+  const handleRankedAnswer = async (optionIndex: number) => {
+    if (selectedOptionIndex !== null || !rankedControllerRef.current) return;
+    sound.playTap();
+    setSelectedOptionIndex(optionIndex);
+
+    const question = rankedQuestions[currentQuestionIndex];
+    if (!question) return;
+
+    try {
+      const result = await rankedControllerRef.current.submitAnswer(question.id, optionIndex);
+      setIsAnswerGradedCorrect(result.isCorrect);
+
+      const newScore = result.isCorrect ? userScore + 1 : userScore;
+      if (result.isCorrect) {
+        sound.playExploitSuccess();
+        setUserScore(newScore);
+      } else {
+        sound.playPayloadBlocked();
+      }
+
+      // Broadcast cosmetic low-latency feedback to opponent
+      rankedControllerRef.current.broadcastCosmeticProgress({
+        questionIndex: currentQuestionIndex,
+        score: newScore,
+        streak: userState.winStreak + (result.isCorrect ? 1 : 0),
+        isCorrect: result.isCorrect
+      });
+
+      // Advance question or finalize
+      setTimeout(async () => {
+        setSelectedOptionIndex(null);
+        setIsAnswerGradedCorrect(null);
+
+        if (currentQuestionIndex < rankedQuestions.length - 1) {
+          setCurrentQuestionIndex((prev) => prev + 1);
+          questionStartTimeRef.current = Date.now();
+        } else {
+          await finalizeRankedMatch();
+        }
+      }, 900);
+
+    } catch (err: unknown) {
+      console.error('[Ranked Error] Answer submission failed:', err);
+      // Advance on error to prevent locking
+      setTimeout(() => {
+        setSelectedOptionIndex(null);
+        setIsAnswerGradedCorrect(null);
+        if (currentQuestionIndex < rankedQuestions.length - 1) {
+          setCurrentQuestionIndex((prev) => prev + 1);
+        } else {
+          finalizeRankedMatch();
+        }
+      }, 900);
+    }
+  };
+
+  const finalizeRankedMatch = async () => {
+    if (!rankedControllerRef.current) {
+      setPhase('post_match');
+      return;
+    }
+
+    try {
+      const result: RankedMatchResult = await rankedControllerRef.current.finalizeMatch();
+
+      setEloDelta(result.eloDelta);
+      if (result.isWin) {
+        setMatchResult('win');
+        sound.playVictoryFanfare();
+        setTimeout(() => sound.playEloTick(), 400);
+        setTimeout(() => sound.playEloTick(), 550);
+        setTimeout(() => sound.playEloTick(), 700);
+        confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
+        onWinMatch(result.eloDelta);
+      } else if (result.isTie) {
+        setMatchResult('tie');
+        sound.playExploitSuccess();
+      } else {
+        setMatchResult('loss');
+        sound.playPayloadBlocked();
+        onLossMatch(Math.abs(result.eloDelta));
+      }
+
+      setPhase('post_match');
+    } catch (err) {
+      console.error('[Ranked] Failed to finalize match:', err);
+      setPhase('post_match');
+    }
+  };
+
+  const handleCancelMatchmaking = async () => {
+    sound.playTap();
+    if (rankedPollTimerRef.current) {
+      clearInterval(rankedPollTimerRef.current);
+      rankedPollTimerRef.current = null;
+    }
+    if (rankedControllerRef.current) {
+      await rankedControllerRef.current.cancelQueue();
+      rankedControllerRef.current.destroy();
+      rankedControllerRef.current = null;
+    }
+    setPhase('idle');
+  };
+
+  // ---------------------------------------------------------------------
+  // 2. CASUAL FLOW (PEER-TO-PEER UNCHANGED, NO RATED IMPACT)
+  // ---------------------------------------------------------------------
+
   const handleHostRoom = async () => {
     sound.playTap();
     setOnlineError(null);
     setIsConnectingOnline(true);
+    setMatchMode('casual');
 
     try {
       const code = generateRoomCode();
@@ -283,20 +488,18 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       hostCancelRef.current = hostHandle.cancel;
       setIsConnectingOnline(false);
 
-      // Await opponent to join
       hostHandle.waitForOpponent().then((session) => {
         sound.playVictoryFanfare();
-        bindOnlineSession(session);
+        bindCasualOnlineSession(session);
       }).catch((err) => {
-        console.warn('Host waiting error:', err);
+        console.warn('Casual host waiting error:', err);
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setIsConnectingOnline(false);
-      setOnlineError(e.message || 'Errore inizializzazione stanza online.');
+      setOnlineError(e instanceof Error ? e.message : 'Errore inizializzazione stanza online.');
     }
   };
 
-  // --- ONLINE DUEL: JOIN ROOM ---
   const handleJoinRoom = async () => {
     const code = joinCodeInput.trim().toUpperCase();
     if (!code || code.length < 3) {
@@ -315,6 +518,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     sound.playTap();
     setOnlineError(null);
     setIsConnectingOnline(true);
+    setMatchMode('casual');
 
     try {
       const session = await joinOnlineDuel(code, {
@@ -326,26 +530,25 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
       setIsConnectingOnline(false);
       sound.playExploitSuccess();
-      bindOnlineSession(session);
-    } catch (e: any) {
+      bindCasualOnlineSession(session);
+    } catch (e: unknown) {
       setIsConnectingOnline(false);
-      setOnlineError(e.message || 'Stanza non trovata o host disconnesso.');
+      setOnlineError(e instanceof Error ? e.message : 'Stanza non trovata o host disconnesso.');
       sound.playPayloadBlocked();
     }
   };
 
-  // Binds an active P2P session into match flow
-  const bindOnlineSession = (session: OnlineMatchSession) => {
+  const bindCasualOnlineSession = (session: OnlineMatchSession) => {
     setOnlineSession(session);
     setOpponent(session.opponent);
-    setMatchChallenges(session.challenges);
+    setCasualChallenges(session.challenges);
     setUserScore(0);
     setOpponentScore(0);
-    setCurrentChallengeIndex(0);
-    setSelectedOptionId(null);
+    setCurrentQuestionIndex(0);
+    setSelectedOptionIndex(null);
+    setIsAnswerGradedCorrect(null);
     setIsDuelModalOpen(false);
 
-    // Setup live incoming packet callbacks
     session.onOpponentAnswer((data) => {
       setOpponentScore(data.opponentScore);
       setOpponentAnswerFeedback({
@@ -361,24 +564,26 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     });
 
     session.onDisconnect(() => {
-      setOnlineError('L\'avversario si è disconnesso dalla sessione.');
+      setOnlineError('L\'avversario si è disconnesso dalla sessione casual.');
     });
 
     setPhase('vs_screen');
-
     setTimeout(() => {
       setPhase('battle');
       questionStartTimeRef.current = Date.now();
     }, 2500);
   };
 
-  const handleSelectAnswer = (optionId: string) => {
-    if (selectedOptionId) return; // Prevent double taps
+  const handleCasualAnswer = (optionId: string) => {
+    if (selectedOptionIndex !== null) return;
     sound.playTap();
-    setSelectedOptionId(optionId);
 
-    const challenge = matchChallenges[currentChallengeIndex];
-    const isCorrect = challenge.options.find(o => o.id === optionId)?.isCorrect || false;
+    const challenge = casualChallenges[currentQuestionIndex];
+    const optIndex = challenge.options.findIndex((o) => o.id === optionId);
+    setSelectedOptionIndex(optIndex);
+
+    const isCorrect = challenge.options[optIndex]?.isCorrect || false;
+    setIsAnswerGradedCorrect(isCorrect);
 
     const newScore = isCorrect ? userScore + 1 : userScore;
     if (isCorrect) {
@@ -388,38 +593,55 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       sound.playPayloadBlocked();
     }
 
-    // Broadcast live answer to opponent via WebRTC P2P
     if (onlineSession) {
       onlineSession.sendAnswer(
-        isCorrect, 
-        newScore, 
-        userState.winStreak + (isCorrect ? 1 : 0), 
-        currentChallengeIndex
+        isCorrect,
+        newScore,
+        userState.winStreak + (isCorrect ? 1 : 0),
+        currentQuestionIndex
       );
-    } else {
-      // Local Bot answering simulation if offline
-      const botAccuracy = opponent?.isBot ? 0.65 : 0.75;
-      const botCorrect = Math.random() < botAccuracy;
-      if (botCorrect) {
-        setOpponentScore(prev => prev + 1);
-      }
     }
 
-    // Advance to next question or end match
     setTimeout(() => {
-      setSelectedOptionId(null);
-      if (currentChallengeIndex < matchChallenges.length - 1) {
-        setCurrentChallengeIndex(prev => prev + 1);
+      setSelectedOptionIndex(null);
+      setIsAnswerGradedCorrect(null);
+      if (currentQuestionIndex < casualChallenges.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
         questionStartTimeRef.current = Date.now();
       } else {
-        endMatch();
+        endCasualMatch();
       }
     }, 800);
   };
 
-  const currentChallenge = matchChallenges[currentChallengeIndex];
+  const endCasualMatch = useCallback(() => {
+    const isWin = userScore >= opponentScore;
+    setMatchResult(isWin ? 'win' : 'loss');
+    // Casual matches carry zero ELO delta
+    setEloDelta(0);
+
+    if (onlineSession) {
+      onlineSession.sendFinished(userScore);
+    }
+
+    if (isWin) {
+      sound.playVictoryFanfare();
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+    } else {
+      sound.playPayloadBlocked();
+    }
+
+    setPhase('post_match');
+  }, [userScore, opponentScore, onlineSession]);
+
+  // Total questions count based on mode
+  const totalQuestionsCount = matchMode === 'ranked' ? rankedQuestions.length : casualChallenges.length;
   const totalPoints = userScore + opponentScore;
   const userRatio = totalPoints > 0 ? (userScore / totalPoints) * 100 : 50;
+
+  // Active Challenge references
+  const currentCasualChallenge = casualChallenges[currentQuestionIndex];
+  const currentRankedChallenge = rankedQuestions[currentQuestionIndex];
 
   return (
     <div className="w-full max-w-xl mx-auto space-y-4 font-sans">
@@ -436,7 +658,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   {t.blitzArenaTitle}
                 </h1>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
-                  P2P REALTIME
+                  SERVER AUTHORITATIVE
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -457,69 +679,115 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
           </div>
 
-          {/* Action Center Card: Online Matchmaking & Private Duels */}
-          <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-5 space-y-4 shadow-md">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-emerald-400" />
-                  <span>{isEn ? 'Cyber Warfare Grid' : 'Griglia Duelli Online'}</span>
-                </h2>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  {isEn 
-                    ? `Live 60-second synchronized combat calibrated to ELO ${userState.elo} (${userRank.tier}).`
-                    : `Combattimento sincronizzato a 60 secondi calibrato sul tuo ELO ${userState.elo} (${userRank.tier}).`}
-                </p>
+          {/* Authentication Notice Alert */}
+          {authNotice && (
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-2.5 shadow-md">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+              <span>{authNotice}</span>
+            </div>
+          )}
+
+          {onlineError && (
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-center gap-2.5 shadow-md">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>{onlineError}</span>
+            </div>
+          )}
+
+          {/* Mode Selection Grid */}
+          <div className="grid grid-cols-1 gap-3">
+            {/* 1. COMPETITIVE RANKED CARD (SERVER-AUTHORITATIVE) */}
+            <div className="rounded-xl bg-gradient-to-br from-[#0D121D] to-[#121826] border-2 border-emerald-500/40 p-5 space-y-4 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2 w-28 h-28 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono font-bold tracking-wider">
+                      OFFICIAL RANKED
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400">K=32 ELO</span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 mt-1">
+                    <Zap className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+                    <span>{isEn ? 'Competitive Ranked Duel' : 'Duello Ranked Competitivo'}</span>
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    {isEn
+                      ? `Authoritative 1v1 quiz duel. Questions streamed directly from database; zero client timing trust.`
+                      : `Duello 1v1 server-authoritative con rating ELO ufficiale. Timing server-side e validazione Postgres.`}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 shrink-0">
-                <Wifi className="w-3 h-3 text-emerald-400" />
-                <span>WEBRTC 0MS</span>
+
+              <div className="pt-1 flex items-center justify-between">
+                <div className="text-[11px] font-mono text-zinc-400">
+                  Rating: <span className="text-white font-bold">{userState.elo} ELO</span> ({userRank.tier})
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStartRankedMatchmaking}
+                  className="py-2.5 px-5 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
+                >
+                  <Swords className="w-4 h-4" />
+                  <span>{isEn ? 'SEARCH RANKED MATCH' : 'TROVA MATCH RANKED'}</span>
+                </button>
               </div>
             </div>
 
-            {/* Primary Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              {/* Quick Match Online */}
-              <button
-                type="button"
-                onClick={handleStartQuickMatch}
-                className="py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10 active:scale-[0.99]"
-              >
-                <Zap className="w-4 h-4 fill-zinc-950 text-zinc-950" />
-                <span>{isEn ? 'QUICK MATCH ONLINE' : 'DUEL CASUALE (ONLINE)'}</span>
-              </button>
+            {/* 2. CASUAL DUEL & PRIVATE STAGING */}
+            <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-5 space-y-3 shadow-md">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[10px] font-mono font-bold tracking-wider">
+                    CASUAL P2P
+                  </span>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 mt-1">
+                    <Share2 className="w-4 h-4 text-indigo-400" />
+                    <span>{isEn ? 'Casual Duel (Direct Link / Code)' : 'Duello Amichevole (Link / Codice)'}</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {isEn
+                      ? 'Direct encrypted peer-to-peer combat. Zero impact on official ELO rating.'
+                      : 'Duello diretto WebRTC tramite link o codice stanza. Nessun impatto su ELO.'}
+                  </p>
+                </div>
+              </div>
 
-              {/* Private Room Duel (Challenge Friend) */}
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playTap();
-                  setIsDuelModalOpen(true);
-                  if (!hostedRoomCode) {
-                    handleHostRoom();
-                  }
-                }}
-                className="py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-200 bg-zinc-900 border border-zinc-700/80 hover:border-emerald-500/60 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-              >
-                <Share2 className="w-4 h-4 text-emerald-400" />
-                <span>{isEn ? 'CHALLENGE A FRIEND' : 'SFIDA UN AMICO (CODICE)'}</span>
-              </button>
+              <div className="flex items-center justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playTap();
+                    setIsDuelModalOpen(true);
+                    if (!hostedRoomCode) {
+                      handleHostRoom();
+                    }
+                  }}
+                  className="py-2 px-4 rounded-xl font-mono font-bold text-xs text-zinc-200 bg-zinc-900 border border-zinc-700 hover:border-indigo-500/60 transition-colors flex items-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  <Users className="w-4 h-4 text-indigo-400" />
+                  <span>{isEn ? 'OPEN STAGING ROOM' : 'STANZA AMICHEVOLE'}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Offline Survival Mode */}
-            <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between">
-              <span className="text-[11px] font-mono text-zinc-400">
-                {isEn ? 'Solo offline training:' : 'Addestramento offline:'}
-              </span>
+            {/* 3. SOLO OFFLINE TRAINING */}
+            <div className="rounded-xl bg-[#0D121D] border border-zinc-800/80 p-3.5 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2.5">
+                <Skull className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="text-xs font-mono text-zinc-300">
+                  {isEn ? 'Solo Gauntlet Survival' : 'Addestramento Survival Gauntlet'}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   sound.playTap();
                   setIsSurvivalOpen(true);
                 }}
-                className="py-1.5 px-3 rounded-lg font-mono font-bold text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-1.5 px-3 rounded-lg font-mono font-bold text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-colors cursor-pointer"
               >
-                <Skull className="w-3.5 h-3.5 text-rose-400" />
                 <span>{t.survivalGauntlet} (x{userState.survivalHighScore || 0})</span>
               </button>
             </div>
@@ -547,7 +815,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         </div>
       )}
 
-      {/* PHASE 2: MATCHMAKING SEARCHING */}
+      {/* PHASE 2: SEARCHING / RADAR */}
       {phase === 'searching' && (
         <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-8 text-center space-y-4 my-8">
           <div className="flex items-center justify-center text-emerald-400">
@@ -556,29 +824,26 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
           <div className="space-y-1">
             <h2 className="text-lg font-bold text-white font-mono">
-              {isEn ? 'Searching Online Opponent...' : 'Ricerca Avversario Online...'}
+              {isEn ? 'Searching Opponent...' : 'Ricerca Avversario Ranked...'}
             </h2>
             <p className="text-xs text-zinc-400 font-mono">
-              {isEn ? 'Calibrating ELO' : 'Calibrazione ELO'} {userState.elo} · WebRTC P2P Radar
+              {rankedStatusMsg || `${userState.elo} ELO · Bracket Matching`}
             </p>
           </div>
 
           <div className="w-48 mx-auto h-1.5 rounded-full bg-zinc-800 overflow-hidden">
             <div 
-              className="bg-emerald-500 h-full transition-all duration-100"
-              style={{ width: `${Math.min(100, (searchTimer / 2.8) * 100)}%` }}
+              className="bg-emerald-500 h-full transition-all duration-300 animate-pulse"
+              style={{ width: `${Math.min(100, Math.max(15, (searchTimer / 30) * 100))}%` }}
             />
           </div>
 
           <button
             type="button"
-            onClick={() => {
-              sound.playTap();
-              setPhase('idle');
-            }}
+            onClick={handleCancelMatchmaking}
             className="text-xs text-zinc-400 hover:text-white font-mono underline cursor-pointer"
           >
-            {isEn ? 'Cancel Search' : 'Annulla Ricerca'}
+            {isEn ? 'Cancel Matchmaking' : 'Annulla Ricerca'}
           </button>
         </div>
       )}
@@ -587,8 +852,8 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       {phase === 'vs_screen' && opponent && (
         <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-6 space-y-6 text-center my-8 animate-fadeIn">
           <div className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-bold flex items-center justify-center gap-1.5">
-            <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{onlineSession ? 'LIVE P2P OPPONENT CONNECTED' : 'OPERATOR LOCKED'}</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>{matchMode === 'ranked' ? 'OFFICIAL RANKED DUEL LOCKED' : 'CASUAL P2P OPERATOR CONNECTED'}</span>
           </div>
 
           <div className="flex items-center justify-around">
@@ -616,13 +881,13 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
           </div>
 
           <div className="text-xs font-mono text-zinc-400 animate-pulse">
-            {isEn ? 'Duel starting in 3 seconds...' : 'Inizio duello tra 3 secondi...'}
+            {isEn ? 'Duel starting in 2.5 seconds...' : 'Inizio duello tra 2.5 secondi...'}
           </div>
         </div>
       )}
 
-      {/* PHASE 4: 60s BLITZ BATTLE IN-GAME */}
-      {phase === 'battle' && opponent && currentChallenge && (
+      {/* PHASE 4: 60s BATTLE IN-GAME */}
+      {phase === 'battle' && opponent && (
         <div className="space-y-4">
           {/* Top Score Bar & Timer */}
           <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-4 space-y-3 shadow-md">
@@ -632,7 +897,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                 <span className="text-white font-bold">{userScore} PTS</span>
               </div>
 
-              <div className="flex items-center gap-1.5 font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <div className="flex items-center gap-1.5 font-bold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20">
                 <Timer className="w-3.5 h-3.5" />
                 <span>{battleTimer}s</span>
               </div>
@@ -656,70 +921,116 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
 
             <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
-              <span>ROUND {currentChallengeIndex + 1} OF {matchChallenges.length}</span>
-              {onlineSession ? (
+              <span>ROUND {currentQuestionIndex + 1} OF {totalQuestionsCount || 5}</span>
+              {matchMode === 'ranked' ? (
                 <span className="text-emerald-400 flex items-center gap-1 font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  LIVE P2P · {onlineSession.latencyMs}ms
+                  POSTGRES AUTHORITATIVE
+                </span>
+              ) : onlineSession ? (
+                <span className="text-indigo-400 flex items-center gap-1 font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                  CASUAL P2P · {onlineSession.latencyMs}ms
                 </span>
               ) : (
                 <span className="text-zinc-500">PRACTICE SENTINEL</span>
               )}
             </div>
 
-            {/* Live Opponent Action Banner */}
+            {/* Lagging Opponent Warning */}
+            {isOpponentLagging && (
+              <div className="text-[11px] font-mono px-2 py-1.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 text-center animate-pulse">
+                Avversario temporaneamente disconnesso · Finestra di riconnessione attiva (10s)
+              </div>
+            )}
+
+            {/* Opponent Feedback Banner */}
             {opponentAnswerFeedback && (
               <div className={`text-[11px] font-mono px-2 py-1 rounded border text-center transition-all ${
                 opponentAnswerFeedback.isCorrect 
                   ? 'bg-rose-500/20 border-rose-500/40 text-rose-300' 
                   : 'bg-zinc-800/80 border-zinc-700 text-zinc-400'
               }`}>
-                {opponent.name} {opponentAnswerFeedback.isCorrect ? 'trovato exploit! (+1 PTS)' : 'payload bloccato (0 PTS)'}
+                {opponent.name} {opponentAnswerFeedback.isCorrect ? 'risposta corretta! (+1 PTS)' : 'risposta errata (0 PTS)'}
               </div>
             )}
           </div>
 
-          {/* Active Challenge Card */}
+          {/* Active Question Card */}
           <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-5 space-y-4 shadow-md">
             <h3 className="font-bold text-sm sm:text-base text-white leading-relaxed">
-              {currentChallenge.question}
+              {matchMode === 'ranked'
+                ? currentRankedChallenge?.question
+                : currentCasualChallenge?.question}
             </h3>
 
-            {currentChallenge.codeSnippet && (
+            {(matchMode === 'ranked' ? currentRankedChallenge?.code_snippet : currentCasualChallenge?.codeSnippet) && (
               <div className="rounded-lg bg-zinc-950 border border-zinc-800 p-3 font-mono text-xs text-emerald-300 overflow-x-auto">
-                <pre>{currentChallenge.codeSnippet}</pre>
+                <pre>{matchMode === 'ranked' ? currentRankedChallenge?.code_snippet : currentCasualChallenge?.codeSnippet}</pre>
               </div>
             )}
 
-            {/* Options */}
+            {/* Options List */}
             <div className="grid grid-cols-1 gap-2">
-              {currentChallenge.options.map((opt) => {
-                const isSelected = selectedOptionId === opt.id;
-                let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200';
+              {matchMode === 'ranked' ? (
+                // RANKED OPTIONS (Strings, graded exclusively server-side via submit_answer)
+                currentRankedChallenge?.options.map((optText, idx) => {
+                  const isSelected = selectedOptionIndex === idx;
+                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200';
 
-                if (selectedOptionId) {
-                  if (opt.isCorrect) {
-                    optStyle = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
-                  } else if (isSelected && !opt.isCorrect) {
-                    optStyle = 'bg-rose-950/60 border-rose-500 text-rose-300';
+                  if (selectedOptionIndex !== null) {
+                    if (isSelected) {
+                      optStyle = isAnswerGradedCorrect
+                        ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
+                        : 'bg-rose-950/60 border-rose-500 text-rose-300';
+                    }
                   }
-                }
 
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    disabled={!!selectedOptionId}
-                    onClick={() => handleSelectAnswer(opt.id)}
-                    className={`p-3.5 rounded-lg border text-left text-xs sm:text-sm font-mono transition-colors flex items-center justify-between cursor-pointer ${optStyle}`}
-                  >
-                    <span>{opt.text}</span>
-                    {selectedOptionId && opt.isCorrect && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
-                    )}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={selectedOptionIndex !== null}
+                      onClick={() => handleRankedAnswer(idx)}
+                      className={`p-3.5 rounded-lg border text-left text-xs sm:text-sm font-mono transition-colors flex items-center justify-between cursor-pointer ${optStyle}`}
+                    >
+                      <span>{optText}</span>
+                      {isSelected && isAnswerGradedCorrect && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                // CASUAL OPTIONS
+                currentCasualChallenge?.options.map((opt, idx) => {
+                  const isSelected = selectedOptionIndex === idx;
+                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200';
+
+                  if (selectedOptionIndex !== null) {
+                    if (opt.isCorrect) {
+                      optStyle = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
+                    } else if (isSelected && !opt.isCorrect) {
+                      optStyle = 'bg-rose-950/60 border-rose-500 text-rose-300';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      disabled={selectedOptionIndex !== null}
+                      onClick={() => handleCasualAnswer(opt.id)}
+                      className={`p-3.5 rounded-lg border text-left text-xs sm:text-sm font-mono transition-colors flex items-center justify-between cursor-pointer ${optStyle}`}
+                    >
+                      <span>{opt.text}</span>
+                      {selectedOptionIndex !== null && opt.isCorrect && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                      )}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -727,23 +1038,41 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
 
       {/* PHASE 5: POST-MATCH VICTORY/DEFEAT */}
       {phase === 'post_match' && opponent && (
-        <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-6 space-y-5 my-6 text-center shadow-lg">
+        <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-6 space-y-5 my-6 text-center shadow-lg animate-fadeIn">
           <div>
             <h2 className={`text-2xl font-extrabold font-mono uppercase tracking-wider ${
-              matchResult === 'win' ? 'text-emerald-400' : 'text-rose-400'
+              matchResult === 'win' ? 'text-emerald-400' : matchResult === 'tie' ? 'text-amber-400' : 'text-rose-400'
             }`}>
-              {matchResult === 'win' ? (isEn ? 'MISSION ACCOMPLISHED' : 'VITTORIA TATTICA') : (isEn ? 'OPERATOR DEFEATED' : 'SCONFITTA TATTICA')}
+              {matchResult === 'win' 
+                ? (isEn ? 'TACTICAL VICTORY' : 'VITTORIA TATTICA')
+                : matchResult === 'tie'
+                ? (isEn ? 'DRAW / TACTICAL STALEMATE' : 'PAREGGIO TATTICO')
+                : (isEn ? 'TACTICAL DEFEAT' : 'SCONFITTA TATTICA')}
             </h2>
             <p className="text-xs text-zinc-400 font-mono mt-1">
-              {matchResult === 'win' ? (isEn ? 'Payload delivered with sub-millisecond precision' : 'Payload completato prima dell\'avversario') : (isEn ? 'Opponent extracted flag first' : 'L\'avversario ha estratto la flag per primo')}
+              {matchMode === 'ranked'
+                ? (isEn ? 'PostgreSQL server-authoritative match finalization.' : 'Punteggio e rating calcolati e validati da PostgreSQL RPC.')
+                : (isEn ? 'Casual session complete. Rating unaffected.' : 'Sessione amichevole completata. Nessun impatto su ELO.')}
             </p>
           </div>
 
           {/* ELO Delta Badge */}
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 font-mono max-w-xs mx-auto space-y-1">
-            <span className="text-[10px] text-zinc-400 uppercase">RATING ADJUSTMENT</span>
-            <div className={`text-xl font-bold ${matchResult === 'win' ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {matchResult === 'win' ? `+${eloDelta}` : `${eloDelta}`} ELO
+            <span className="text-[10px] text-zinc-400 uppercase">
+              {matchMode === 'ranked' ? 'OFFICIAL RATING ADJUSTMENT' : 'CASUAL MATCH'}
+            </span>
+            <div className={`text-xl font-bold ${
+              matchMode !== 'ranked'
+                ? 'text-zinc-400'
+                : eloDelta > 0
+                ? 'text-emerald-400'
+                : eloDelta < 0
+                ? 'text-rose-400'
+                : 'text-zinc-300'
+            }`}>
+              {matchMode === 'ranked'
+                ? (eloDelta > 0 ? `+${eloDelta} ELO` : `${eloDelta} ELO`)
+                : '0 ELO (Unrated)'}
             </div>
             <div className="text-xs text-zinc-300">
               Current Rating: <span className="text-white font-bold">{userState.elo}</span>
@@ -759,27 +1088,22 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
 
             <div className="grid grid-cols-3 py-1.5 text-center text-white">
-              <span>{userScore} / 5</span>
+              <span>{userScore} / {totalQuestionsCount || 5}</span>
               <span className="text-zinc-400">Score</span>
-              <span>{opponentScore} / 5</span>
-            </div>
-
-            <div className="grid grid-cols-3 py-1.5 text-center text-white">
-              <span>{Math.round((userScore / (matchChallenges.length || 5)) * 100)}%</span>
-              <span className="text-zinc-400">Accuracy</span>
-              <span>{Math.round((opponentScore / (matchChallenges.length || 5)) * 100)}%</span>
+              <span>{opponentScore} / {totalQuestionsCount || 5}</span>
             </div>
           </div>
 
-          {/* Action CTAs */}
+          {/* CTAs */}
           <div className="space-y-2">
             <button
               type="button"
               onClick={() => {
-                if (!userState.isPro && userState.arenaTickets <= 0) {
-                  onOpenPaywall('win_streak_trap');
+                if (matchMode === 'ranked') {
+                  handleStartRankedMatchmaking();
                 } else {
-                  handleStartQuickMatch();
+                  setIsDuelModalOpen(true);
+                  if (!hostedRoomCode) handleHostRoom();
                 }
               }}
               className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
@@ -813,6 +1137,10 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                     onlineSession.disconnect();
                     setOnlineSession(null);
                   }
+                  if (rankedControllerRef.current) {
+                    rankedControllerRef.current.destroy();
+                    rankedControllerRef.current = null;
+                  }
                   setPhase('idle');
                 }}
                 className="py-2 px-4 rounded-lg text-xs text-zinc-400 hover:text-white font-mono cursor-pointer"
@@ -824,7 +1152,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         </div>
       )}
 
-      {/* MODAL: PRIVATE DUEL ROOM (HOST OR JOIN) */}
+      {/* CASUAL DUEL MODAL (HOST / JOIN) */}
       {isDuelModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-6 space-y-5 shadow-2xl relative">
@@ -839,21 +1167,19 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
               <X className="w-5 h-5" />
             </button>
 
-            {/* Modal Header */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                 <h3 className="text-base font-bold text-white font-mono flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-emerald-400" />
-                  <span>{isEn ? 'Private Duel Staging Room' : 'Stanza Privata Duello 1v1'}</span>
+                  <Share2 className="w-4 h-4 text-indigo-400" />
+                  <span>{isEn ? 'Casual Duel Staging Room' : 'Stanza Duello Amichevole (P2P)'}</span>
                 </h3>
               </div>
               <p className="text-xs text-zinc-400 mt-1">
-                {isEn ? 'Direct encrypted WebRTC data channel between two operators.' : 'Canale cifrato diretto peer-to-peer tra due dispositivi.'}
+                {isEn ? 'Direct WebRTC data channel. Unrated casual play.' : 'Canale WebRTC diretto peer-to-peer. Nessun impatto su ELO.'}
               </p>
             </div>
 
-            {/* Tabs: Host vs Join */}
             <div className="grid grid-cols-2 p-1 bg-zinc-950 rounded-xl border border-zinc-800 text-xs font-mono">
               <button
                 onClick={() => {
@@ -862,7 +1188,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   if (!hostedRoomCode) handleHostRoom();
                 }}
                 className={`py-2 rounded-lg font-bold transition-colors ${
-                  duelModalTab === 'host' ? 'bg-emerald-500 text-zinc-950' : 'text-zinc-400 hover:text-white'
+                  duelModalTab === 'host' ? 'bg-indigo-500 text-zinc-950' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 {isEn ? 'HOST DUEL' : 'CREA STANZA'}
@@ -874,21 +1200,21 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   setOnlineError(null);
                 }}
                 className={`py-2 rounded-lg font-bold transition-colors ${
-                  duelModalTab === 'join' ? 'bg-emerald-500 text-zinc-950' : 'text-zinc-400 hover:text-white'
+                  duelModalTab === 'join' ? 'bg-indigo-500 text-zinc-950' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 {isEn ? 'JOIN CODE' : 'ENTRA CON CODICE'}
               </button>
             </div>
 
-            {/* HOST TAB CONTENT */}
+            {/* HOST TAB */}
             {duelModalTab === 'host' && (
               <div className="space-y-4 text-center">
                 <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800/80 space-y-2">
                   <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block">
                     CODICE STANZA ATTIVA
                   </span>
-                  <div className="text-3xl font-extrabold font-mono text-emerald-400 tracking-wider">
+                  <div className="text-3xl font-extrabold font-mono text-indigo-400 tracking-wider">
                     {hostedRoomCode || 'GENERAZIONE...'}
                   </div>
                   <p className="text-[11px] font-mono text-zinc-400">
@@ -896,31 +1222,29 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   </p>
                 </div>
 
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      sound.playExploitSuccess();
-                      const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
-                      const link = `${origin}/?duel=${hostedRoomCode}`;
-                      navigator.clipboard.writeText(`Entra nel duello 1v1 su ZeroDay! Codice: ${hostedRoomCode} | Link diretto: ${link}`);
-                      setCopiedRoomLink(true);
-                      setTimeout(() => setCopiedRoomLink(false), 2500);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-emerald-500 text-zinc-200 font-mono text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    {copiedRoomLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-                    <span>{copiedRoomLink ? 'LINK DIRETTO COPIATO!' : 'COPIA LINK DI INVITO'}</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    sound.playExploitSuccess();
+                    const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
+                    const link = `${origin}/?duel=${hostedRoomCode}`;
+                    navigator.clipboard.writeText(`Entra nel duello 1v1 su ZeroDay! Codice: ${hostedRoomCode} | Link diretto: ${link}`);
+                    setCopiedRoomLink(true);
+                    setTimeout(() => setCopiedRoomLink(false), 2500);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-indigo-500 text-zinc-200 font-mono text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {copiedRoomLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
+                  <span>{copiedRoomLink ? 'LINK DIRETTO COPIATO!' : 'COPIA LINK DI INVITO'}</span>
+                </button>
 
                 <div className="flex items-center justify-center gap-2 text-xs font-mono text-zinc-400 py-2">
-                  <Radio className="w-4 h-4 animate-spin text-emerald-400" />
+                  <Radio className="w-4 h-4 animate-spin text-indigo-400" />
                   <span>In attesa che l'avversario entri nella stanza...</span>
                 </div>
               </div>
             )}
 
-            {/* JOIN TAB CONTENT */}
+            {/* JOIN TAB */}
             {duelModalTab === 'join' && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -933,7 +1257,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                     onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                     placeholder="0x...."
                     maxLength={8}
-                    className="w-full py-3 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-emerald-400 font-mono font-bold text-center text-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full py-3 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-indigo-400 font-mono font-bold text-center text-lg focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
@@ -948,7 +1272,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   type="button"
                   disabled={isConnectingOnline || !joinCodeInput.trim()}
                   onClick={handleJoinRoom}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="w-full py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-zinc-950 font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   {isConnectingOnline ? (
                     <>
@@ -968,7 +1292,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
         </div>
       )}
 
-      {/* Survival Mode Gauntlet Modal */}
+      {/* Survival Gauntlet Modal */}
       <SurvivalModeModal
         isOpen={isSurvivalOpen}
         onClose={() => setIsSurvivalOpen(false)}
