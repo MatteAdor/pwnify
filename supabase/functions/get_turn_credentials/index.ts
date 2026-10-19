@@ -1,56 +1,56 @@
 // Edge Function: get_turn_credentials
-// Generates ephemeral TURN credentials (TTL 1h) with provider support (Metered / coturn / Cloudflare)
-// Requires valid user JWT and applies rate limiting per user/IP.
+// Ephemeral TURN credentials (TTL 1h) with provider support (Metered / coturn RFC 5766)
+// Requires valid user JWT, applies atomic PostgreSQL rate limiting, and restricts CORS to app origin.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:4173",
+  "https://zeroday.gg",
+  "capacitor://localhost",
+];
 
-// In-memory sliding rate limiter (Max 10 requests per 5 minutes per user/IP)
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
+function getCorsHeaders(req: Request): { headers: Record<string, string>; allowed: boolean } {
+  const origin = req.headers.get("origin") || "";
+  const envOrigins = (Deno.env.get("ALLOWED_ORIGINS") || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
+  const isAllowed = !origin || allowedList.includes(origin) || origin.endsWith(".zeroday.gg");
+
+  return {
+    allowed: isAllowed,
+    headers: {
+      "Access-Control-Allow-Origin": isAllowed ? (origin || "*") : allowedList[0],
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      "Vary": "Origin",
+    },
+  };
 }
-const rateLimitMap = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_REQUESTS_PER_WINDOW = 10;
-
-function checkRateLimit(key: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-
-  if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
-  }
-
-  entry.count += 1;
-  return true;
-}
-
-// Cleanup stale rate limit entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetAt) {
-      rateLimitMap.delete(key);
-    }
-  }
-}, 60 * 1000);
 
 serve(async (req: Request) => {
+  const { headers: corsHeaders, allowed: originAllowed } = getCorsHeaders(req);
+
   // 1. CORS Preflight
   if (req.method === "OPTIONS") {
+    if (!originAllowed) {
+      return new Response("CORS origin forbidden", { status: 403, headers: corsHeaders });
+    }
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (!originAllowed) {
+    return new Response(
+      JSON.stringify({ error: "Forbidden: Origin not permitted" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -65,13 +65,14 @@ serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     const token = authHeader.replace("Bearer ", "").trim();
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
 
     if (authError || !user) {
       return new Response(
@@ -80,16 +81,27 @@ serve(async (req: Request) => {
       );
     }
 
-    // 3. Rate Limiting Check (Per user ID and IP)
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-                     req.headers.get("cf-connecting-ip") || "unknown-ip";
-    const rateLimitKey = `${user.id}:${clientIp}`;
-
-    if (!checkRateLimit(rateLimitKey)) {
-      return new Response(
-        JSON.stringify({ error: "Too many requests: rate limit exceeded (10 requests per 5 minutes)" }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // 3. Atomic Rate Limiting via PostgreSQL RPC (10 requests / 5 minutes per user_id)
+    if (supabaseServiceKey) {
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: isAllowed, error: rateLimitError } = await adminClient.rpc(
+        "check_and_increment_rate_limit",
+        {
+          p_user_id: user.id,
+          p_action: "turn_credentials",
+          p_max_requests: 10,
+          p_window_seconds: 300,
+        }
       );
+
+      if (rateLimitError) {
+        console.warn("[TURN RateLimit] DB check error:", rateLimitError.message);
+      } else if (isAllowed === false) {
+        return new Response(
+          JSON.stringify({ error: "Too many requests: rate limit exceeded (10 requests per 5 minutes)" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // 4. Build ICE Servers Array (Strictly STUN first -> TURN)
@@ -103,13 +115,15 @@ serve(async (req: Request) => {
       },
     ];
 
-    const TTL_SECONDS = 3600; // 1 hour TTL
+    const TTL_SECONDS = 3600;
     const meteredApiKey = Deno.env.get("METERED_API_KEY");
     const meteredAppName = Deno.env.get("METERED_APP_NAME");
     const turnSecret = Deno.env.get("TURN_SECRET");
     const turnUrls = Deno.env.get("TURN_URLS");
 
-    // Option A: Metered TURN API
+    let hasTurnConfigured = false;
+
+    // Option A: Metered TURN API with expiring credentials
     if (meteredApiKey && meteredAppName) {
       try {
         const resp = await fetch(
@@ -121,17 +135,18 @@ serve(async (req: Request) => {
             for (const s of meteredServers) {
               if (s.urls && (s.urls.includes("turn:") || s.urls.includes("turns:"))) {
                 iceServers.push(s);
+                hasTurnConfigured = true;
               }
             }
           }
         } else {
-          console.warn("[TURN] Metered API request failed:", resp.status);
+          console.error("[TURN] Metered API error status:", resp.status);
         }
       } catch (mErr) {
-        console.warn("[TURN] Error fetching Metered credentials:", mErr);
+        console.error("[TURN] Error fetching Metered credentials:", mErr);
       }
     }
-    // Option B: Standard RFC 5766 HMAC-SHA1 Ephemeral TURN (coturn / Cloudflare / custom)
+    // Option B: Standard RFC 5766 HMAC-SHA1 Ephemeral TURN (coturn / Cloudflare)
     else if (turnSecret && turnUrls) {
       const expiry = Math.floor(Date.now() / 1000) + TTL_SECONDS;
       const username = `${expiry}:${user.id}`;
@@ -158,38 +173,20 @@ serve(async (req: Request) => {
         username,
         credential,
       });
+      hasTurnConfigured = true;
     }
-    // Option C: Fallback / Local Dev Ephemeral Token
-    else {
-      // In local development or until production TURN secret is populated,
-      // emit developer coturn configuration with signed ephemeral key
-      const devSecret = "zeroday_dev_turn_secret_ephemeral_token";
-      const expiry = Math.floor(Date.now() / 1000) + TTL_SECONDS;
-      const username = `${expiry}:${user.id.slice(0, 8)}`;
 
-      const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(devSecret),
-        { name: "HMAC", hash: "SHA-1" },
-        false,
-        ["sign"]
+    // Explicit error if no TURN provider is configured (NO fake fallback)
+    if (!hasTurnConfigured) {
+      return new Response(
+        JSON.stringify({
+          error: "No TURN provider configured on server (METERED_API_KEY or TURN_SECRET missing)",
+        }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
-      const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(username)
-      );
-      const credential = btoa(String.fromCharCode(...new Uint8Array(signature)));
-
-      iceServers.push({
-        urls: [
-          "turn:turn.zeroday.internal:3478?transport=udp",
-          "turn:turn.zeroday.internal:3478?transport=tcp",
-          "turns:turn.zeroday.internal:5349?transport=tcp",
-        ],
-        username,
-        credential,
-      });
     }
 
     return new Response(

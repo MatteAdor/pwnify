@@ -23,7 +23,33 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "match_answers": {
+            "forfeit_history": {
+                  Row: {
+                    "forfeited_at": string,"id": string,"match_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "forfeited_at"?: string,"id"?: string,"match_id": string,"user_id": string
+                  }
+                  Update: {
+                    "forfeited_at"?: string,"id"?: string,"match_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "forfeit_history_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "forfeit_history_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"match_answers": {
                   Row: {
                     "answer_index": number,"id": string,"is_correct": boolean,"match_id": string,"question_id": string,"response_time_ms": number,"server_ts": string,"user_id": string
                   }
@@ -115,14 +141,14 @@ isOneToOne: true
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"elo": number,"flagged": boolean,"id": string,"inventory": NonNullable<Json>,"last_ranked_at": string | null,"legacy_imported": boolean,"nick": string,"profession": string | null,"rank": string,"updated_at": string,"xp": number
+                    "created_at": string,"elo": number,"flagged": boolean,"id": string,"inventory": NonNullable<Json>,"last_ranked_at": string | null,"legacy_imported": boolean,"matchmaking_cooldown_until": string | null,"nick": string,"profession": string | null,"rank": string,"updated_at": string,"xp": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id": string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"nick": string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
+                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id": string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick": string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
                   }
                   Update: {
-                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id"?: string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"nick"?: string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
+                    "created_at"?: string,"elo"?: number,"flagged"?: boolean,"id"?: string,"inventory"?: NonNullable<Json>,"last_ranked_at"?: string | null,"legacy_imported"?: boolean,"matchmaking_cooldown_until"?: string | null,"nick"?: string,"profession"?: string | null,"rank"?: string,"updated_at"?: string,"xp"?: number
                   }
                   Relationships: [
                     
@@ -141,6 +167,26 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"rpc_rate_limits": {
+                  Row: {
+                    "action_name": string,"request_count": number,"user_id": string,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action_name": string,"request_count"?: number,"user_id": string,"window_start"?: string
+                  }
+                  Update: {
+                    "action_name"?: string,"request_count"?: number,"user_id"?: string,"window_start"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rpc_rate_limits_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -149,6 +195,15 @@ isOneToOne: true
           Functions: {
             "apply_elo_decay":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"check_and_increment_rate_limit":
+{ Args: { "p_action": string,"p_max_requests": number,"p_user_id": string,"p_window_seconds": number }; Returns: boolean
+                           },
+"check_operator_anomalies":
+{ Args: { "p_user_id": string }; Returns: undefined
+                           },
+"finalize_abandoned_match":
+{ Args: { "p_match_id": string }; Returns: Json
                            },
 "finalize_match":
 { Args: { "p_match_id": string }; Returns: Json
