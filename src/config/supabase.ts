@@ -12,8 +12,11 @@ function getEnv(key: string): string | undefined {
   return undefined;
 }
 
-const supabaseUrl = getEnv('VITE_SUPABASE_URL') || 'https://placeholder-project.supabase.co';
-const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || 'placeholder-anon-key';
+const DEFAULT_SUPABASE_URL = 'https://mhnalgbufdlnctwdxppb.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_GLGnIw2hOIbWs8OD5jWGuw_zlVtWMM5';
+
+const supabaseUrl = getEnv('VITE_SUPABASE_URL') || DEFAULT_SUPABASE_URL;
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&

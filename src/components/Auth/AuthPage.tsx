@@ -383,7 +383,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     if (isSupabaseConfigured) {
       setIsProcessing(true);
       try {
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: window.location.origin
@@ -393,13 +393,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           console.warn('Supabase Google OAuth error:', error.message);
           setErrorMsg(error.message);
           setIsProcessing(false);
-          setIsGoogleModalOpen(true);
+          return;
+        }
+        if (data?.url) {
+          window.location.href = data.url;
           return;
         }
         return;
       } catch (err: unknown) {
         setIsProcessing(false);
-        setIsGoogleModalOpen(true);
+        const msg = err instanceof Error ? err.message : 'Google OAuth failed';
+        setErrorMsg(msg);
         return;
       }
     }
