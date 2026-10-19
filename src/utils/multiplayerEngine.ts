@@ -1,10 +1,17 @@
-import PeerPackage, { type DataConnection, type PeerOptions } from 'peerjs';
+import PeerPackage, { type Peer, type DataConnection, type PeerOptions } from 'peerjs';
 
-const Peer = (
+const PeerConstructor = (
   (PeerPackage as unknown as { Peer?: typeof PeerPackage; default?: typeof PeerPackage }).Peer ||
   (PeerPackage as unknown as { default?: typeof PeerPackage }).default ||
   PeerPackage
 ) as unknown as typeof PeerPackage;
+
+export type PeerFactory = (id?: string, options?: PeerOptions) => Peer;
+
+export const defaultPeerFactory: PeerFactory = (id, options) => {
+  return new (PeerConstructor as unknown as new (id?: string, options?: PeerOptions) => Peer)(id, options);
+};
+
 import { PvPPlayer, PvPChallenge } from '../types/index.ts';
 import { generatePvPMatchChallenges, PVP_CHALLENGES } from '../data/pvpChallenges.ts';
 import { getAuthoritativeIceServers, type RTCIceServerConfig } from './turnService.ts';
@@ -108,7 +115,8 @@ export function generateRoomCode(): string {
  */
 export function hostOnlineDuel(
   hostUser: { username: string; elo: number; rank: string; profession?: string },
-  customCode?: string
+  customCode?: string,
+  peerFactory?: PeerFactory
 ): Promise<{
   roomCode: string;
   waitForOpponent: () => Promise<OnlineMatchSession>;
@@ -124,7 +132,8 @@ export function hostOnlineDuel(
     try {
       const options = await buildPeerOptions();
       if (isCancelled) return;
-      peer = new Peer(peerId, options);
+      const factory = peerFactory || defaultPeerFactory;
+      peer = factory(peerId, options);
     } catch (err) {
       return reject(err instanceof Error ? err : new Error(String(err)));
     }
@@ -133,7 +142,7 @@ export function hostOnlineDuel(
       console.warn('[P2P Duel Host Error]', err);
       if (err.type === 'unavailable-id') {
         peer?.destroy();
-        resolve(hostOnlineDuel(hostUser));
+        resolve(hostOnlineDuel(hostUser, customCode, peerFactory));
       }
     });
 
@@ -194,7 +203,8 @@ export function hostOnlineDuel(
  */
 export function joinOnlineDuel(
   roomCode: string,
-  guestUser: { username: string; elo: number; rank: string; profession?: string }
+  guestUser: { username: string; elo: number; rank: string; profession?: string },
+  peerFactory?: PeerFactory
 ): Promise<OnlineMatchSession> {
   return new Promise(async (resolve, reject) => {
     const cleanCode = roomCode.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -205,7 +215,8 @@ export function joinOnlineDuel(
 
     try {
       const options = await buildPeerOptions();
-      guestPeer = new Peer(options);
+      const factory = peerFactory || defaultPeerFactory;
+      guestPeer = factory(undefined, options);
     } catch (err) {
       return reject(err instanceof Error ? err : new Error(String(err)));
     }

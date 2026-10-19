@@ -2,11 +2,16 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   RankedMatchController,
+  computeRankedPeerId,
+  type PeerFactory,
   type RankedQuestion,
   type RankedOpponentInfo,
   type RankedMatchResult,
   type CosmeticFeedbackPayload,
 } from '../src/utils/rankedController.ts';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '../src/types/database.types.ts';
+import type { Peer } from 'peerjs';
 
 // =====================================================================
 // MOCK IMPLEMENTATION OF SUPABASE CLIENT FOR CONTROLLER UNIT TESTING
@@ -21,8 +26,8 @@ interface MockState {
   broadcastedEvents: Array<{ event: string; payload: unknown }>;
 }
 
-function createMockSupabase(state: MockState) {
-  return {
+function createMockSupabase(state: MockState): SupabaseClient<Database> {
+  const client = {
     auth: {
       getSession: async () => ({
         data: {
@@ -35,8 +40,8 @@ function createMockSupabase(state: MockState) {
       }),
     },
     from: (table: string) => ({
-      select: (fields: string) => ({
-        eq: (col: string, val: string) => ({
+      select: (_fields: string) => ({
+        eq: (_col: string, _val: string) => ({
           single: async () => {
             if (table === 'matches') {
               return {
@@ -131,6 +136,19 @@ function createMockSupabase(state: MockState) {
             error: null,
           };
 
+        case 'finalize_abandoned_match':
+          return {
+            data: {
+              status: 'completed',
+              winner_id: state.currentUserId,
+              p1_score: 1,
+              p2_score: 0,
+              p1_delta: 18,
+              p2_delta: -18,
+            },
+            error: null,
+          };
+
         case 'forfeit_match':
           return {
             data: {
@@ -144,7 +162,7 @@ function createMockSupabase(state: MockState) {
           return { data: null, error: new Error(`Unknown RPC ${fn}`) };
       }
     },
-    channel: (name: string) => ({
+    channel: (_name: string) => ({
       on: () => ({ subscribe: async () => ({}) }),
       subscribe: async () => ({}),
       unsubscribe: async () => ({}),
@@ -154,59 +172,95 @@ function createMockSupabase(state: MockState) {
       },
     }),
   };
+
+  return client as unknown as SupabaseClient<Database>;
 }
 
-describe('RankedMatchController Unit Suite (Mock RPC & State Flow)', () => {
-  test('Queue lifecycle: enterQueue returns queued, pollQueue returns matched', async () => {
-    const mockState: MockState = {
-      currentUserId: 'user-p1-uuid',
-      isQueueMatched: false,
-      matchId: 'match-alpha-uuid',
-      opponentId: 'user-p2-uuid',
-      rpcCalls: [],
-      broadcastedEvents: [],
+function createMockPeerFactory(createdPeers: Array<{ id?: string }>): PeerFactory {
+  return (id, options) => {
+    const mockPeer = {
+      id: id || 'mock-peer-id',
+      options,
+      on: (_event: string, cb: (data?: unknown) => void) => {
+        if (_event === 'open') setTimeout(() => cb(id || 'mock-peer-id'), 0);
+        return mockPeer;
+      },
+      connect: (_targetId: string) => ({
+        open: true,
+        send: () => {},
+        on: () => {},
+        close: () => {},
+      }),
+      destroy: () => {},
     };
+    createdPeers.push(mockPeer);
+    return mockPeer as unknown as Peer;
+  };
+}
 
-    const mockSupabase = createMockSupabase(mockState);
-    // Bind mock Supabase into global scope / controller
-    (globalThis as unknown as { __mockSupabase?: unknown }).__mockSupabase = mockSupabase;
+describe('RankedMatchController Unit Suite (Mock RPC & Injected Dependencies)', () => {
+  test('Deterministic Peer ID hash generation', async () => {
+    const peerId1 = await computeRankedPeerId('match-alpha-1234', 'user-p1-5678');
+    const peerId2 = await computeRankedPeerId('match-alpha-1234', 'user-p1-5678');
+    const peerIdDiff = await computeRankedPeerId('match-alpha-1234', 'user-p2-9999');
 
-    // Simulate controller operations directly
-    const queueRes1 = await mockSupabase.rpc('find_or_create_match');
-    assert.equal(queueRes1.data.status, 'queued');
-
-    // Simulate matchmaker matching
-    mockState.isQueueMatched = true;
-    const pollRes = await mockSupabase.rpc('poll_matchmaking');
-    assert.equal(pollRes.data.status, 'matched');
-    assert.equal(pollRes.data.match_id, 'match-alpha-uuid');
+    assert.ok(peerId1.startsWith('zeroday-pvp-v2-ranked-'));
+    assert.equal(peerId1, peerId2, 'Same match and user must produce identical peer ID');
+    assert.notEqual(peerId1, peerIdDiff, 'Different users must produce distinct peer IDs');
   });
 
-  test('Zero-Knowledge Invariant: Questions returned from get_match_questions never reveal correct_index', async () => {
+  test('Queue lifecycle via Injected Controller: enterQueue -> matched -> initializeMatch', async () => {
     const mockState: MockState = {
       currentUserId: 'user-p1-uuid',
-      isQueueMatched: true,
+      isQueueMatched: true, // Immediately matched for this test
       matchId: 'match-alpha-uuid',
       opponentId: 'user-p2-uuid',
       rpcCalls: [],
       broadcastedEvents: [],
     };
 
+    const createdPeers: Array<{ id?: string }> = [];
     const mockSupabase = createMockSupabase(mockState);
-    const questionsRes = await mockSupabase.rpc('get_match_questions', { p_match_id: mockState.matchId });
-    assert.ok(Array.isArray(questionsRes.data));
-    assert.equal(questionsRes.data.length, 2);
+    const mockPeerFactory = createMockPeerFactory(createdPeers);
 
-    for (const q of questionsRes.data) {
-      assert.ok(q.id);
-      assert.ok(q.question);
-      assert.ok(Array.isArray(q.options));
-      // STRICT ZERO-KNOWLEDGE: correct_index must be strictly undefined
-      assert.equal((q as Record<string, unknown>).correct_index, undefined, 'correct_index must NEVER exist in client questions');
+    let statusUpdates: string[] = [];
+    const controller = new RankedMatchController(
+      {
+        onStatusChange: (status) => {
+          statusUpdates.push(status);
+        },
+      },
+      {
+        peerFactory: mockPeerFactory,
+        supabaseClient: mockSupabase,
+      }
+    );
+
+    const res = await controller.enterQueue();
+    assert.equal(res.status, 'matched');
+    assert.equal(res.matchId, 'match-alpha-uuid');
+    assert.equal(controller.getMatchId(), 'match-alpha-uuid');
+
+    // Verify questions loaded with ZERO correct_index
+    const questions = controller.getQuestions();
+    assert.equal(questions.length, 2);
+    for (const q of questions) {
+      assert.equal((q as Record<string, unknown>).correct_index, undefined);
     }
+
+    // Verify opponent loaded
+    const opponent = controller.getOpponent();
+    assert.ok(opponent);
+    assert.equal(opponent?.nick, 'TargetOperator_99');
+
+    // Verify injected peer was instantiated with hashed peer ID
+    assert.ok(createdPeers.length > 0);
+    assert.ok(createdPeers[0].id?.startsWith('zeroday-pvp-v2-ranked-'));
+
+    controller.destroy();
   });
 
-  test('Server-Authoritative submit_answer RPC validates answers correctly', async () => {
+  test('Injected Controller submitAnswer and finalizeMatch execution', async () => {
     const mockState: MockState = {
       currentUserId: 'user-p1-uuid',
       isQueueMatched: true,
@@ -216,113 +270,102 @@ describe('RankedMatchController Unit Suite (Mock RPC & State Flow)', () => {
       broadcastedEvents: [],
     };
 
+    const createdPeers: Array<{ id?: string }> = [];
     const mockSupabase = createMockSupabase(mockState);
+    const mockPeerFactory = createMockPeerFactory(createdPeers);
 
-    // Submission with correct option index (0)
-    const subCorrect = await mockSupabase.rpc('submit_answer', {
-      p_match_id: mockState.matchId,
-      p_question_id: '11111111-1111-1111-1111-111111111111',
-      p_answer_index: 0,
-    });
-    assert.equal(subCorrect.data.is_correct, true);
-    assert.equal(subCorrect.data.elapsed_ms, 1850);
+    const controller = new RankedMatchController(
+      {},
+      {
+        peerFactory: mockPeerFactory,
+        supabaseClient: mockSupabase,
+      }
+    );
 
-    // Submission with incorrect option index (1)
-    const subWrong = await mockSupabase.rpc('submit_answer', {
-      p_match_id: mockState.matchId,
-      p_question_id: '11111111-1111-1111-1111-111111111111',
-      p_answer_index: 1,
-    });
-    assert.equal(subWrong.data.is_correct, false);
-  });
+    await controller.enterQueue();
 
-  test('Server-Authoritative finalize_match calculates scores and ELO delta without client trust', async () => {
-    const mockState: MockState = {
-      currentUserId: 'user-p1-uuid',
-      isQueueMatched: true,
-      matchId: 'match-alpha-uuid',
-      opponentId: 'user-p2-uuid',
-      rpcCalls: [],
-      broadcastedEvents: [],
-    };
+    // Test answer submission
+    const ansResult = await controller.submitAnswer('11111111-1111-1111-1111-111111111111', 0);
+    assert.equal(ansResult.isCorrect, true);
+    assert.equal(ansResult.elapsedMs, 1850);
 
-    const mockSupabase = createMockSupabase(mockState);
-    const finalizeRes = await mockSupabase.rpc('finalize_match', { p_match_id: mockState.matchId });
-
-    assert.equal(finalizeRes.data.status, 'completed');
-    assert.equal(finalizeRes.data.winner_id, 'user-p1-uuid');
-    assert.equal(finalizeRes.data.p1_score, 2);
-    assert.equal(finalizeRes.data.p2_score, 1);
-    assert.equal(finalizeRes.data.p1_delta, 16);
-    assert.equal(finalizeRes.data.p2_delta, -16);
-  });
-
-  test('Server-Authoritative forfeit_match assigns victory to opponent on surrender', async () => {
-    const mockState: MockState = {
-      currentUserId: 'user-p1-uuid',
-      isQueueMatched: true,
-      matchId: 'match-alpha-uuid',
-      opponentId: 'user-p2-uuid',
-      rpcCalls: [],
-      broadcastedEvents: [],
-    };
-
-    const mockSupabase = createMockSupabase(mockState);
-    const forfeitRes = await mockSupabase.rpc('forfeit_match', { p_match_id: mockState.matchId });
-
-    assert.equal(forfeitRes.data.status, 'forfeited');
-    assert.equal(forfeitRes.data.winner_id, 'user-p2-uuid');
-  });
-
-  test('Supabase Realtime fallback channel sends cosmetic feedback', async () => {
-    const mockState: MockState = {
-      currentUserId: 'user-p1-uuid',
-      isQueueMatched: true,
-      matchId: 'match-alpha-uuid',
-      opponentId: 'user-p2-uuid',
-      rpcCalls: [],
-      broadcastedEvents: [],
-    };
-
-    const mockSupabase = createMockSupabase(mockState);
-    const channel = mockSupabase.channel('match_feedback:match-alpha-uuid');
-    await channel.send({
-      type: 'broadcast',
-      event: 'COSMETIC_FEEDBACK',
-      payload: { questionIndex: 1, score: 2, streak: 2, isCorrect: true },
-    });
-
-    assert.equal(mockState.broadcastedEvents.length, 1);
-    assert.equal(mockState.broadcastedEvents[0].event, 'COSMETIC_FEEDBACK');
-    assert.deepEqual(mockState.broadcastedEvents[0].payload, {
-      questionIndex: 1,
-      score: 2,
-      streak: 2,
+    // Test broadcast fallback to Realtime
+    controller.broadcastCosmeticProgress({
+      questionIndex: 0,
+      score: 1,
+      streak: 1,
       isCorrect: true,
     });
+    assert.equal(mockState.broadcastedEvents.length, 1);
+    assert.equal(mockState.broadcastedEvents[0].event, 'COSMETIC_FEEDBACK');
+
+    // Test match finalization
+    const finalResult = await controller.finalizeMatch();
+    assert.equal(finalResult.status, 'completed');
+    assert.equal(finalResult.isWin, true);
+    assert.equal(finalResult.eloDelta, 16);
+
+    controller.destroy();
   });
 
-  test('Heartbeat & Lagging detection triggers after 8000ms inactivity', () => {
-    let isLagging = false;
-    let forfeitTriggered = false;
+  test('Injected Controller finalizeAbandonedMatch on opponent inactivity', async () => {
+    const mockState: MockState = {
+      currentUserId: 'user-p1-uuid',
+      isQueueMatched: true,
+      matchId: 'match-alpha-uuid',
+      opponentId: 'user-p2-uuid',
+      rpcCalls: [],
+      broadcastedEvents: [],
+    };
 
-    let lastHeartbeatAt = Date.now() - 8500; // 8.5 seconds ago
+    const mockSupabase = createMockSupabase(mockState);
+    const mockPeerFactory = createMockPeerFactory([]);
 
-    // Simulation of heartbeat watchdog cycle
-    const now = Date.now();
-    const elapsed = now - lastHeartbeatAt;
-    if (elapsed > 8000) {
-      isLagging = true;
-    }
+    const controller = new RankedMatchController(
+      {},
+      {
+        peerFactory: mockPeerFactory,
+        supabaseClient: mockSupabase,
+      }
+    );
 
-    assert.equal(isLagging, true, 'Opponent should be flagged as lagging after 8s silence');
+    await controller.enterQueue();
 
-    // Simulate 10s reconnection grace window expiration
-    const graceElapsed = elapsed - 8000;
-    if (isLagging && graceElapsed >= 500) {
-      forfeitTriggered = true;
-    }
+    const abandonedResult = await controller.finalizeAbandonedMatch();
+    assert.equal(abandonedResult.status, 'completed');
+    assert.equal(abandonedResult.isWin, true);
+    assert.equal(abandonedResult.eloDelta, 18);
 
-    assert.equal(forfeitTriggered, true, 'Forfeit timeout should trigger when grace window lapses');
+    controller.destroy();
+  });
+
+  test('Injected Controller forfeitMatch strictly yields defeat for caller', async () => {
+    const mockState: MockState = {
+      currentUserId: 'user-p1-uuid',
+      isQueueMatched: true,
+      matchId: 'match-alpha-uuid',
+      opponentId: 'user-p2-uuid',
+      rpcCalls: [],
+      broadcastedEvents: [],
+    };
+
+    const mockSupabase = createMockSupabase(mockState);
+    const mockPeerFactory = createMockPeerFactory([]);
+
+    const controller = new RankedMatchController(
+      {},
+      {
+        peerFactory: mockPeerFactory,
+        supabaseClient: mockSupabase,
+      }
+    );
+
+    await controller.enterQueue();
+
+    const forfeitResult = await controller.forfeitMatch();
+    assert.equal(forfeitResult.status, 'forfeited');
+    assert.equal(forfeitResult.winnerId, 'user-p2-uuid');
+
+    controller.destroy();
   });
 });

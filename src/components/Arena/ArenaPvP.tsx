@@ -271,7 +271,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
       },
       onOpponentForfeitTimeout: async () => {
         setIsOpponentLagging(false);
-        await finalizeRankedMatch();
+        await finalizeAbandonedRankedMatch();
       },
       onError: (err) => {
         setOnlineError(err.message);
@@ -444,6 +444,35 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
     } catch (err) {
       console.error('[Ranked] Failed to finalize match:', err);
       setPhase('post_match');
+    }
+  };
+
+  const finalizeAbandonedRankedMatch = async () => {
+    if (!rankedControllerRef.current) {
+      setPhase('post_match');
+      return;
+    }
+
+    try {
+      const result: RankedMatchResult = await rankedControllerRef.current.finalizeAbandonedMatch();
+      setEloDelta(result.eloDelta);
+      if (result.isWin) {
+        setMatchResult('win');
+        sound.playVictoryFanfare();
+        confetti({ particleCount: 70, spread: 65, origin: { y: 0.6 } });
+        onWinMatch(result.eloDelta);
+      } else if (result.isTie) {
+        setMatchResult('tie');
+        sound.playExploitSuccess();
+      } else {
+        setMatchResult('loss');
+        sound.playPayloadBlocked();
+        onLossMatch(Math.abs(result.eloDelta));
+      }
+      setPhase('post_match');
+    } catch (err) {
+      console.warn('[Ranked] Fallback to normal finalize on timeout:', err);
+      await finalizeRankedMatch();
     }
   };
 

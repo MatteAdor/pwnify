@@ -1,9 +1,10 @@
-import { supabase, isSupabaseConfigured } from '../config/supabase.ts';
+import { supabase as defaultSupabase, isSupabaseConfigured } from '../config/supabase.ts';
 import type { Database } from '../types/database.types.ts';
 import { getAuthoritativeIceServers, type RTCIceServerConfig } from './turnService.ts';
-import PeerPackage, { type DataConnection, type PeerOptions } from 'peerjs';
+import PeerPackage, { type Peer, type DataConnection, type PeerOptions } from 'peerjs';
+import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 
-const Peer = (
+const PeerConstructor = (
   (PeerPackage as unknown as { Peer?: typeof PeerPackage; default?: typeof PeerPackage }).Peer ||
   (PeerPackage as unknown as { default?: typeof PeerPackage }).default ||
   PeerPackage
@@ -62,9 +63,33 @@ export interface RankedControllerCallbacks {
   onError?: (err: Error) => void;
 }
 
-const PEER_PREFIX = 'zeroday-pvp-v2-';
+export type PeerFactory = (id?: string, options?: PeerOptions) => Peer;
 
-function getPeerOptions(iceServers: RTCIceServerConfig[]): Record<string, unknown> {
+export const defaultPeerFactory: PeerFactory = (id, options) => {
+  return new (PeerConstructor as unknown as new (id?: string, options?: PeerOptions) => Peer)(id, options);
+};
+
+export interface RankedControllerDependencies {
+  peerFactory?: PeerFactory;
+  supabaseClient?: SupabaseClient<Database>;
+}
+
+const PEER_PREFIX = 'zeroday-pvp-v2-ranked-';
+
+/**
+ * Computes deterministic Peer ID from SHA-256 hash of matchId and userId.
+ * format: zeroday-pvp-v2-ranked-<hash16>
+ */
+export async function computeRankedPeerId(matchId: string, userId: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${matchId}:${userId}`);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+  return `${PEER_PREFIX}${hashHex}`;
+}
+
+function getPeerOptions(iceServers: RTCIceServerConfig[]): PeerOptions {
   const env = (import.meta as unknown as { env?: Record<string, string> })?.env || {};
   const host = env.VITE_PEER_HOST || undefined;
   const port = env.VITE_PEER_PORT ? Number(env.VITE_PEER_PORT) : undefined;
@@ -73,7 +98,7 @@ function getPeerOptions(iceServers: RTCIceServerConfig[]): Record<string, unknow
   const secure = env.VITE_PEER_SECURE === 'true' ||
     (typeof window !== 'undefined' && window.location.protocol === 'https:' && Boolean(host));
 
-  const options: Record<string, unknown> = {
+  const options: PeerOptions = {
     config: {
       iceServers,
       iceCandidatePoolSize: 10,
@@ -97,19 +122,26 @@ export class RankedMatchController {
   private opponentProfile: RankedOpponentInfo | null = null;
   private questions: RankedQuestion[] = [];
   private callbacks: RankedControllerCallbacks;
+  private deps: RankedControllerDependencies;
+  private supabase: SupabaseClient<Database>;
 
   // Cosmetic P2P & Realtime
   private peer: Peer | null = null;
   private dataConn: DataConnection | null = null;
-  private realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+  private realtimeChannel: RealtimeChannel | null = null;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private lastOpponentHeartbeatAt: number = 0;
   private isOpponentLagging: boolean = false;
   private disconnectGraceTimeout: ReturnType<typeof setTimeout> | null = null;
   private isDestroyed: boolean = false;
 
-  constructor(callbacks: RankedControllerCallbacks = {}) {
+  constructor(
+    callbacks: RankedControllerCallbacks = {},
+    deps: RankedControllerDependencies = {}
+  ) {
     this.callbacks = callbacks;
+    this.deps = deps;
+    this.supabase = deps.supabaseClient || (defaultSupabase as unknown as SupabaseClient<Database>);
   }
 
   public getMatchId(): string | null {
@@ -128,11 +160,11 @@ export class RankedMatchController {
    * Enters the ranked queue via PostgreSQL RPC `find_or_create_match`.
    */
   public async enterQueue(): Promise<{ status: 'matched' | 'queued'; matchId?: string }> {
-    if (!isSupabaseConfigured) {
+    if (!this.deps.supabaseClient && !isSupabaseConfigured) {
       throw new Error('Supabase client is not configured for ranked play.');
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await this.supabase.auth.getSession();
     const user = sessionData?.session?.user;
     if (!user) {
       throw new Error('Autenticazione richiesta per accedere al PvP Ranked.');
@@ -141,7 +173,7 @@ export class RankedMatchController {
 
     this.callbacks.onStatusChange?.('queued', 'Ricerca operatore nel bracket ELO...');
 
-    const { data, error } = await supabase.rpc('find_or_create_match');
+    const { data, error } = await this.supabase.rpc('find_or_create_match');
     if (error) {
       this.callbacks.onError?.(new Error(error.message));
       throw error;
@@ -162,7 +194,7 @@ export class RankedMatchController {
    * Polls the queue periodically until match found or aborted.
    */
   public async pollQueue(): Promise<{ status: 'matched' | 'waiting'; matchId?: string }> {
-    const { data, error } = await supabase.rpc('poll_matchmaking');
+    const { data, error } = await this.supabase.rpc('poll_matchmaking');
     if (error) {
       throw error;
     }
@@ -184,7 +216,7 @@ export class RankedMatchController {
   public async cancelQueue(): Promise<void> {
     if (!this.userId) return;
     try {
-      await supabase.from('matchmaking_queue').delete().eq('user_id', this.userId);
+      await this.supabase.from('matchmaking_queue').delete().eq('user_id', this.userId);
       this.callbacks.onStatusChange?.('idle');
     } catch (err) {
       console.warn('[RankedController] Error cancelling matchmaking queue:', err);
@@ -199,7 +231,7 @@ export class RankedMatchController {
     this.callbacks.onStatusChange?.('loading_questions', 'Zero-knowledge verification in corso...');
 
     // 1. Fetch match row to identify role and opponent ID
-    const { data: matchData, error: matchError } = await supabase
+    const { data: matchData, error: matchError } = await this.supabase
       .from('matches')
       .select('p1_id, p2_id, status')
       .eq('id', matchId)
@@ -214,7 +246,7 @@ export class RankedMatchController {
 
     // 2. Fetch opponent public profile
     if (this.opponentId) {
-      const { data: profile } = await supabase
+      const { data: profile } = await this.supabase
         .from('profiles')
         .select('id, nick, elo, rank')
         .eq('id', this.opponentId)
@@ -231,8 +263,8 @@ export class RankedMatchController {
       }
     }
 
-    // 3. Fetch questions (Server guarantees correct_index is NEVER exposed)
-    const { data: questionsData, error: questionsError } = await supabase.rpc(
+    // 3. Fetch questions (Zero-knowledge: correct_index is never exposed)
+    const { data: questionsData, error: questionsError } = await this.supabase.rpc(
       'get_match_questions',
       { p_match_id: matchId }
     );
@@ -275,7 +307,7 @@ export class RankedMatchController {
       throw new Error('Nessun match attivo.');
     }
 
-    const { data, error } = await supabase.rpc('submit_answer', {
+    const { data, error } = await this.supabase.rpc('submit_answer', {
       p_match_id: this.matchId,
       p_question_id: questionId,
       p_answer_index: answerIndex,
@@ -304,7 +336,6 @@ export class RankedMatchController {
    * Broadcasts cosmetic feedback (score, streak, question progress) to opponent.
    */
   public broadcastCosmeticProgress(payload: CosmeticFeedbackPayload): void {
-    // Attempt WebRTC DataChannel first
     if (this.dataConn && this.dataConn.open) {
       try {
         this.dataConn.send({
@@ -317,7 +348,6 @@ export class RankedMatchController {
       }
     }
 
-    // Fallback to Supabase Realtime channel
     if (this.realtimeChannel) {
       this.realtimeChannel.send({
         type: 'broadcast',
@@ -335,7 +365,7 @@ export class RankedMatchController {
       throw new Error('Nessun match attivo da finalizzare.');
     }
 
-    const { data, error } = await supabase.rpc('finalize_match', {
+    const { data, error } = await this.supabase.rpc('finalize_match', {
       p_match_id: this.matchId,
     });
 
@@ -374,14 +404,60 @@ export class RankedMatchController {
   }
 
   /**
-   * Submits a forfeit when an operator surrenders.
+   * Finalizes an abandoned match on Postgres when opponent is inactive on timeout.
+   */
+  public async finalizeAbandonedMatch(): Promise<RankedMatchResult> {
+    if (!this.matchId) {
+      throw new Error('Nessun match attivo.');
+    }
+
+    const { data, error } = await this.supabase.rpc('finalize_abandoned_match', {
+      p_match_id: this.matchId,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    const res = data as {
+      status: 'completed' | 'already_completed';
+      winner_id: string | null;
+      p1_score: number;
+      p2_score: number;
+      p1_delta: number;
+      p2_delta: number;
+    };
+
+    const isWin = res.winner_id === this.userId;
+    const isTie = res.winner_id === null;
+    const userScore = this.isP1 ? res.p1_score : res.p2_score;
+    const opponentScore = this.isP1 ? res.p2_score : res.p1_score;
+    const eloDelta = this.isP1 ? res.p1_delta : res.p2_delta;
+
+    this.callbacks.onStatusChange?.('completed');
+
+    return {
+      status: res.status,
+      winnerId: res.winner_id,
+      userScore,
+      opponentScore,
+      eloDelta,
+      isWin,
+      isTie,
+      p1Delta: res.p1_delta,
+      p2Delta: res.p2_delta,
+    };
+  }
+
+  /**
+   * Strictly auto-forfeits the match (caller is always the loser, -25 ELO).
    */
   public async forfeitMatch(): Promise<{ status: string; winnerId: string | null }> {
     if (!this.matchId) {
       return { status: 'no_match', winnerId: null };
     }
 
-    const { data, error } = await supabase.rpc('forfeit_match', {
+    const { data, error } = await this.supabase.rpc('forfeit_match', {
       p_match_id: this.matchId,
     });
 
@@ -400,39 +476,40 @@ export class RankedMatchController {
   private async setupCosmeticChannel(matchId: string): Promise<void> {
     // 1. Supabase Realtime fallback channel
     try {
-      this.realtimeChannel = supabase.channel(`ranked_match_${matchId}`, {
+      this.realtimeChannel = this.supabase.channel(`ranked_match_${matchId}`, {
         config: { broadcast: { self: false } },
       });
 
-      this.realtimeChannel.on('broadcast', { event: 'COSMETIC_FEEDBACK' }, (payload) => {
-        if (payload?.payload) {
-          this.callbacks.onOpponentFeedback?.(payload.payload as CosmeticFeedbackPayload);
+      this.realtimeChannel.on('broadcast', { event: 'COSMETIC_FEEDBACK' }, (rawEvent) => {
+        const eventObj = rawEvent as unknown as { payload?: unknown };
+        if (eventObj && typeof eventObj === 'object' && eventObj.payload && typeof eventObj.payload === 'object') {
+          this.callbacks.onOpponentFeedback?.(eventObj.payload as CosmeticFeedbackPayload);
         }
       });
 
       await this.realtimeChannel.subscribe();
     } catch (rtErr) {
-      console.warn('[RankedController] Realtime fallback subscribe warning:', rtErr);
+      console.warn('[RankedController] Realtime fallback subscribe notice:', rtErr);
     }
 
-    // 2. Fetch authoritative ICE servers (STUN first, then TURN)
+    // 2. Authoritative ICE servers & Peer instantiation
     const iceServers = await getAuthoritativeIceServers();
     const peerOptions = getPeerOptions(iceServers);
+    const peerFactory = this.deps.peerFactory || defaultPeerFactory;
 
-    // Deterministic Peer IDs for the pair:
-    // P1 hosts peer ID: zeroday-pvp-v2-ranked-<matchId>-p1
-    // P2 connects to P1
-    const p1PeerId = `${PEER_PREFIX}ranked-${matchId.replace(/-/g, '').slice(0, 16)}-p1`;
-    const p2PeerId = `${PEER_PREFIX}ranked-${matchId.replace(/-/g, '').slice(0, 16)}-p2`;
+    if (!this.userId || !this.opponentId) return;
+
+    const p1PeerId = await computeRankedPeerId(matchId, this.isP1 ? this.userId : this.opponentId);
+    const p2PeerId = await computeRankedPeerId(matchId, this.isP1 ? this.opponentId : this.userId);
 
     try {
       if (this.isP1) {
-        this.peer = new Peer(p1PeerId, peerOptions);
-        this.peer.on('connection', (conn) => {
+        this.peer = peerFactory(p1PeerId, peerOptions);
+        this.peer.on('connection', (conn: DataConnection) => {
           this.bindDataConnection(conn);
         });
       } else {
-        this.peer = new Peer(p2PeerId, peerOptions);
+        this.peer = peerFactory(p2PeerId, peerOptions);
         this.peer.on('open', () => {
           if (this.isDestroyed || !this.peer) return;
           const conn = this.peer.connect(p1PeerId, { reliable: true });
@@ -440,14 +517,14 @@ export class RankedMatchController {
         });
       }
 
-      this.peer.on('error', (err) => {
-        console.warn('[RankedController] WebRTC cosmetic signaling notice:', err.message);
+      this.peer.on('error', (err: { message?: string }) => {
+        console.warn('[RankedController] WebRTC cosmetic signaling notice:', err.message || err);
       });
     } catch (e) {
       console.warn('[RankedController] WebRTC init skipped, relying on Realtime:', e);
     }
 
-    // 3. Heartbeat & Disconnection Watchdog (2s interval, 8s timeout, 10s reconnect window)
+    // 3. Heartbeat watchdog (2s interval, 8s timeout, 10s reconnect window)
     this.lastOpponentHeartbeatAt = Date.now();
     this.heartbeatInterval = setInterval(() => {
       this.runHeartbeatCycle();
@@ -470,7 +547,7 @@ export class RankedMatchController {
     });
 
     conn.on('data', (raw: unknown) => {
-      const msg = raw as { type: string; payload?: unknown };
+      const msg = raw as { type?: string; payload?: unknown };
       if (!msg || typeof msg !== 'object') return;
 
       if (msg.type === 'PING') {
@@ -486,7 +563,9 @@ export class RankedMatchController {
         }
       } else if (msg.type === 'COSMETIC_FEEDBACK') {
         this.lastOpponentHeartbeatAt = Date.now();
-        this.callbacks.onOpponentFeedback?.(msg.payload as CosmeticFeedbackPayload);
+        if (msg.payload && typeof msg.payload === 'object') {
+          this.callbacks.onOpponentFeedback?.(msg.payload as CosmeticFeedbackPayload);
+        }
       }
     });
 
@@ -494,8 +573,8 @@ export class RankedMatchController {
       this.handleConnectionDrop();
     });
 
-    conn.on('error', (err) => {
-      console.warn('[RankedController] DataConnection error:', err);
+    conn.on('error', (err: unknown) => {
+      console.warn('[RankedController] DataConnection notice:', err);
       this.handleConnectionDrop();
     });
   }
@@ -508,12 +587,10 @@ export class RankedMatchController {
     }
 
     const elapsed = Date.now() - this.lastOpponentHeartbeatAt;
-    // 8s timeout trigger
     if (elapsed > 8000 && !this.isOpponentLagging) {
       this.isOpponentLagging = true;
       this.callbacks.onOpponentLagging?.(true);
 
-      // Reconnection window: 10 seconds before forfeit notice
       if (!this.disconnectGraceTimeout) {
         this.disconnectGraceTimeout = setTimeout(() => {
           if (this.isOpponentLagging && !this.isDestroyed) {

@@ -7,7 +7,7 @@
 
 BEGIN;
 
-SELECT plan(28);
+SELECT plan(37);
 
 -- ---------------------------------------------------------------------
 -- FIXTURE SETUP
@@ -447,5 +447,161 @@ SELECT throws_ok(
 
 RESET ROLE;
 
+-- =====================================================================
+-- TEST 29: ATOMIC RATE LIMIT FUNCTION (CHECK_AND_INCREMENT_RATE_LIMIT)
+-- =====================================================================
+
+-- 2 requests allowed, 3rd blocked
+SELECT is(
+    public.check_and_increment_rate_limit('11111111-1111-1111-1111-111111111111'::UUID, 'test_action'::TEXT, 2, 60),
+    true,
+    'check_and_increment_rate_limit allows 1st request within quota'
+);
+
+SELECT is(
+    (SELECT public.check_and_increment_rate_limit('11111111-1111-1111-1111-111111111111'::UUID, 'test_action'::TEXT, 2, 60)),
+    true,
+    'check_and_increment_rate_limit allows 2nd request within quota'
+);
+
+-- Note: The two above consumed quota (2 of 2). Next call must be blocked (false).
+SELECT is(
+    public.check_and_increment_rate_limit('11111111-1111-1111-1111-111111111111'::UUID, 'test_action'::TEXT, 2, 60),
+    false,
+    'check_and_increment_rate_limit blocks 3rd request when quota exceeded (2/2)'
+);
+
+-- =====================================================================
+-- TEST 30 & 31: STRICT AUTO-FORFEIT & MATCHMAKING COOLDOWN
+-- =====================================================================
+
+-- Reset ELOs and create match for forfeit test
+UPDATE public.profiles SET elo = 1000, rank = 'Bronze Recruit', matchmaking_cooldown_until = NULL WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222');
+
+INSERT INTO public.matches (id, p1_id, p2_id, question_ids, question_started_at, status)
+VALUES (
+    'd0000000-0000-0000-0000-000000000001',
+    '11111111-1111-1111-1111-111111111111',
+    '22222222-2222-2222-2222-222222222222',
+    '["a0000000-0000-0000-0000-000000000001"]'::jsonb,
+    pg_catalog.clock_timestamp(),
+    'active'
+);
+
+SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+SET request.jwt.claim.role = 'authenticated';
+SET ROLE authenticated;
+
+-- Test 30: Calling forfeit_match forfeits for the caller (-25 ELO for caller, +18 ELO for opponent)
+SELECT is(
+    (public.forfeit_match('d0000000-0000-0000-0000-000000000001')->>'winner_id')::text,
+    '22222222-2222-2222-2222-222222222222',
+    'forfeit_match strictly enforces caller as loser and opponent as winner'
+);
+
+RESET ROLE;
+
+-- Verify caller lost 25 ELO (1000 -> 975)
+SELECT is(
+    (SELECT elo FROM public.profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
+    975,
+    'Caller received exact -25 ELO forfeit penalty'
+);
+
+-- Test 31: Second forfeit within 1h triggers matchmaking cooldown
+INSERT INTO public.matches (id, p1_id, p2_id, question_ids, question_started_at, status)
+VALUES (
+    'd0000000-0000-0000-0000-000000000002',
+    '11111111-1111-1111-1111-111111111111',
+    '22222222-2222-2222-2222-222222222222',
+    '["a0000000-0000-0000-0000-000000000001"]'::jsonb,
+    pg_catalog.clock_timestamp(),
+    'active'
+);
+
+SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+SET request.jwt.claim.role = 'authenticated';
+SET ROLE authenticated;
+
+SELECT is(
+    (public.forfeit_match('d0000000-0000-0000-0000-000000000002')->>'cooldown_active')::boolean,
+    true,
+    'Second forfeit within 1h activates matchmaking cooldown'
+);
+
+-- Test 32: find_or_create_match blocks caller when cooldown is active
+SELECT throws_ok(
+    'SELECT public.find_or_create_match();',
+    'P0001',
+    NULL,
+    'find_or_create_match throws exception when operator has active matchmaking cooldown'
+);
+
+RESET ROLE;
+
+-- =====================================================================
+-- TEST 33: FINALIZE_ABANDONED_MATCH (INACTIVITY TIMEOUT)
+-- =====================================================================
+
+INSERT INTO public.matches (id, p1_id, p2_id, question_ids, question_started_at, status)
+VALUES (
+    'd0000000-0000-0000-0000-000000000003',
+    '55555555-5555-5555-5555-555555555555',
+    '66666666-6666-6666-6666-666666666666',
+    '["a0000000-0000-0000-0000-000000000001"]'::jsonb,
+    pg_catalog.clock_timestamp() - INTERVAL '25 seconds', -- Inactive > 18s
+    'active'
+);
+
+-- Charlie submitted answer, Delta is inactive
+INSERT INTO public.match_answers (match_id, user_id, question_id, answer_index, is_correct, response_time_ms, server_ts)
+VALUES ('d0000000-0000-0000-0000-000000000003', '55555555-5555-5555-5555-555555555555', 'a0000000-0000-0000-0000-000000000001', 0, true, 3000, pg_catalog.clock_timestamp() - INTERVAL '24 seconds');
+
+SET request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
+SET request.jwt.claim.role = 'authenticated';
+SET ROLE authenticated;
+
+SELECT is(
+    (public.finalize_abandoned_match('d0000000-0000-0000-0000-000000000003')->>'winner_id')::text,
+    '55555555-5555-5555-5555-555555555555',
+    'finalize_abandoned_match finalizes match on inactivity timeout awarding active participant'
+);
+
+RESET ROLE;
+
+-- =====================================================================
+-- TEST 34: ANOMALY SOFT-FLAG DETECTION
+-- =====================================================================
+
+-- Charlie has 1 completed match from above. Add 2 more perfect ultra-fast matches
+INSERT INTO public.matches (id, p1_id, p2_id, question_ids, status, created_at, ended_at)
+VALUES 
+    ('e0000000-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555', '66666666-6666-6666-6666-666666666666', '["a0000000-0000-0000-0000-000000000001"]'::jsonb, 'completed', pg_catalog.now() - INTERVAL '10 minutes', pg_catalog.now() - INTERVAL '9 minutes'),
+    ('e0000000-0000-0000-0000-000000000002', '55555555-5555-5555-5555-555555555555', '66666666-6666-6666-6666-666666666666', '["a0000000-0000-0000-0000-000000000001"]'::jsonb, 'completed', pg_catalog.now() - INTERVAL '5 minutes', pg_catalog.now() - INTERVAL '4 minutes');
+
+-- Populate 5 correct answers with 400ms reaction time for each match
+INSERT INTO public.match_answers (match_id, user_id, question_id, answer_index, is_correct, response_time_ms)
+SELECT 'e0000000-0000-0000-0000-000000000001', '55555555-5555-5555-5555-555555555555', id, 0, true, 400
+FROM public.questions LIMIT 5;
+
+INSERT INTO public.match_answers (match_id, user_id, question_id, answer_index, is_correct, response_time_ms)
+SELECT 'e0000000-0000-0000-0000-000000000002', '55555555-5555-5555-5555-555555555555', id, 0, true, 420
+FROM public.questions LIMIT 5;
+
+-- Ensure match 3 has 5 answers
+INSERT INTO public.match_answers (match_id, user_id, question_id, answer_index, is_correct, response_time_ms)
+SELECT 'd0000000-0000-0000-0000-000000000003', '55555555-5555-5555-5555-555555555555', id, 0, true, 450
+FROM public.questions WHERE id != 'a0000000-0000-0000-0000-000000000001' LIMIT 4;
+
+-- Trigger anomaly checker
+SELECT public.check_operator_anomalies('55555555-5555-5555-5555-555555555555');
+
+SELECT is(
+    (SELECT flagged FROM public.profiles WHERE id = '55555555-5555-5555-5555-555555555555'),
+    true,
+    'check_operator_anomalies sets flagged = true on 100% accuracy and avg time < 650ms over 3 matches'
+);
+
 SELECT * FROM finish();
 ROLLBACK;
+

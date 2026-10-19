@@ -1,0 +1,13 @@
+# Caddy configuration for ZeroDay PeerServer signaling daemon
+# Automatic Let's Encrypt TLS termination & WSS upgrade
+
+peer.zeroday.gg {
+    encode gzip zstd
+
+    reverse_proxy localhost:9000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
