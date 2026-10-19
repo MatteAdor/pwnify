@@ -16,6 +16,10 @@ dist-ssr
 .env.*.local
 *.env
 database/
+supabase/seed.sql
+supabase/seed*.sql
+supabase/questions_bank.json
+supabase/*.json
 
 # Editor directories and files
 .vscode/*
