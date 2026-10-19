@@ -169,8 +169,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <li>
                     <strong>{isEn ? 'Billing Data:' : 'Dati di fatturazione:'}</strong>{' '}
                     {isEn
-                      ? 'Securely tokenized through PCI-DSS certified payment processors (Stripe). No credit card numbers are stored on our servers.'
-                      : 'Gestiti in modo tokenizzato e sicuro tramite gateway certificato PCI-DSS (Stripe). Nessun estremo di carta di credito viene mai memorizzato sui nostri server.'}
+                      ? 'Securely tokenized through PCI-DSS certified payment processors (Lemon Squeezy). No credit card numbers are stored on our servers.'
+                      : 'Gestiti in modo tokenizzato e sicuro tramite gateway certificato PCI-DSS (Lemon Squeezy). Nessun estremo di carta di credito viene mai memorizzato sui nostri server.'}
                   </li>
                 </ul>
               </section>

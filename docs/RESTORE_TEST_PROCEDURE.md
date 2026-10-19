@@ -1,24 +1,34 @@
 # ZeroDay — Database Backup & Restore Verification Procedure
 
-> **OBJECTIVE**: Verify the integrity of production database backups (`zeroday_prod_*.dump.enc`) by performing a simulated restore into an isolated Staging database environment. Never restore untested dumps directly to Production.
+> [!IMPORTANT]
+> **Production Requirement: Supabase Pro Tier ($25/month)**
+> ZeroDay in production mandates the Supabase Pro plan:
+> 1. **Zero Auto-Pause**: Free tier projects pause automatically after 7 days of inactivity, dropping production traffic. Pro keeps services permanently active.
+> 2. **Native Daily Backups & PITR**: Provides automated 7-day point-in-time recovery at the storage/WAL level alongside our offsite encrypted `pg_dump` automation.
+> 3. **Higher Egress & Connection Limits**: Essential for concurrent 1v1 matchmaking and WebSocket/Realtime traffic.
 
 ---
 
 ## Prerequisites
-- A recent encrypted backup from the [Database Automated Backup](https://github.com/MatteAdor/zeroday_app/actions/workflows/db-backup.yml) GitHub Action run.
-- `BACKUP_ENCRYPTION_KEY` from password vault / GitHub Secrets.
 - PostgreSQL Client (`pg_restore`, `psql`) v15+.
+- AWS CLI configured with read access to the offsite encrypted backup bucket.
+- `BACKUP_ENCRYPTION_KEY` from password vault.
 - Supabase Staging Database Connection String (`SUPABASE_STAGING_DB_URL`).
 
 ---
 
 ## Step 1: Download & Decrypt Backup
 
-1. Download the `database-backup-encrypted.zip` artifact from GitHub Actions and extract `zeroday_prod_<timestamp>.dump.enc`.
-2. Decrypt using OpenSSL with PBKDF2:
+1. Download the latest encrypted backup from your private object storage (Cloudflare R2 / AWS S3):
    ```bash
-   openssl enc -d -aes-256-cbc -pbkdf2 \
-     -in "zeroday_prod_<timestamp>.dump.enc" \
+   aws s3 cp "s3://${BACKUP_BUCKET_NAME}/backups/<backup_filename>.dump.enc" \
+     ./prod_backup.dump.enc \
+     --endpoint-url "${BACKUP_S3_ENDPOINT}"
+   ```
+2. Decrypt using OpenSSL with PBKDF2 (600,000 iterations):
+   ```bash
+   openssl enc -d -aes-256-cbc -salt -pbkdf2 -iter 600000 \
+     -in "./prod_backup.dump.enc" \
      -out "staging_restore.dump" \
      -pass "pass:${BACKUP_ENCRYPTION_KEY}"
    ```

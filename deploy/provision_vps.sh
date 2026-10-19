@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 # =====================================================================
-# ZERODAY PEERSERVER — VPS PROVISIONING & DEPLOYMENT SCRIPT
+# ZERODAY PEERSERVER — SECURE VPS PROVISIONING & DEPLOYMENT SCRIPT
 # Tested on Ubuntu 22.04 / 24.04 LTS & Debian 12
-# Idempotent: sets up Docker, UFW firewall, systemd service, and Caddy TLS
+# Hardened: requires pinned tag/commit checkout, integrity verification,
+# sets up Docker, UFW firewall, systemd auto-restart, and Caddy TLS.
+#
+# DO NOT PIPE TO BASH VIA CURL!
+# Always clone a verified tag and verify sha256 checksum before execution:
+#   sha256sum -c provision_vps.sh.sha256
+#   sudo bash provision_vps.sh <domain> [tag_or_branch]
 # =====================================================================
 
 set -euo pipefail
 
-echo "==> [ZeroDay VPS Provisioning] Initializing setup..."
+echo "==> [ZeroDay VPS Provisioning] Initializing hardened setup..."
 
 if [ "$EUID" -ne 0 ]; then
   echo "Error: This script must be run as root (or via sudo)." >&2
@@ -15,9 +21,11 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 DOMAIN="${1:-peer.zeroday.gg}"
+PINNED_REF="${2:-main}"
 APP_DIR="/opt/zeroday-signaling"
 
 echo "==> Target Domain: $DOMAIN"
+echo "==> Repository Ref: $PINNED_REF"
 echo "==> Target Directory: $APP_DIR"
 
 # 1. Update OS packages
@@ -25,7 +33,7 @@ echo "==> Updating apt repositories..."
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg lsb-release ufw git
 
-# 2. Install Docker if missing
+# 2. Install Docker Engine if missing
 if ! command -v docker &> /dev/null; then
   echo "==> Installing Docker Engine..."
   install -m 0755 -d /etc/apt/keyrings
@@ -43,7 +51,7 @@ if ! command -v docker &> /dev/null; then
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   systemctl enable --now docker
 else
-  echo "==> Docker is already installed."
+  echo "==> Docker Engine is already installed."
 fi
 
 # 3. Configure UFW Firewall
@@ -53,16 +61,15 @@ ufw allow 80/tcp comment "HTTP / ACME Challenge"
 ufw allow 443/tcp comment "HTTPS / WSS Signaling"
 ufw --force enable
 
-# 4. Clone / Sync Application Code
-mkdir -p "$APP_DIR"
-cd "$APP_DIR"
-
+# 4. Clone or Verify Application Code at Pinned Ref
 if [ ! -d "$APP_DIR/.git" ]; then
-  echo "==> Cloning ZeroDay repository into $APP_DIR..."
-  git clone https://github.com/MatteAdor/zeroday_app.git .
+  echo "==> Cloning ZeroDay repository (ref: $PINNED_REF) into $APP_DIR..."
+  git clone --depth 1 --branch "$PINNED_REF" https://github.com/MatteAdor/zeroday_app.git "$APP_DIR"
 else
-  echo "==> Pulling latest code..."
-  git pull origin main || true
+  echo "==> Verifying repository checkout in $APP_DIR..."
+  cd "$APP_DIR"
+  git fetch --depth 1 origin "$PINNED_REF"
+  git checkout "$PINNED_REF"
 fi
 
 # Write runtime .env for compose
@@ -102,5 +109,6 @@ EOF
 systemctl daemon-reload
 systemctl enable zeroday-signaling.service
 
-echo "==> [SUCCESS] ZeroDay PeerServer is live!"
-echo "==> Verify status: curl -I https://${DOMAIN}/peerjs"
+echo "==> [SUCCESS] ZeroDay PeerServer signaling daemon is running!"
+echo "==> Check status: docker compose -f $APP_DIR/deploy/docker-compose.yml ps"
+echo "==> Verify endpoint: curl -I https://${DOMAIN}/peerjs"

@@ -53,7 +53,7 @@ jobs:
 
       - name: Secret Detection — Audit tracked repo files for GitHub token patterns
         run: |
-          echo "Scanning repository for token leaks (gho_, ghp_, ghs_)..."
+          echo "Scanning repository for token leaks (GitHub token prefixes)..."
           LEAKS=$(git grep -EI "gh[opsu]_[0-9a-zA-Z]{36}" || true)
           if [ -n "$LEAKS" ]; then
             echo "::error::Detected exposed GitHub token pattern in repository files:"

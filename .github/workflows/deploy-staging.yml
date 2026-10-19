@@ -43,10 +43,13 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Seed Questions to Staging (In-Memory Decryption)
+        if: env.QUESTION_BANK_KEY != '' && env.QUESTION_BANK_REMOTE_URL != ''
         run: |
           npm ci
           node scripts/seed_questions_remote.cjs
         env:
           QUESTION_BANK_KEY: ${{ secrets.QUESTION_BANK_KEY }}
+          QUESTION_BANK_REMOTE_URL: ${{ secrets.QUESTION_BANK_REMOTE_URL }}
+          QUESTION_BANK_AUTH_TOKEN: ${{ secrets.QUESTION_BANK_AUTH_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_STAGING_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
