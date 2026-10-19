@@ -1,0 +1,11 @@
+services:
+  peerjs:
+    image: peerjs/peerjs-server:latest
+    container_name: zeroday-peerjs
+    ports:
+      - "${PEER_PORT:-9000}:9000"
+    environment:
+      - PORT=9000
+      - PATH=${PEER_PATH:-/peerjs}
+      - KEY=${PEER_KEY:-zeroday-pvp}
+    restart: unless-stopped
