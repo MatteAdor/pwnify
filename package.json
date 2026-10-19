@@ -10,7 +10,9 @@
     "android:sync": "npx cap sync android",
     "android:open": "npx cap open android",
     "lint": "oxlint",
-    "test": "node --experimental-strip-types --test tests/ranked_system.test.ts",
+    "test": "node --experimental-strip-types --test tests/ranked_system.test.ts tests/cloudSync.test.ts",
+    "test:pgtap": "wsl -d kali-linux bash -c \"cd /mnt/c/Users/lenovo/Documents/zeroDay_app && npx supabase test db\"",
+    "seed:questions": "node --experimental-strip-types scripts/import_questions.ts supabase/questions_bank.json supabase/seed_questions.sql",
     "preview": "vite preview"
   },
   "dependencies": {
