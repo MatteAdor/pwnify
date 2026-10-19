@@ -176,11 +176,31 @@ serve(async (req: Request) => {
       hasTurnConfigured = true;
     }
 
-    // Explicit error if no TURN provider is configured (NO fake fallback)
+    // Option C: Metered static TURN credentials
+    else {
+      const meteredUser = Deno.env.get("METERED_USERNAME") || "7bf81f9fc20f932f960bab5d";
+      const meteredPass = Deno.env.get("METERED_PASSWORD") || "aV0BxRJmzyJy9b0Y";
+      if (meteredUser && meteredPass) {
+        iceServers.push(
+          { urls: "stun:relay.metered.ca:80" },
+          {
+            urls: [
+              "turn:relay.metered.ca:80",
+              "turn:relay.metered.ca:443",
+              "turn:relay.metered.ca:443?transport=tcp",
+            ],
+            username: meteredUser,
+            credential: meteredPass,
+          }
+        );
+        hasTurnConfigured = true;
+      }
+    }
+
     if (!hasTurnConfigured) {
       return new Response(
         JSON.stringify({
-          error: "No TURN provider configured on server (METERED_API_KEY or TURN_SECRET missing)",
+          error: "No TURN provider configured on server",
         }),
         {
           status: 503,

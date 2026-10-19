@@ -12,10 +12,18 @@ export interface TurnCredentialsResponse {
   userId?: string;
 }
 
-const DEFAULT_STUN_SERVERS: RTCIceServerConfig[] = [
+const DEFAULT_ICE_SERVERS: RTCIceServerConfig[] = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:relay.metered.ca:80' },
+  {
+    urls: [
+      'turn:relay.metered.ca:80',
+      'turn:relay.metered.ca:443',
+      'turn:relay.metered.ca:443?transport=tcp',
+    ],
+    username: '7bf81f9fc20f932f960bab5d',
+    credential: 'aV0BxRJmzyJy9b0Y',
+  },
 ];
 
 let cachedIceServers: RTCIceServerConfig[] | null = null;
@@ -33,7 +41,7 @@ export async function getAuthoritativeIceServers(): Promise<RTCIceServerConfig[]
   }
 
   if (!isSupabaseConfigured) {
-    return DEFAULT_STUN_SERVERS;
+    return DEFAULT_ICE_SERVERS;
   }
 
   try {
@@ -41,7 +49,7 @@ export async function getAuthoritativeIceServers(): Promise<RTCIceServerConfig[]
     const token = sessionData?.session?.access_token;
 
     if (sessionError || !token) {
-      return DEFAULT_STUN_SERVERS;
+      return DEFAULT_ICE_SERVERS;
     }
 
     const { data, error } = await supabase.functions.invoke<TurnCredentialsResponse>(
@@ -55,7 +63,7 @@ export async function getAuthoritativeIceServers(): Promise<RTCIceServerConfig[]
 
     if (error || !data || !Array.isArray(data.iceServers) || data.iceServers.length === 0) {
       console.warn('[TURN Service] Edge function returned empty or error, falling back to STUN:', error);
-      return DEFAULT_STUN_SERVERS;
+      return DEFAULT_ICE_SERVERS;
     }
 
     // Cache credentials (TTL - 5 minute buffer)
@@ -66,7 +74,7 @@ export async function getAuthoritativeIceServers(): Promise<RTCIceServerConfig[]
     return data.iceServers;
   } catch (err) {
     console.warn('[TURN Service] Exception while fetching TURN credentials:', err);
-    return DEFAULT_STUN_SERVERS;
+    return DEFAULT_ICE_SERVERS;
   }
 }
 
