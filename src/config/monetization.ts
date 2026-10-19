@@ -38,7 +38,7 @@ export const MONETIZATION_CONFIG: MonetizationConfig = {
   stripeAnnualUrl: annualUrl,
   stripeMonthlyUrl: monthlyUrl,
 
-  enableRealRedirect: (import.meta.env?.VITE_ENABLE_REAL_CHECKOUT_REDIRECT ?? import.meta.env?.VITE_ENABLE_REAL_STRIPE_REDIRECT) !== 'false',
+  enableRealRedirect: import.meta.env?.VITE_ENABLE_REAL_CHECKOUT_REDIRECT !== 'false',
 
   currency: PRICING_CONFIG.currencySymbol,
 
