@@ -28,6 +28,36 @@ public class DirectUpdatePlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private static final String ALLOWED_REPO_PATH = "MatteAdor/zeroday_app";
+
+    private boolean isUrlAllowed(URL url) {
+        if (url == null) return false;
+        String host = url.getHost() != null ? url.getHost().toLowerCase() : "";
+        String path = url.getPath() != null ? url.getPath() : "";
+
+        if (host.equals("zeroday.academy") || host.endsWith(".zeroday.academy") || host.equals("zeroday-app.vercel.app")) {
+            return path.startsWith("/downloads/");
+        }
+
+        if (host.equals("github.com")) {
+            return path.startsWith("/" + ALLOWED_REPO_PATH + "/releases/download/");
+        }
+
+        if (host.equals("raw.githubusercontent.com")) {
+            return path.startsWith("/" + ALLOWED_REPO_PATH + "/");
+        }
+
+        if (host.equals("objects.githubusercontent.com")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isValidSha256(String hash) {
+        return hash != null && hash.trim().matches("^[a-fA-F0-9]{64}$");
+    }
+
     @PluginMethod
     public void getDistributionFlavor(PluginCall call) {
         JSObject ret = new JSObject();
@@ -70,6 +100,27 @@ public class DirectUpdatePlugin extends Plugin {
 
         if (urlString == null || urlString.isEmpty()) {
             call.reject("URL parameter is required.");
+            return;
+        }
+
+        if (!urlString.toLowerCase().startsWith("https://")) {
+            call.reject("Insecure download URL: only HTTPS is permitted.");
+            return;
+        }
+
+        if (!isValidSha256(expectedSha256)) {
+            call.reject("Refusing to install APK: valid 64-character SHA-256 integrity hash is required.");
+            return;
+        }
+
+        try {
+            URL url = new URL(urlString);
+            if (!isUrlAllowed(url)) {
+                call.reject("Forbidden download URL: " + urlString + " is not in the allowed repository/domain path list.");
+                return;
+            }
+        } catch (Exception e) {
+            call.reject("Invalid download URL: " + e.getMessage());
             return;
         }
 
@@ -135,12 +186,10 @@ public class DirectUpdatePlugin extends Plugin {
                 }
                 String actualSha256 = sb.toString();
 
-                if (expectedSha256 != null && !expectedSha256.trim().isEmpty()) {
-                    if (!actualSha256.equalsIgnoreCase(expectedSha256.trim())) {
-                        outputFile.delete();
-                        call.reject("Integrità compromessa: SHA-256 non corrisponde. Atteso: " + expectedSha256 + ", Calcolato: " + actualSha256);
-                        return;
-                    }
+                if (!actualSha256.equalsIgnoreCase(expectedSha256.trim())) {
+                    outputFile.delete();
+                    call.reject("Integrity check failed: SHA-256 mismatch. Expected: " + expectedSha256 + ", Calculated: " + actualSha256);
+                    return;
                 }
 
                 // Launch package installer
@@ -169,8 +218,8 @@ public class DirectUpdatePlugin extends Plugin {
                 try {
                     if (output != null) output.close();
                     if (input != null) input.close();
+                    if (connection != null) connection.disconnect();
                 } catch (Exception ignored) {}
-                if (connection != null) connection.disconnect();
             }
         });
     }
@@ -180,8 +229,13 @@ public class DirectUpdatePlugin extends Plugin {
         String filePath = call.getString("filePath");
         String expectedSha256 = call.getString("expectedSha256");
 
-        if (filePath == null) {
-            call.reject("filePath is required");
+        if (filePath == null || filePath.isEmpty()) {
+            call.reject("filePath parameter is required.");
+            return;
+        }
+
+        if (!isValidSha256(expectedSha256)) {
+            call.reject("Refusing to install APK: valid 64-character SHA-256 integrity hash is required.");
             return;
         }
 
@@ -191,26 +245,23 @@ public class DirectUpdatePlugin extends Plugin {
             return;
         }
 
-        try {
-            if (expectedSha256 != null && !expectedSha256.trim().isEmpty()) {
-                MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                try (FileInputStream fis = new FileInputStream(apkFile)) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = fis.read(buffer)) != -1) {
-                        digest.update(buffer, 0, read);
-                    }
-                }
-                byte[] hashBytes = digest.digest();
-                StringBuilder sb = new StringBuilder();
-                for (byte b : hashBytes) {
-                    sb.append(String.format("%02x", b));
-                }
-                String actualSha256 = sb.toString();
-                if (!actualSha256.equalsIgnoreCase(expectedSha256.trim())) {
-                    call.reject("SHA-256 verification failed: " + actualSha256);
-                    return;
-                }
+        try (FileInputStream fis = new FileInputStream(apkFile)) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = fis.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] hashBytes = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            String actualSha256 = sb.toString();
+
+            if (!actualSha256.equalsIgnoreCase(expectedSha256.trim())) {
+                call.reject("Integrity check failed: local APK SHA-256 mismatch. Expected: " + expectedSha256 + ", Calculated: " + actualSha256);
+                return;
             }
 
             Context context = getContext();
@@ -226,11 +277,11 @@ public class DirectUpdatePlugin extends Plugin {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
 
-            JSObject res = new JSObject();
-            res.put("success", true);
-            call.resolve(res);
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
         } catch (Exception e) {
-            call.reject("Failed to trigger installer: " + e.getMessage());
+            call.reject("Failed to verify or install local APK: " + e.getMessage());
         }
     }
 }

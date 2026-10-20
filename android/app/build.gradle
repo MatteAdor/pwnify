@@ -32,12 +32,40 @@ android {
     }
     signingConfigs {
         release {
-            def keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
-            if (keystorePath && file(keystorePath).exists()) {
-                storeFile file(keystorePath)
-                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
-                keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: ""
-                keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
+            if (ksPath) {
+                def ksFile = file(ksPath).isAbsolute() ? file(ksPath) : rootProject.file(ksPath)
+                if (ksFile.exists()) {
+                    storeFile ksFile
+                    storePassword (project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD") ?: "")
+                    keyAlias (project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS") ?: "")
+                    keyPassword (project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD") ?: "")
+                }
+            }
+        }
+    }
+
+    gradle.taskGraph.whenReady { taskGraph ->
+        def isReleaseTask = taskGraph.allTasks.any { task ->
+            def n = task.name.toLowerCase()
+            return n.contains("releasedirect") || n.contains("releaseplay") || 
+                   n.contains("assembleplayrelease") || n.contains("assembledirectrelease") || 
+                   n.contains("bundleplayrelease") || n.contains("bundledirectrelease")
+        }
+        if (isReleaseTask) {
+            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
+            def ksPass = project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD")
+            def kAlias = project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS")
+            def kPass = project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD")
+
+            if (!ksPath || !ksPass || !kAlias || !kPass) {
+                throw new GradleException("BUILD FAILED: Missing required release signing credentials.\n" +
+                    "Configure ZERODAY_KEYSTORE_PATH, ZERODAY_KEYSTORE_PASSWORD, ZERODAY_KEY_ALIAS, ZERODAY_KEY_PASSWORD\n" +
+                    "in %USERPROFILE%/.gradle/gradle.properties (or ~/.gradle/gradle.properties) or as environment variables.")
+            }
+            def ksFile = file(ksPath).isAbsolute() ? file(ksPath) : rootProject.file(ksPath)
+            if (!ksFile.exists()) {
+                throw new GradleException("BUILD FAILED: Keystore file does not exist at: ${ksFile.absolutePath}")
             }
         }
     }
