@@ -116,36 +116,59 @@ serve(async (req: Request) => {
     ];
 
     const TTL_SECONDS = 3600;
-    const meteredApiKey = Deno.env.get("METERED_API_KEY");
+    const meteredSecretKey = Deno.env.get("METERED_SECRET_KEY");
     const meteredAppName = Deno.env.get("METERED_APP_NAME");
     const turnSecret = Deno.env.get("TURN_SECRET");
     const turnUrls = Deno.env.get("TURN_URLS");
 
     let hasTurnConfigured = false;
 
-    // Option A: Metered TURN API with expiring credentials
-    if (meteredApiKey && meteredAppName) {
+    // Option A: Metered TURN API with temporary expiring credentials (POST /api/v1/turn/credential)
+    if (meteredSecretKey && meteredAppName) {
       try {
         const resp = await fetch(
-          `https://${meteredAppName}.metered.ca/api/v1/turn/credentials?apiKey=${meteredApiKey}`
+          `https://${meteredAppName}.metered.live/api/v1/turn/credential?secretKey=${meteredSecretKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              expiryInSeconds: TTL_SECONDS,
+              label: `zeroday_${user.id.slice(0, 8)}`,
+            }),
+          }
         );
+
         if (resp.ok) {
-          const meteredServers = await resp.json();
-          if (Array.isArray(meteredServers)) {
-            for (const s of meteredServers) {
-              if (s.urls && (s.urls.includes("turn:") || s.urls.includes("turns:"))) {
-                iceServers.push(s);
-                hasTurnConfigured = true;
+          const cred = await resp.json();
+          if (cred && cred.username && cred.password) {
+            iceServers.push(
+              { urls: `stun:${meteredAppName}.metered.live:80` },
+              { urls: 'stun:stun.relay.metered.ca:80' },
+              {
+                urls: [
+                  `turn:${meteredAppName}.metered.live:80`,
+                  `turn:${meteredAppName}.metered.live:80?transport=tcp`,
+                  `turn:${meteredAppName}.metered.live:443`,
+                  `turn:${meteredAppName}.metered.live:443?transport=tcp`,
+                ],
+                username: cred.username,
+                credential: cred.password,
               }
-            }
+            );
+            hasTurnConfigured = true;
           }
         } else {
-          console.error("[TURN] Metered API error status:", resp.status);
+          // Never log apiKey or query params
+          console.error('[TURN] Metered credential creation failed with HTTP status:', resp.status);
         }
-      } catch (mErr) {
-        console.error("[TURN] Error fetching Metered credentials:", mErr);
+      } catch {
+        // Safe catch: zero leak of secretKey or URL in log stream
+        console.error('[TURN] Network error while requesting Metered temporary credential');
       }
     }
+
     // Option B: Standard RFC 5766 HMAC-SHA1 Ephemeral TURN (coturn / Cloudflare)
     else if (turnSecret && turnUrls) {
       const expiry = Math.floor(Date.now() / 1000) + TTL_SECONDS;
@@ -176,10 +199,10 @@ serve(async (req: Request) => {
       hasTurnConfigured = true;
     }
 
-    // Option C: Metered static TURN credentials
+    // Option C: Metered static TURN credentials (from secrets only)
     else {
-      const meteredUser = Deno.env.get("METERED_USERNAME") || "7bf81f9fc20f932f960bab5d";
-      const meteredPass = Deno.env.get("METERED_PASSWORD") || "aV0BxRJmzyJy9b0Y";
+      const meteredUser = Deno.env.get("METERED_USERNAME");
+      const meteredPass = Deno.env.get("METERED_PASSWORD");
       if (meteredUser && meteredPass) {
         iceServers.push(
           { urls: "stun:relay.metered.ca:80" },
@@ -200,7 +223,7 @@ serve(async (req: Request) => {
     if (!hasTurnConfigured) {
       return new Response(
         JSON.stringify({
-          error: "No TURN provider configured on server",
+          error: "No TURN provider configured on server (METERED_SECRET_KEY missing)",
         }),
         {
           status: 503,
