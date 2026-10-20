@@ -19,6 +19,7 @@ export interface RemotePlatformConfig {
   store_url: string;
   apk_download_url?: string;
   apk_sha256?: string;
+  apk_hashes?: Record<string, string>; // mapping from versionCode to sha256
   rollout_percent: number;
   kill_switch: boolean;
   changelog?: Record<string, string[]>;
@@ -145,4 +146,85 @@ export function evaluateUpdateDisposition(
 export function formatVersionDisplay(versionName: string, versionCode: number | string): string {
   const cleanName = versionName.startsWith('v') ? versionName : `v${versionName}`;
   return `${cleanName} (build ${versionCode})`;
+}
+
+export const ALLOWED_APK_REPO = 'MatteAdor/zeroday_app';
+
+export function isValidSha256(hash?: string | null): boolean {
+  if (!hash) return false;
+  return /^[a-fA-F0-9]{64}$/.test(hash.trim());
+}
+
+export function isAllowedDownloadUrl(urlStr: string): boolean {
+  try {
+    if (!urlStr || typeof urlStr !== 'string') return false;
+    if (!urlStr.startsWith('https://')) return false;
+    const parsed = new URL(urlStr);
+    const host = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname;
+
+    // ZeroDay Academy official domains
+    if (host === 'zeroday.academy' || host.endsWith('.zeroday.academy')) {
+      return pathname.startsWith('/downloads/');
+    }
+    if (host === 'zeroday-app.vercel.app') {
+      return pathname.startsWith('/downloads/');
+    }
+
+    // GitHub official repository releases & raw assets (strictly restricted to owner/repo)
+    if (host === 'github.com') {
+      return pathname.startsWith(`/${ALLOWED_APK_REPO}/releases/download/`);
+    }
+    if (host === 'raw.githubusercontent.com') {
+      return pathname.startsWith(`/${ALLOWED_APK_REPO}/`);
+    }
+    if (host === 'objects.githubusercontent.com') {
+      // GitHub release asset CDN redirect host
+      return true;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export function resolveApkSha256(config: RemotePlatformConfig, targetBuildCode?: number): string | null {
+  const code = targetBuildCode ?? config.latest_version_code;
+  if (config.apk_hashes && config.apk_hashes[String(code)]) {
+    const hash = config.apk_hashes[String(code)];
+    if (isValidSha256(hash)) return hash.toLowerCase();
+  }
+  if (config.apk_sha256 && isValidSha256(config.apk_sha256)) {
+    return config.apk_sha256.toLowerCase();
+  }
+  return null;
+}
+
+
+
+export const DEFAULT_FALLBACK_APK_URL = 'https://zeroday.academy/#download';
+
+/**
+ * Resolves current APK download URL from remote config or cached configuration in storage,
+ * with fail-safe fallback to official website download section.
+ */
+export function resolveApkDownloadUrl(config?: RemotePlatformConfig | null): string {
+  if (config?.apk_download_url && config.apk_download_url.trim()) {
+    return config.apk_download_url.trim();
+  }
+
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('zeroday_remote_app_config_v1');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.config?.apk_download_url && typeof parsed.config.apk_download_url === 'string') {
+          return parsed.config.apk_download_url.trim();
+        }
+      }
+    }
+  } catch {}
+
+  return DEFAULT_FALLBACK_APK_URL;
 }

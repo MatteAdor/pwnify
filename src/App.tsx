@@ -19,7 +19,8 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
-import { isBrowserEnvironment, APK_DOWNLOAD_URL } from './utils/platform';
+import { isBrowserEnvironment, isPlayDistribution } from './utils/platform';
+import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
 import { FlexibleUpdateBanner } from './components/Update/FlexibleUpdateBanner';
@@ -207,27 +208,37 @@ export const App: React.FC = () => {
       const params = new URLSearchParams(window.location.search);
 
       // Check 1: Post-checkout return verification (Defends against URL paywall bypass)
-      const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
-      const incomingLicense = params.get('license');
+      // Play flavor policy: block external checkout return & external license bypass
+      if (!isPlayDistribution()) {
+        const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
+        const incomingLicense = params.get('license');
 
-      if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
-        const key = incomingLicense && verifyLicenseKey(incomingLicense) 
-          ? incomingLicense 
-          : generateLicenseKey(userState.username);
-        setUserState(prev => ({
-          ...prev,
-          isPro: true,
-          streakShieldActive: true,
-          readinessScore: 92,
-          licenseKey: key
-        }));
-        setVerifiedCheckoutLicense(key);
-        sound.playVictoryFanfare();
-        confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-        if (window.history) {
-          window.history.replaceState({}, '', window.location.pathname);
+        if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
+          const key = incomingLicense && verifyLicenseKey(incomingLicense) 
+            ? incomingLicense 
+            : generateLicenseKey(userState.username);
+          setUserState(prev => ({
+            ...prev,
+            isPro: true,
+            streakShieldActive: true,
+            readinessScore: 92,
+            licenseKey: key
+          }));
+          setVerifiedCheckoutLicense(key);
+          sound.playVictoryFanfare();
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+          if (window.history) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+          return;
         }
-        return;
+      } else {
+        // In Play distribution, strip checkout/license parameters from URL without processing
+        if (params.has('checkout') || params.has('license') || params.has('token')) {
+          if (window.history) {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }
       }
 
       // Check 2: Incoming Duel Challenge (Strict input sanitization)
@@ -706,7 +717,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 </span>
               </div>
               <a
-                href={APK_DOWNLOAD_URL}
+                href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
                 download="zeroday.apk"
                 onClick={() => sound.playVictoryFanfare()}
                 className="ml-3 shrink-0 px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors flex items-center gap-1.5 shadow-sm"
@@ -997,7 +1008,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           )}
 
           {/* Celebratory Post-Checkout License Key Modal */}
-          {verifiedCheckoutLicense && (
+          {verifiedCheckoutLicense && !isPlayDistribution() && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
               <div className="relative w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100 text-center space-y-4">
                 <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto" />

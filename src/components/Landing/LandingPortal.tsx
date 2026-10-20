@@ -30,10 +30,12 @@ interface LandingPortalProps {
   onOpenCookiePrefs?: () => void;
 }
 
-import { APK_SHA256, APK_SIZE, getCachedVersionInfo } from '../../utils/platform';
+import { APK_SIZE, getCachedVersionInfo, isPlayDistribution } from '../../utils/platform';
+import { updateManager } from '../../utils/updateManager';
+import { resolveApkDownloadUrl } from '../../utils/versionUtils';
 
 const APK_FILENAME = 'zeroday.apk';
-const APK_DOWNLOAD_URL = '/downloads/zeroday.apk';
+
 const APK_GITHUB_MIRROR = 'https://github.com/MatteAdor/zeroday_app/raw/main/releases/zeroday-app-debug.apk';
 
 
@@ -44,6 +46,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
 }) => {
   const { lang, setLanguage } = useLanguage();
   const isEn = lang === 'en';
+  const isPlay = isPlayDistribution();
+  const activeSha256 = updateManager.getState().apkSha256;
 
   const [copiedHash, setCopiedHash] = useState(false);
   const [selectedTerminalSnippet, setSelectedTerminalSnippet] = useState<number>(0);
@@ -51,9 +55,11 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
 
   const handleCopyHash = () => {
     sound.playTap();
-    navigator.clipboard.writeText(APK_SHA256);
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2500);
+    if (activeSha256) {
+      navigator.clipboard.writeText(activeSha256);
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2500);
+    }
   };
 
   const handleCheckoutRedirect = (url: string) => {
@@ -225,7 +231,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Primary: Direct APK Download */}
               <a
-                href={APK_DOWNLOAD_URL}
+                href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
                 download={APK_FILENAME}
                 onClick={() => sound.playTap()}
                 className="flex items-center justify-center gap-2.5 px-6 py-3.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all font-mono shadow-md"
@@ -432,14 +438,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   </button>
                 </div>
                 <div className="font-mono text-[10px] text-slate-400 break-all select-all">
-                  {APK_SHA256}
+                  {activeSha256 || (isEn ? 'SHA-256 verified on release' : 'SHA-256 verificato al rilascio')}
                 </div>
               </div>
 
               {/* Download Buttons */}
               <div className="space-y-2">
                 <a
-                  href={APK_DOWNLOAD_URL}
+                  href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
                   download={APK_FILENAME}
                   onClick={() => sound.playTap()}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs transition-colors"
@@ -755,19 +761,27 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <button
-                  onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeMonthlyUrl)}
-                  className="w-full py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold transition-colors shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span>{isEn ? 'Start 7-Day Free Trial (Monthly)' : 'Attiva 7 Giorni Gratis (Mensile)'}</span>
-                </button>
-                <button
-                  onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeAnnualUrl)}
-                  className="w-full py-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
-                >
-                  <span>{isEn ? 'Choose Annual (€69/yr · Save 42%)' : 'Scegli Annuale (€69/anno · Risparmi 42%)'}</span>
-                </button>
+                {isPlay ? (
+                  <div className="w-full py-3 px-3 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-xs text-center font-bold">
+                    {isEn ? 'Purchases not available in this version' : 'Acquisti non disponibili in questa versione'}
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeMonthlyUrl)}
+                      className="w-full py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-bold transition-colors shadow-md flex items-center justify-center gap-1.5"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-current" />
+                      <span>{isEn ? 'Start 7-Day Free Trial (Monthly)' : 'Attiva 7 Giorni Gratis (Mensile)'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.stripeAnnualUrl)}
+                      className="w-full py-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
+                    >
+                      <span>{isEn ? 'Choose Annual (€69/yr · Save 42%)' : 'Scegli Annuale (€69/anno · Risparmi 42%)'}</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -809,13 +823,19 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 </ul>
               </div>
 
-              <button
-                onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.starterPassUrl)}
-                className="w-full py-2.5 rounded bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-semibold border border-white/10 transition-colors flex items-center justify-center gap-1.5"
-              >
-                <span>{isEn ? 'Get 90-Day Pass (€19.99)' : 'Acquista Starter Pass (€19.99)'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {isPlay ? (
+                <div className="w-full py-2.5 px-3 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-xs text-center font-bold">
+                  {isEn ? 'Purchases not available in this version' : 'Acquisti non disponibili in questa versione'}
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleCheckoutRedirect(MONETIZATION_CONFIG.starterPassUrl)}
+                  className="w-full py-2.5 rounded bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-semibold border border-white/10 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <span>{isEn ? 'Get 90-Day Pass (€19.99)' : 'Acquista Starter Pass (€19.99)'}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
           </div>

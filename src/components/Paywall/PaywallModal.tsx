@@ -11,6 +11,13 @@ import confetti from 'canvas-confetti';
 import { verifyLicenseKey } from '../../utils/licenseEngine';
 import { isSafeRedirectUrl } from '../../utils/security';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
+import {
+  isPlayDistribution,
+  isFlavorResolving,
+  isFlavorTimedOut,
+  retryDistributionResolution,
+  subscribeDistributionFlavor
+} from '../../utils/platform';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -32,6 +39,23 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const [billingCycle, setBillingCycle] = useState<'annual' | 'monthly' | 'starterPass'>('annual');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [flavorState, setFlavorState] = useState(() => ({
+    isPlay: isPlayDistribution(),
+    resolving: isFlavorResolving(),
+    timedOut: isFlavorTimedOut(),
+  }));
+
+  React.useEffect(() => {
+    return subscribeDistributionFlavor(() => {
+      setFlavorState({
+        isPlay: isPlayDistribution(),
+        resolving: isFlavorResolving(),
+        timedOut: isFlavorTimedOut(),
+      });
+    });
+  }, []);
+
+  const { isPlay, resolving, timedOut } = flavorState;
 
   // License Key Mode
   const [isRestoreView, setIsRestoreView] = useState(false);
@@ -42,6 +66,10 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   // Restore License Handler with UX format check + server-authoritative Edge Function activation
   const handleVerifyAndRestore = async () => {
+    if (isPlay) {
+      setRestoreError('Riscatto licenza non disponibile in questa versione.');
+      return;
+    }
     sound.playTap();
     const cleanKey = restoreInput.trim().toUpperCase();
     if (!cleanKey) {
@@ -112,6 +140,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const handleExecuteCheckout = (planType: 'annual' | 'monthly' | 'starterPass') => {
     sound.playTap();
     setErrorMessage(null);
+
+    if (isPlay) {
+      setErrorMessage('Acquisti non disponibili in questa versione.');
+      return;
+    }
 
     const checkoutUrl = planType === 'annual' 
       ? MONETIZATION_CONFIG.stripeAnnualUrl 
@@ -441,24 +474,30 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
             )}
 
             {/* Primary Action Button */}
-            <button
-              onClick={() => handleExecuteCheckout(billingCycle)}
-              disabled={isProcessing}
-              className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
-            >
-              {isProcessing ? (
-                <span className="flex items-center gap-2 text-xs font-bold">
-                  <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
-                  <span>Connecting to Lemon Squeezy...</span>
-                </span>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 fill-current" />
-                  <span>START 7-DAY FREE TRIAL</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            {isPlay ? (
+              <div className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-center text-zinc-400 bg-zinc-900 border border-zinc-800">
+                Acquisti non disponibili in questa versione
+              </div>
+            ) : (
+              <button
+                onClick={() => handleExecuteCheckout(billingCycle)}
+                disabled={isProcessing}
+                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              >
+                {isProcessing ? (
+                  <span className="flex items-center gap-2 text-xs font-bold">
+                    <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Connecting to Lemon Squeezy...</span>
+                  </span>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>START 7-DAY FREE TRIAL</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Footer Options */}
             <div className="text-center space-y-2 pt-1">
@@ -472,18 +511,20 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 Continue with Free version
               </button>
 
-              <div className="pt-2 border-t border-zinc-800">
-                <button
-                  onClick={() => {
-                    sound.playTap();
-                    setIsRestoreView(true);
-                  }}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 font-mono flex items-center justify-center gap-1.5 mx-auto transition-colors cursor-pointer"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Already have a license? Enter activation key</span>
-                </button>
-              </div>
+              {!flavorState.isPlay && !flavorState.resolving && !flavorState.timedOut && (
+                <div className="pt-2 border-t border-zinc-800">
+                  <button
+                    onClick={() => {
+                      sound.playTap();
+                      setIsRestoreView(true);
+                    }}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-mono flex items-center justify-center gap-1.5 mx-auto transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Already have a license? Enter activation key</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

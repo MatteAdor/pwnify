@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
-import { APK_DOWNLOAD_URL, APK_SIZE, APK_SHA256, getCachedVersionInfo } from '../../utils/platform';
+import { APK_SIZE, getCachedVersionInfo } from '../../utils/platform';
+import { resolveApkDownloadUrl } from '../../utils/versionUtils';
+import { updateManager } from '../../utils/updateManager';
 
 interface ArenaWebLockedViewProps {
   onBackToSkillTree: () => void;
@@ -25,12 +27,15 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
   const { lang } = useLanguage();
   const isEn = lang === 'en';
   const [copiedHash, setCopiedHash] = useState(false);
+  const activeSha256 = updateManager.getState().apkSha256;
 
   const handleCopyHash = () => {
     sound.playTap();
-    navigator.clipboard.writeText(APK_SHA256);
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2500);
+    if (activeSha256) {
+      navigator.clipboard.writeText(activeSha256);
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2500);
+    }
   };
 
   return (
@@ -98,21 +103,23 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
         {/* SHA-256 Checksum Box */}
         <div className="bg-[#070B12] p-3 rounded-lg border border-zinc-800 text-[10px] font-mono flex items-center justify-between">
           <div className="truncate text-zinc-400 mr-2">
-            SHA-256: <span className="text-zinc-300">{APK_SHA256.slice(0, 16)}...{APK_SHA256.slice(-8)}</span>
+            SHA-256: <span className="text-zinc-300">{activeSha256 ? `${activeSha256.slice(0, 16)}...${activeSha256.slice(-8)}` : (isEn ? 'Verified on release' : 'Verificato al rilascio')}</span>
           </div>
-          <button
-            onClick={handleCopyHash}
-            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 font-bold"
-          >
-            {copiedHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            <span>{copiedHash ? 'COPIED' : 'COPY HASH'}</span>
-          </button>
+          {activeSha256 && (
+            <button
+              onClick={handleCopyHash}
+              className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 font-bold"
+            >
+              {copiedHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              <span>{copiedHash ? 'COPIED' : 'COPY HASH'}</span>
+            </button>
+          )}
         </div>
 
         {/* Primary Download CTA */}
         <div className="space-y-2 pt-2">
           <a
-            href={APK_DOWNLOAD_URL}
+            href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
             download="zeroday.apk"
             onClick={() => sound.playVictoryFanfare()}
             className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/10 cursor-pointer"

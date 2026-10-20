@@ -19,6 +19,10 @@ import {
 } from './platform.ts';
 import { 
   evaluateUpdateDisposition, 
+  resolveApkSha256,
+  resolveApkDownloadUrl,
+  isAllowedDownloadUrl,
+  isValidSha256,
   type RemotePlatformConfig, 
   type UpdateDisposition 
 } from './versionUtils.ts';
@@ -90,7 +94,7 @@ class UpdateManager {
       errorMessage: null,
       forceMessage: null,
       storeUrl: 'https://play.google.com/store/apps/details?id=com.zeroday.academy',
-      apkDownloadUrl: '/downloads/zeroday.apk',
+      apkDownloadUrl: resolveApkDownloadUrl(),
       apkSha256: '',
       changelog: null,
       isArenaDuelActive: false,
@@ -333,8 +337,8 @@ class UpdateManager {
         minSupportedVersion: config.min_supported_version,
         forceMessage: config.force_message,
         storeUrl: config.store_url,
-        apkDownloadUrl: config.apk_download_url || '/downloads/zeroday.apk',
-        apkSha256: config.apk_sha256 || '',
+        apkDownloadUrl: resolveApkDownloadUrl(config),
+        apkSha256: resolveApkSha256(config) || '',
         changelog: config.changelog || null,
       });
 
@@ -494,12 +498,22 @@ class UpdateManager {
     });
 
     try {
+      const targetUrl = this.state.apkDownloadUrl.startsWith('http')
+        ? this.state.apkDownloadUrl
+        : `${window.location.origin}${this.state.apkDownloadUrl}`;
+
+      if (!isAllowedDownloadUrl(targetUrl)) {
+        throw new Error('URL di download APK non autorizzato: consentito solo protocollo HTTPS su domini ufficiali in allowlist.');
+      }
+
+      if (!isValidSha256(this.state.apkSha256)) {
+        throw new Error('Impossibile procedere con l\'installazione: hash SHA-256 di integrità assente o non valido nella configurazione remota.');
+      }
+
       if (isNativeApp()) {
         const res = await DirectUpdate.downloadAndInstallApk({
-          url: this.state.apkDownloadUrl.startsWith('http') 
-            ? this.state.apkDownloadUrl 
-            : `${window.location.origin}${this.state.apkDownloadUrl}`,
-          expectedSha256: this.state.apkSha256 || undefined,
+          url: targetUrl,
+          expectedSha256: this.state.apkSha256,
         });
 
         if (res.success) {
@@ -509,7 +523,7 @@ class UpdateManager {
       } else {
         // Web browser: trigger standard browser download
         const a = document.createElement('a');
-        a.href = this.state.apkDownloadUrl;
+        a.href = targetUrl;
         a.download = 'zeroday.apk';
         document.body.appendChild(a);
         a.click();

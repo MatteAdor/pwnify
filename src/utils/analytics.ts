@@ -11,7 +11,8 @@ export type AnalyticsEventName =
   | 'update_completed'
   | 'update_failed'
   | 'update_fallback_to_store'
-  | 'api_426_received';
+  | 'api_426_received'
+  | 'distribution_flavor_timeout';
 
 export interface AnalyticsEvent {
   event: AnalyticsEventName;
