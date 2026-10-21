@@ -192,19 +192,22 @@ public class DirectUpdatePlugin extends Plugin {
                     return;
                 }
 
-                // Launch package installer
-                Context context = getContext();
-                Uri apkUri = FileProvider.getUriForFile(
-                    context,
-                    context.getPackageName() + ".fileprovider",
-                    outputFile
-                );
+                boolean autoInstall = Boolean.TRUE.equals(call.getBoolean("autoInstall", Boolean.TRUE));
+                if (autoInstall) {
+                    // Launch package installer
+                    Context context = getContext();
+                    Uri apkUri = FileProvider.getUriForFile(
+                        context,
+                        context.getPackageName() + ".fileprovider",
+                        outputFile
+                    );
 
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                }
 
                 JSObject res = new JSObject();
                 res.put("success", true);

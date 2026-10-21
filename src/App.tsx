@@ -24,6 +24,7 @@ import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
 import { FlexibleUpdateBanner } from './components/Update/FlexibleUpdateBanner';
+import { UpdateProgressModal } from './components/Update/UpdateProgressModal';
 import { WhatsNewModal } from './components/Update/WhatsNewModal';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
@@ -1109,6 +1110,9 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
       {/* Flexible Non-Blocking Update Discrete Banner */}
       <FlexibleUpdateBanner state={updateState} />
+
+      {/* Centered Download / Install Modal */}
+      <UpdateProgressModal state={updateState} />
 
       {/* Post-Update "What's New" Highlights */}
       <WhatsNewModal state={updateState} />

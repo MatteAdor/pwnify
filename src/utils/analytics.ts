@@ -8,6 +8,7 @@ export type AnalyticsEventName =
   | 'update_available_shown'
   | 'update_blocking_shown'
   | 'update_started'
+  | 'update_downloaded'
   | 'update_completed'
   | 'update_failed'
   | 'update_fallback_to_store'

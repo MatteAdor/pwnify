@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import { App } from '@capacitor/app';
 import { analytics } from './analytics.ts';
 
-export const APK_SIZE = '58.7 MB';
+export const APK_SIZE = '12.0 MB';
 
 export type DistributionFlavor = 'play' | 'direct';
 
@@ -10,7 +10,7 @@ export interface DirectUpdatePlugin {
   getDistributionFlavor(): Promise<{ flavor: DistributionFlavor }>;
   canRequestPackageInstalls(): Promise<{ canInstall: boolean }>;
   openInstallPermissionSettings(): Promise<void>;
-  downloadAndInstallApk(options: { url: string; expectedSha256: string }): Promise<{ success: boolean; filePath: string; sha256: string }>;
+  downloadAndInstallApk(options: { url: string; expectedSha256: string; autoInstall?: boolean }): Promise<{ success: boolean; filePath: string; sha256: string }>;
   installLocalApk(options: { filePath: string; expectedSha256: string }): Promise<{ success: boolean }>;
   addListener(eventName: 'downloadProgress', listenerFunc: (progress: { progress: number; bytesDownloaded: number; totalBytes: number }) => void): Promise<PluginListenerHandle>;
 }
@@ -25,8 +25,8 @@ export interface RuntimeVersionInfo {
 }
 
 let cachedRuntimeInfo: RuntimeVersionInfo = {
-  versionName: '1.2.3',
-  versionCode: 3,
+  versionName: '1.2.4',
+  versionCode: 4,
   platform: 'web',
   flavor: 'direct',
 };

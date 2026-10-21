@@ -61,6 +61,7 @@ export interface UpdateManagerState {
   isArenaDuelActive: boolean;
   needsPermission: boolean;
   showWhatsNew: boolean;
+  localDownloadedFilePath?: string | null;
 }
 
 const CONFIG_STORAGE_KEY = 'zeroday_remote_app_config_v1';
@@ -100,6 +101,7 @@ class UpdateManager {
       isArenaDuelActive: false,
       needsPermission: false,
       showWhatsNew: false,
+      localDownloadedFilePath: null,
     };
   }
 
@@ -514,11 +516,16 @@ class UpdateManager {
         const res = await DirectUpdate.downloadAndInstallApk({
           url: targetUrl,
           expectedSha256: this.state.apkSha256,
+          autoInstall: false,
         });
 
         if (res.success) {
-          this.updateState({ status: 'INSTALLING', progressPercent: 100 });
-          analytics.track('update_completed', { flavor: 'direct', flow: 'in_app_apk' });
+          this.updateState({ 
+            status: 'DOWNLOADED', 
+            progressPercent: 100,
+            localDownloadedFilePath: res.filePath,
+          });
+          analytics.track('update_downloaded', { flavor: 'direct', flow: 'in_app_apk' });
         }
       } else {
         // Web browser: trigger standard browser download
@@ -543,13 +550,33 @@ class UpdateManager {
   /**
    * Completes flexible update and restarts app (Play flavor).
    */
+  public async completeDirectUpdate(): Promise<void> {
+    if (this.state.localDownloadedFilePath && this.state.apkSha256 && isNativeApp()) {
+      try {
+        this.updateState({ status: 'INSTALLING' });
+        await DirectUpdate.installLocalApk({
+          filePath: this.state.localDownloadedFilePath,
+          expectedSha256: this.state.apkSha256,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        this.updateState({ status: 'ERROR', errorMessage: msg });
+      }
+    }
+  }
+
+  /**
+   * Completes flexible update and triggers installation/restart (Play or Direct flavor).
+   */
   public async completeFlexibleUpdate(): Promise<void> {
     if (this.state.flavor === 'play' && isNativeApp()) {
       try {
         await AppUpdate.completeFlexibleUpdate();
       } catch (err) {
-        console.warn('[UpdateManager] Error completing flexible update:', err);
+        console.warn('[UpdateManager] Error completing flexible update on Play:', err);
       }
+    } else if (this.state.flavor === 'direct') {
+      await this.completeDirectUpdate();
     }
   }
 

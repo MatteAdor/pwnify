@@ -5,7 +5,7 @@ import { sound } from '../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../utils/language';
 import { getCachedVersionInfo } from '../utils/platform';
 import { 
-  Flame, Ticket, Sparkles, Terminal, 
+  Flame, Ticket, Sparkles, Terminal, Smartphone, 
   Volume2, VolumeX, RotateCcw, Palette,
   LogIn, UserCheck, Settings, X, Shield,
   Globe, Edit3, Check, Zap, AlertCircle
@@ -503,12 +503,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* App Version Info Footer */}
-            <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-500">
-              <span>ZeroDay Security OS</span>
-              <span className="text-zinc-300 font-bold bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
-                v{getCachedVersionInfo().versionName} (build {getCachedVersionInfo().versionCode})
-              </span>
+            {/* Dedicated App Version Info Card */}
+            <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-emerald-500/30 space-y-2 font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                  {lang === 'en' ? 'APP VERSION' : 'VERSIONE APPLICAZIONE'}
+                </span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  v{getCachedVersionInfo().versionName} (build {getCachedVersionInfo().versionCode})
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1 border-t border-zinc-800/80">
+                <span>{lang === 'en' ? 'Distribution Channel:' : 'Canale di Distribuzione:'}</span>
+                <span className="text-zinc-300 font-bold uppercase">{getCachedVersionInfo().flavor}</span>
+              </div>
             </div>
 
             {/* Developer God Mode (Only visible in Localhost / Godmode) */}
