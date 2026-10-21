@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../utils/language';
 import { PRICING_CONFIG } from '../../config/pricing.config';
 import { MONETIZATION_CONFIG } from '../../config/monetization';
@@ -36,7 +36,7 @@ import { resolveApkDownloadUrl } from '../../utils/versionUtils';
 
 const APK_FILENAME = 'zeroday.apk';
 
-const APK_GITHUB_MIRROR = 'https://github.com/MatteAdor/zeroday_app/raw/main/releases/zeroday-app-debug.apk';
+const APK_GITHUB_MIRROR = 'https://github.com/MatteAdor/zeroday_app/releases';
 
 
 export const LandingPortal: React.FC<LandingPortalProps> = ({
@@ -47,7 +47,12 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
   const { lang, setLanguage } = useLanguage();
   const isEn = lang === 'en';
   const isPlay = isPlayDistribution();
-  const activeSha256 = updateManager.getState().apkSha256;
+  const [updateState, setUpdateState] = useState(() => updateManager.getState());
+  useEffect(() => {
+    return updateManager.subscribe(setUpdateState);
+  }, []);
+  const activeSha256 = updateState.apkSha256;
+  const apkDownloadUrl = updateState.apkDownloadUrl || resolveApkDownloadUrl();
 
   const [copiedHash, setCopiedHash] = useState(false);
   const [selectedTerminalSnippet, setSelectedTerminalSnippet] = useState<number>(0);
@@ -231,7 +236,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Primary: Direct APK Download */}
               <a
-                href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
+                href={apkDownloadUrl}
                 download={APK_FILENAME}
                 onClick={() => sound.playTap()}
                 className="flex items-center justify-center gap-2.5 px-6 py-3.5 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all font-mono shadow-md"
@@ -445,7 +450,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               {/* Download Buttons */}
               <div className="space-y-2">
                 <a
-                  href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
+                  href={apkDownloadUrl}
                   download={APK_FILENAME}
                   onClick={() => sound.playTap()}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono font-bold text-xs transition-colors"

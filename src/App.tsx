@@ -19,7 +19,7 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
-import { isBrowserEnvironment, isPlayDistribution } from './utils/platform';
+import { isBrowserEnvironment, isPlayDistribution, APK_SIZE } from './utils/platform';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -723,7 +723,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 className="ml-3 shrink-0 px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors flex items-center gap-1.5 shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>{isEn ? 'Get APK' : 'Scarica APK (20.8MB)'}</span>
+                <span>{isEn ? ('Get APK (' + APK_SIZE + ')') : ('Scarica APK (' + APK_SIZE + ')')}</span>
               </a>
             </div>
           )}

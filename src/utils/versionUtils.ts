@@ -3,6 +3,8 @@
  * Single Source of Truth: versionCode is the definitive criteria; versionName is for UI display.
  */
 
+import { isNativeApp } from './platform.ts';
+
 export interface AppVersionInfo {
   versionName: string;
   versionCode: number;
@@ -206,12 +208,34 @@ export function resolveApkSha256(config: RemotePlatformConfig, targetBuildCode?:
 export const DEFAULT_FALLBACK_APK_URL = 'https://zeroday.academy/#download';
 
 /**
+ * Sanitizes URLs pointing to legacy or dead endpoints.
+ * In particular, redirects WordPress marketing portal paths (which 404)
+ * to the actual APK hosting on Vercel.
+ */
+export function sanitizeApkUrl(url: string): string {
+  if (!url || typeof url !== 'string') return url;
+  if (url.includes('zeroday.academy/downloads/')) {
+    return url.replace('zeroday.academy/downloads/', 'zeroday-app.vercel.app/downloads/');
+  }
+  return url;
+}
+
+/**
  * Resolves current APK download URL from remote config or cached configuration in storage,
  * with fail-safe fallback to official website download section.
  */
 export function resolveApkDownloadUrl(config?: RemotePlatformConfig | null): string {
+  // 1. If in browser context (web app visitor), default to direct hosted APK on Vercel
+  if (typeof window !== 'undefined' && !isNativeApp()) {
+    if (config?.apk_download_url && config.apk_download_url.trim()) {
+      const sanitized = sanitizeApkUrl(config.apk_download_url.trim());
+      if (isAllowedDownloadUrl(sanitized)) return sanitized;
+    }
+    return '/downloads/zeroday.apk';
+  }
+
   if (config?.apk_download_url && config.apk_download_url.trim()) {
-    return config.apk_download_url.trim();
+    return sanitizeApkUrl(config.apk_download_url.trim());
   }
 
   try {
@@ -220,7 +244,7 @@ export function resolveApkDownloadUrl(config?: RemotePlatformConfig | null): str
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.config?.apk_download_url && typeof parsed.config.apk_download_url === 'string') {
-          return parsed.config.apk_download_url.trim();
+          return sanitizeApkUrl(parsed.config.apk_download_url.trim());
         }
       }
     }

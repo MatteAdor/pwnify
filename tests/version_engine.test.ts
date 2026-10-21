@@ -271,6 +271,7 @@ describe('TURN & WebRTC ICE Relay Suite', () => {
 import {
   resolveApkDownloadUrl,
   DEFAULT_FALLBACK_APK_URL,
+  sanitizeApkUrl,
 } from '../src/utils/versionUtils.ts';
 import { updateManager } from '../src/utils/updateManager.ts';
 
@@ -290,6 +291,31 @@ describe('Remote Config RPC & Fail-Open Suite', () => {
     assert.strictEqual(
       resolveApkDownloadUrl(config),
       'https://github.com/MatteAdor/zeroday_app/releases/download/v1.2.2/zeroday.apk'
+    );
+  });
+
+  it('sanitizeApkUrl redirects WordPress marketing downloads path to Vercel hosting', () => {
+    assert.strictEqual(
+      sanitizeApkUrl('https://zeroday.academy/downloads/zeroday.apk'),
+      'https://zeroday-app.vercel.app/downloads/zeroday.apk'
+    );
+  });
+
+  it('resolveApkDownloadUrl automatically sanitizes dead WordPress links from config', () => {
+    const legacyConfig = {
+      latest_version: '1.2.1',
+      latest_version_code: 1,
+      min_supported_version: '0.0.0',
+      min_supported_version_code: 0,
+      force_message: { it: '', en: '' },
+      store_url: '',
+      apk_download_url: 'https://zeroday.academy/downloads/zeroday.apk',
+      rollout_percent: 100,
+      kill_switch: false,
+    };
+    assert.strictEqual(
+      resolveApkDownloadUrl(legacyConfig),
+      'https://zeroday-app.vercel.app/downloads/zeroday.apk'
     );
   });
 

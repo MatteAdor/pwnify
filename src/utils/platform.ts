@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import { App } from '@capacitor/app';
 import { analytics } from './analytics.ts';
 
-export const APK_SIZE = '60.2 MB';
+export const APK_SIZE = '58.7 MB';
 
 export type DistributionFlavor = 'play' | 'direct';
 
