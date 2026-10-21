@@ -3,6 +3,7 @@ import { UserState } from '../types';
 import { getRankFromElo } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../utils/language';
+import { getCachedVersionInfo } from '../utils/platform';
 import { 
   Flame, Ticket, Sparkles, Terminal, 
   Volume2, VolumeX, RotateCcw, Palette,
@@ -500,6 +501,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>Passa a ZeroDay PRO</span>
                 </button>
               )}
+            </div>
+
+            {/* App Version Info Footer */}
+            <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+              <span>ZeroDay Security OS</span>
+              <span className="text-zinc-300 font-bold bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
+                v{getCachedVersionInfo().versionName} (build {getCachedVersionInfo().versionCode})
+              </span>
             </div>
 
             {/* Developer God Mode (Only visible in Localhost / Godmode) */}

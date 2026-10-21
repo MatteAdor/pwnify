@@ -25,8 +25,8 @@ export interface RuntimeVersionInfo {
 }
 
 let cachedRuntimeInfo: RuntimeVersionInfo = {
-  versionName: '1.2.2',
-  versionCode: 2,
+  versionName: '1.2.3',
+  versionCode: 3,
   platform: 'web',
   flavor: 'direct',
 };
