@@ -19,7 +19,7 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
-import { isBrowserEnvironment, isPlayDistribution, APK_SIZE } from './utils/platform';
+import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -149,6 +149,8 @@ export const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
     try {
       if (typeof window !== 'undefined') {
+        // Native Capacitor: skip the web marketing portal entirely
+        if (isNativeApp()) return 'app';
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.get('view') === 'app' || window.location.hash === '#app') {
           return 'app';
