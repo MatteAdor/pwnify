@@ -405,8 +405,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setIsProcessing(true);
       try {
         const redirectUrl = isNativeApp()
-          ? 'https://zeroday-app.vercel.app/auth/callback'
-          : `${window.location.origin}/auth/callback`;
+          ? 'https://zeroday-app.vercel.app/'
+          : `${window.location.origin}/`;
 
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
@@ -443,7 +443,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (googleClientId && googleClientId.trim()) {
-      const redirectUri = `${window.location.origin}/auth/callback`;
+      const redirectUri = `${window.location.origin}/`;
       const scope = encodeURIComponent('email profile openid');
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId.trim())}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scope}&prompt=select_account`;
       if (isNativeApp()) {
@@ -510,8 +510,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setIsProcessing(true);
       try {
         const redirectUrl = isNativeApp()
-          ? 'https://zeroday-app.vercel.app/auth/callback'
-          : `${window.location.origin}/auth/callback`;
+          ? 'https://zeroday-app.vercel.app/'
+          : `${window.location.origin}/`;
 
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
