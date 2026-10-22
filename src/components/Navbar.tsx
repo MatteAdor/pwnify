@@ -4,12 +4,13 @@ import { getRankFromElo, getNextRankProgress } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../utils/language';
 import { getCachedVersionInfo } from '../utils/platform';
+import { updateManager } from '../utils/updateManager';
 import { 
   Flame, Ticket, Sparkles, Terminal, Smartphone, 
   Volume2, VolumeX, RotateCcw, Palette,
   LogIn, UserCheck, Settings, X, Shield,
   Globe, Edit3, Check, Zap, AlertCircle,
-  Radio, Crosshair, ShieldAlert, Award
+  Radio, Crosshair, ShieldAlert, Award, RefreshCw
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -47,6 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const activeTitle = currentTitle || userState.customTitle || rank.tier;
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
+  const [updateCheckFeedback, setUpdateCheckFeedback] = useState<string | null>(null);
 
   const renderRankIcon = (iconName: string, className = "w-3.5 h-3.5") => {
     switch (iconName) {
@@ -122,6 +125,30 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
     } else {
       setIsEditingUsername(false);
+    }
+  };
+
+  const handleCheckUpdates = async () => {
+    sound.playTap();
+    setIsCheckingUpdate(true);
+    setUpdateCheckFeedback(null);
+    try {
+      await updateManager.checkForUpdates({ ignoreDebounce: true, forceImmediateCheck: true });
+      const current = updateManager.getState();
+      if (current.status === 'UP_TO_DATE' || current.clientVersionCode >= current.latestVersionCode) {
+        setUpdateCheckFeedback(lang === 'en' ? 'App is up to date.' : 'App già aggiornata all\'ultima versione.');
+      } else if (
+        current.status === 'FORCE_REQUIRED' ||
+        current.status === 'DOWNLOADING' ||
+        current.status === 'DOWNLOADED' ||
+        current.clientVersionCode < current.latestVersionCode
+      ) {
+        setIsSettingsOpen(false);
+      }
+    } catch {
+      setUpdateCheckFeedback(lang === 'en' ? 'Check failed.' : 'Verifica non riuscita.');
+    } finally {
+      setIsCheckingUpdate(false);
     }
   };
 
@@ -584,6 +611,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>{lang === 'en' ? 'Distribution Channel:' : 'Canale di Distribuzione:'}</span>
                 <span className="text-zinc-300 font-bold uppercase">{getCachedVersionInfo().flavor}</span>
               </div>
+
+              {/* In-App Check Updates Trigger */}
+              <button
+                onClick={handleCheckUpdates}
+                disabled={isCheckingUpdate}
+                className="w-full mt-2 py-2.5 px-3 min-h-[42px] rounded-xl bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700/80 hover:border-emerald-500/40 text-xs text-emerald-400 hover:text-emerald-300 font-bold font-mono transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                <span>
+                  {isCheckingUpdate 
+                    ? (lang === 'en' ? 'Checking for updates...' : 'Verifica aggiornamenti...') 
+                    : (lang === 'en' ? 'Check for Updates' : 'Verifica Aggiornamenti')}
+                </span>
+              </button>
+
+              {updateCheckFeedback && (
+                <p className="text-[11px] text-center text-zinc-300 pt-1 font-mono">
+                  {updateCheckFeedback}
+                </p>
+              )}
             </div>
 
             {/* Developer God Mode (Only visible in Localhost / Godmode) */}

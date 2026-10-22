@@ -67,7 +67,7 @@ export interface UpdateManagerState {
 const CONFIG_STORAGE_KEY = 'zeroday_remote_app_config_v1';
 const LAST_CHECK_KEY = 'zeroday_last_update_check_ts';
 const LAST_SEEN_CHANGELOG_BUILD_KEY = 'zeroday_last_seen_changelog_build';
-const DEBOUNCE_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const DEBOUNCE_INTERVAL_MS = 30 * 1000; // 30 seconds during active release cycles
 
 type UpdateStateListener = (state: UpdateManagerState) => void;
 
@@ -213,7 +213,7 @@ class UpdateManager {
     }
 
     // 4. Initial update check (fail-open)
-    await this.checkForUpdates({ ignoreDebounce: false });
+    await this.checkForUpdates({ ignoreDebounce: true });
   }
 
   /**
@@ -235,7 +235,7 @@ class UpdateManager {
     }
 
     // Run debounced check
-    await this.checkForUpdates({ ignoreDebounce: false });
+    await this.checkForUpdates({ ignoreDebounce: true });
   }
 
   /**
@@ -352,10 +352,10 @@ class UpdateManager {
         config
       );
 
-      if (disposition === 'FORCE_UPDATE_REQUIRED') {
+      if (disposition === 'FORCE_UPDATE_REQUIRED' || disposition === 'FLEXIBLE_UPDATE_AVAILABLE') {
         await this.handleForceUpdateRequired(config);
-      } else if (disposition === 'FLEXIBLE_UPDATE_AVAILABLE') {
-        await this.handleFlexibleUpdateAvailable(config);
+
+
       } else {
         this.updateState({ status: 'UP_TO_DATE' });
       }
@@ -464,7 +464,11 @@ class UpdateManager {
 
     // Direct flavor: In-app APK download and installation
     if (this.state.flavor === 'direct') {
-      await this.startDirectApkInstall();
+      if (this.state.status === 'DOWNLOADED') {
+        await this.completeDirectUpdate();
+      } else {
+        await this.startDirectApkInstall();
+      }
     }
   }
 

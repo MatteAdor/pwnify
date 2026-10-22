@@ -128,6 +128,18 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ state }) => 
           </div>
         )}
 
+        {/* Downloaded Ready Notice */}
+        {state.status === 'DOWNLOADED' && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-300 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              {isEn 
+                ? 'Package downloaded and SHA-256 verified. Click below to install and restart.' 
+                : 'Pacchetto scaricato e verificato con successo. Clicca sotto per installare e riavviare.'}
+            </span>
+          </div>
+        )}
+
         {/* Installing Notice */}
         {isInstalling && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-400 flex items-center gap-2">
@@ -157,6 +169,14 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ state }) => 
               <ExternalLink className="w-4 h-4" />
               <span>{isEn ? 'UPDATE ON GOOGLE PLAY' : 'AGGIORNA SU GOOGLE PLAY'}</span>
             </button>
+          ) : state.status === 'DOWNLOADED' ? (
+            <button
+              onClick={() => updateManager.completeDirectUpdate()}
+              className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-emerald-400 hover:bg-emerald-300 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 animate-pulse cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4 text-slate-950" />
+              <span>{isEn ? 'INSTALL & RESTART APP' : 'INSTALLA & RIAVVIA APP'}</span>
+            </button>
           ) : (
             <button
               onClick={() => updateManager.executePrimaryUpdateAction()}
@@ -167,6 +187,8 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ state }) => 
               <span>
                 {isDownloading 
                   ? (isEn ? 'DOWNLOADING...' : 'DOWNLOAD IN CORSO...') 
+                  : state.status === 'ERROR'
+                  ? (isEn ? 'RETRY DOWNLOAD' : 'RIPROVA DOWNLOAD')
                   : (isEn ? 'DOWNLOAD & INSTALL UPDATE' : 'SCARICA E INSTALLA (IN-APP)')}
               </span>
             </button>
