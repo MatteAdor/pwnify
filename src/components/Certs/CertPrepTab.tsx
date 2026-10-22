@@ -296,25 +296,25 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   setQuickAnswered(false);
                   setQuickCompleted(false);
                 }}
-                className="py-2 px-3 rounded-xl font-mono text-xs text-zinc-200 bg-zinc-900 border border-zinc-750 hover:bg-zinc-850 hover:border-zinc-600 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="min-h-[48px] py-3 px-3.5 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
-                <Play className="w-3.5 h-3.5 text-zinc-400 fill-current" />
+                <Play className="w-4 h-4 text-zinc-300 fill-current" />
                 <span>{t.quickCheckBtn}</span>
               </button>
 
               {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
               <button
                 onClick={() => handleStartPbq(cert.pbqRef)}
-                className="py-2 px-3 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="min-h-[48px] py-3 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
               >
                 {!userState.isPro ? (
                   <>
-                    <Lock className="w-3.5 h-3.5" />
+                    <Lock className="w-4 h-4" />
                     <span>{t.pbqLabBtnPro}</span>
                   </>
                 ) : (
                   <>
-                    <Terminal className="w-3.5 h-3.5" />
+                    <Terminal className="w-4 h-4" />
                     <span>{t.pbqLabBtnActive}</span>
                   </>
                 )}
@@ -373,7 +373,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                         }
                         setQuickAnswered(true);
                       }}
-                      className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-900 text-left text-xs font-mono hover:border-zinc-700 transition-colors flex items-center justify-between text-zinc-300 cursor-pointer"
+                      className="w-full min-h-[50px] p-3.5 rounded-xl border border-zinc-800 bg-zinc-900 text-left text-xs sm:text-sm font-mono font-bold hover:border-zinc-700 transition-all flex items-center justify-between text-zinc-200 cursor-pointer active:scale-[0.99]"
                     >
                       <span>{opt.text}</span>
                     </button>
@@ -382,8 +382,8 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
 
                 {quickAnswered && (
                   <div className="pt-2 animate-fade-in space-y-3">
-                    <p className="text-xs text-zinc-300 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-                      <strong className="text-white">Technical Explanation:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
+                    <p className="text-xs text-zinc-300 bg-zinc-900 p-3.5 rounded-xl border border-zinc-800">
+                      <strong className="text-white font-black">Spiegazione Tecnica:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
                     </p>
                     <button
                       onClick={() => {
@@ -395,9 +395,9 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                           setQuickCompleted(true);
                         }
                       }}
-                      className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                      className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-98"
                     >
-                      <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'NEXT QUESTION' : 'VIEW RESULT'}</span>
+                      <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'PROSSIMA DOMANDA' : 'VEDI RISULTATO'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

@@ -303,9 +303,9 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                   sound.playTap();
                   setViewPhase('quiz');
                 }}
-                className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full min-h-[52px] py-3.5 px-5 rounded-xl font-mono font-black text-sm sm:text-base text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
               >
-                <span>INIZIA ESERCITAZIONE PRATICA ({node.questions.length} QUESITI)</span>
+                <span>INIZIA SFIDA ({node.questions.length} QUESITI)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -517,15 +517,15 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                       <span className="text-[10px] font-mono text-slate-400 block mb-1 uppercase">
                         Tocca i parametri per completare la sintassi:
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {shuffledChips.map((chip, i) => (
                           <button
                             key={i}
                             onClick={() => handleChipClick(chip)}
-                            className="min-h-[36px] px-3 py-1.5 rounded-lg bg-surface border border-white/10 hover:border-cyan-400 text-slate-200 hover:text-cyan-300 font-mono text-xs font-semibold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-cyan-400 text-zinc-100 hover:text-cyan-300 font-mono text-xs sm:text-sm font-black transition-all active:scale-95 flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <span>{chip}</span>
-                            <CornerDownLeft className="w-3 h-3 opacity-60 text-cyan-400" />
+                            <CornerDownLeft className="w-3.5 h-3.5 opacity-70 text-cyan-400" />
                           </button>
                         ))}
                         <button
@@ -533,7 +533,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                             sound.playTap();
                             setTerminalInputText('');
                           }}
-                          className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-red-950/40 border border-red-500/30 hover:border-red-500/60 text-red-400 text-xs font-mono font-bold transition-all active:scale-95 cursor-pointer"
+                          className="min-h-[44px] px-3 py-2 rounded-xl bg-red-950/40 border border-red-500/40 hover:border-red-500/80 text-red-300 text-xs sm:text-sm font-mono font-black transition-all active:scale-95 cursor-pointer"
                         >
                           Cancella
                         </button>
@@ -552,19 +552,19 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
 
               {/* Options Selector for multiple choice or fallback */}
               {currentQ.type !== 'terminal_command' && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {shuffledOptions.map((opt) => {
                     const isSelected = selectedOptionId === opt.id;
-                    let optStyle = 'bg-surface/80 border-white/10 hover:border-white/20 text-slate-200';
+                    let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-100';
 
                     if (hasSubmitted) {
                       if (opt.isCorrect) {
-                        optStyle = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
+                        optStyle = 'bg-emerald-950/70 border-emerald-500 text-emerald-200';
                       } else if (isSelected && !opt.isCorrect) {
-                        optStyle = 'bg-red-950/60 border-red-500 text-red-300';
+                        optStyle = 'bg-red-950/70 border-red-500 text-red-200';
                       }
                     } else if (isSelected) {
-                      optStyle = 'bg-indigo-950/50 border-indigo-500 text-indigo-200';
+                      optStyle = 'bg-indigo-950/70 border-indigo-500 text-indigo-100 shadow-sm';
                     }
 
                     return (
@@ -572,11 +572,11 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                         key={opt.id}
                         disabled={hasSubmitted}
                         onClick={() => handleOptionClick(opt.id)}
-                        className={`w-full text-left py-2 px-3 rounded-xl border text-[11px] sm:text-xs transition-all flex items-center justify-between cursor-pointer leading-snug ${optStyle}`}
+                        className={`w-full text-left min-h-[52px] sm:min-h-[56px] py-3 px-4 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-between cursor-pointer leading-snug active:scale-[0.99] ${optStyle}`}
                       >
-                        <span className="font-mono">{opt.text}</span>
+                        <span className="font-mono font-bold">{opt.text}</span>
                         {hasSubmitted && opt.isCorrect && (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-1.5" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
                         )}
                       </button>
                     );
@@ -674,7 +674,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
             </div>
 
             {/* Pinned Bottom Action Button */}
-            <div className="pt-2 shrink-0 border-t border-white/10">
+            <div className="pt-2 shrink-0 border-t border-zinc-800">
               {!hasSubmitted ? (
                 <button
                   disabled={
@@ -685,20 +685,20 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                       : !selectedOptionId
                   }
                   onClick={handleSubmit}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full min-h-[52px] sm:min-h-[56px] py-3.5 px-5 rounded-xl font-mono font-black text-sm sm:text-base text-zinc-950 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>ESEGUI E VERIFICA RISPOSTA</span>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>CONFERMA RISPOSTA</span>
                 </button>
               ) : (
                 <button
                   onClick={handleNextOrFinish}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full min-h-[52px] sm:min-h-[56px] py-3.5 px-5 rounded-xl font-mono font-black text-sm sm:text-base text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
                 >
                   <span>
-                    {currentQuestionIndex < node.questions.length - 1 ? 'PROSSIMO QUESITO' : 'VEDI RIEPILOGO LEZIONE'}
+                    {currentQuestionIndex < node.questions.length - 1 ? 'PROSSIMA DOMANDA' : 'COMPLETA'}
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -766,18 +766,18 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
               <button
                 type="button"
                 onClick={handleResetLesson}
-                className="py-2.5 px-3 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white font-mono text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                className="py-3 px-4 min-h-[50px] rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white font-mono text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Rivedi Teoria</span>
+                <RotateCcw className="w-4 h-4" />
+                <span>Rivedi</span>
               </button>
               <button
                 type="button"
                 onClick={handleFinalClaim}
-                className="flex-1 py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-3 px-5 min-h-[50px] rounded-xl font-mono font-black text-sm sm:text-base text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
               >
                 <Check className="w-4 h-4" />
-                <span>SALVA E PROSEGUI NEL PERCORSO</span>
+                <span>SALVA E RISCATTA</span>
               </button>
             </div>
           </div>

@@ -120,7 +120,7 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
               sound.playTap();
               onOpenDailyBreach();
             }}
-            className={`w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+            className={`w-full min-h-[50px] py-3 px-5 rounded-xl font-mono font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 ${
               isBreachSolvedToday
                 ? 'bg-zinc-800 border border-emerald-500/40 text-emerald-300 hover:bg-zinc-700'
                 : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950'
@@ -128,23 +128,23 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
           >
             {isBreachSolvedToday ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>TRIAGE COMPLETATO OGGI (RIVEDI ANALISI)</span>
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>TRIAGE COMPLETATO OGGI (RIVEDI)</span>
               </>
             ) : (
               <>
-                <Zap className="w-3.5 h-3.5 fill-current" />
+                <Zap className="w-4 h-4 fill-current" />
                 <span>AVVIA TRIAGE ZERO-DAY (+150 XP)</span>
               </>
             )}
           </button>
 
-          <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 px-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 px-1 font-bold">
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3 text-zinc-500" />
+              <Clock className="w-3.5 h-3.5 text-zinc-400" />
               <span>Nuovo breach alle 00:00</span>
             </span>
-            <span>1 tentativo al giorno</span>
+            <span>1 al giorno</span>
           </div>
         </div>
       </div>
@@ -219,9 +219,9 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
                           onClaimFreeBounty(bounty.id);
                           confetti({ particleCount: 30, spread: 60, origin: { y: 0.7 } });
                         }}
-                        className="py-1 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                        className="min-h-[40px] py-1.5 px-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
                       >
-                        <Zap className="w-3 h-3 fill-current" />
+                        <Zap className="w-3.5 h-3.5 fill-current" />
                         <span>Riscatta +{bounty.freeXp} XP</span>
                       </button>
                     ) : (
@@ -254,10 +254,10 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
                           onClaimProBounty(bounty.id);
                           confetti({ particleCount: 60, spread: 80, origin: { y: 0.7 } });
                         }}
-                        className="py-1 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                        className="min-h-[40px] py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
                       >
-                        <Sparkles className="w-3 h-3" />
-                        <span>Apri Cassa PRO</span>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Apri Cassa</span>
                       </button>
                     ) : (
                       <button
@@ -265,10 +265,10 @@ export const MissionsTab: React.FC<MissionsTabProps> = ({
                           sound.playTap();
                           onOpenPaywallContext('bounty_crate_lock');
                         }}
-                        className="py-1 px-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                        className="min-h-[40px] py-1.5 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black transition-all flex items-center gap-1 cursor-pointer active:scale-95"
                       >
-                        <Lock className="w-3 h-3" />
-                        <span>Sblocca con PRO</span>
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Sblocca PRO</span>
                       </button>
                     )}
                   </div>

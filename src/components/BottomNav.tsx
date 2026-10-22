@@ -58,7 +58,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       className="fixed bottom-0 inset-x-0 z-40 bg-[#090D16] border-t border-zinc-800"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="w-full max-w-lg mx-auto grid grid-cols-5 px-1 py-1">
+      <div className="w-full max-w-lg mx-auto grid grid-cols-5 px-1 py-1.5 min-h-[58px]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -71,25 +71,25 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 sound.playTap();
                 onSelectTab(tab.id);
               }}
-              className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 ${
+              className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer select-none active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400 ${
                 isActive
-                  ? 'text-emerald-400'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'text-emerald-400 bg-emerald-500/10'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
               {/* Contextual Badge */}
               {tab.badge && (
-                <span className="absolute top-1 right-2 px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                <span className="absolute top-1 right-2 px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
                   {tab.badge}
                 </span>
               )}
 
               {/* Icon */}
-              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Icon className="w-5 h-5 sm:w-5 sm:h-5" />
 
               {/* Label */}
-              <span className={`font-mono text-[10px] sm:text-[11px] mt-1 leading-none tracking-tight ${
-                isActive ? 'font-bold text-white' : 'font-medium'
+              <span className={`font-mono text-[11px] mt-1 leading-none tracking-tight ${
+                isActive ? 'font-black text-white' : 'font-bold'
               }`}>
                 {tab.label}
               </span>

@@ -475,14 +475,14 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
             {/* Primary Action Button */}
             {isPlay ? (
-              <div className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-center text-zinc-400 bg-zinc-900 border border-zinc-800">
+              <div className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-center text-zinc-400 bg-zinc-900 border border-zinc-800 flex items-center justify-center">
                 Acquisti non disponibili in questa versione
               </div>
             ) : (
               <button
                 onClick={() => handleExecuteCheckout(billingCycle)}
                 disabled={isProcessing}
-                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                className="w-full min-h-[52px] py-3.5 px-5 rounded-xl font-mono font-black text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 shadow-md active:scale-98"
               >
                 {isProcessing ? (
                   <span className="flex items-center gap-2 text-xs font-bold">

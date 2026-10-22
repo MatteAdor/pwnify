@@ -178,9 +178,9 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
               sound.playTap();
               setSelectedModuleId(null);
             }}
-            className="flex items-center gap-1.5 py-1 px-2 text-xs font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-2 py-2 px-3 min-h-[42px] rounded-xl bg-zinc-900 border border-zinc-800 text-xs sm:text-sm font-mono font-black text-zinc-300 hover:text-white transition-all cursor-pointer active:scale-95"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
+            <ArrowLeft className="w-4 h-4 text-emerald-400" />
             <span>{t.backToMissions}</span>
           </button>
 
@@ -216,7 +216,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
           </div>
 
           {/* List of Lessons */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {activeModule.nodes.map((node, index) => {
               const isCompleted = userState.completedNodeIds.includes(node.id);
               const isFinal = node.isFinalTest;
@@ -228,7 +228,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                     sound.playTap();
                     onSelectNode(node);
                   }}
-                  className={`group rounded-lg border p-3.5 transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                  className={`group rounded-xl border p-4 min-h-[64px] transition-all cursor-pointer flex items-center justify-between gap-3 active:scale-[0.99] ${
                     isFinal
                       ? isCompleted
                         ? 'bg-[#0E1524] border-emerald-500/40 hover:border-emerald-400'
@@ -239,35 +239,35 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   }`}
                 >
                   <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 text-[10px] font-mono">
-                      <span className={`font-bold uppercase ${isFinal ? 'text-purple-300' : 'text-zinc-400'}`}>
+                    <div className="flex items-center gap-2 text-[11px] font-mono">
+                      <span className={`font-black uppercase ${isFinal ? 'text-purple-300' : 'text-zinc-400'}`}>
                         {isFinal ? t.finalTestBadge : `${t.lessonWord} 0${index + 1}`}
                       </span>
 
                       {isCompleted && (
-                        <span className="text-emerald-400 font-bold flex items-center gap-1">
-                          <Check className="w-3 h-3" />
+                        <span className="text-emerald-400 font-black flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" />
                           {t.completed}
                         </span>
                       )}
                     </div>
 
-                    <h3 className={`font-mono font-bold text-sm truncate ${
+                    <h3 className={`font-mono font-black text-sm sm:text-base truncate ${
                       isFinal ? 'text-purple-200 group-hover:text-white' : 'text-zinc-100 group-hover:text-emerald-300'
                     }`}>
                       {node.title}
                     </h3>
 
-                    <p className="text-[11px] text-zinc-400 line-clamp-1">
+                    <p className="text-xs text-zinc-400 font-medium line-clamp-1">
                       {node.lessonExplanation?.keyTakeaway || node.subtitle}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-mono font-bold text-emerald-400">
+                    <span className="text-xs sm:text-sm font-mono font-black text-emerald-400">
                       +{node.xpReward} XP
                     </span>
-                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
+                    <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
                   </div>
                 </div>
               );
@@ -319,7 +319,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                <h2 className="text-sm font-bold text-white tracking-wide">
+                <h2 className="text-sm font-black text-white tracking-wide">
                   {t.dailyBreachTitle}
                 </h2>
               </div>
@@ -329,15 +329,11 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   sound.playTap();
                   if (!userState.isPro) onOpenPaywall();
                 }}
-                className="text-[11px] font-mono font-bold text-amber-400 hover:text-amber-300 cursor-pointer"
+                className="text-xs font-mono font-black text-amber-400 hover:text-amber-300 cursor-pointer"
               >
                 {userState.isPro ? '2X XP ACTIVE' : '2X XP PRO'}
               </button>
             </div>
-
-            <p className="text-xs text-zinc-300 leading-relaxed">
-              {t.dailyBreachDesc}
-            </p>
 
             <button
               type="button"
@@ -345,7 +341,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                 sound.playTap();
                 if (onOpenDailyBreach) onOpenDailyBreach();
               }}
-              className={`w-full py-2 px-4 rounded-lg font-mono font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+              className={`w-full min-h-[50px] py-3 px-5 rounded-xl font-mono font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 ${
                 isBreachSolvedToday
                   ? 'bg-zinc-800 border border-zinc-700 text-emerald-300 hover:bg-zinc-750'
                   : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950'
@@ -353,12 +349,12 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
             >
               {isBreachSolvedToday ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <Check className="w-4 h-4 text-emerald-400" />
                   <span>{t.triageCompletedToday}</span>
                 </>
               ) : (
                 <>
-                  <Zap className="w-3.5 h-3.5 fill-zinc-950 text-zinc-950" />
+                  <Zap className="w-4 h-4 fill-zinc-950 text-zinc-950" />
                   <span>{t.startDailyBreach}</span>
                 </>
               )}
@@ -385,7 +381,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                       sound.playTap();
                       setSelectedModuleId(module.id);
                     }}
-                    className={`group rounded-lg border p-3.5 transition-colors cursor-pointer ${
+                    className={`group rounded-xl border p-4 min-h-[72px] transition-all cursor-pointer active:scale-[0.99] ${
                       isAllCompleted
                         ? 'bg-[#0B111D] border-emerald-500/30 hover:border-emerald-400'
                         : 'bg-[#0D121D] border-zinc-800 hover:border-zinc-700'
@@ -393,17 +389,17 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                   >
                     <div className="flex items-center justify-between gap-3">
                       {/* Left: Unboxed Icon + Text */}
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
                         <IconComponent className="w-5 h-5 text-emerald-400 shrink-0" />
 
                         <div className="min-w-0 flex-1">
-                          <div className="text-[10px] font-mono text-zinc-400 uppercase">
+                          <div className="text-[10px] font-mono font-black text-zinc-400 uppercase">
                             {isEn ? `MISSION 0${index + 1}` : `MISSIONE 0${index + 1}`}
                           </div>
-                          <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors truncate">
+                          <h3 className="text-base font-black text-white group-hover:text-emerald-300 transition-colors truncate">
                             {module.title}
                           </h3>
-                          <div className="text-xs font-mono text-zinc-400 mt-0.5">
+                          <div className="text-xs font-mono font-bold text-zinc-400 mt-0.5">
                             {completedCount} / {totalLessons} {t.lessonsCountWord}
                           </div>
                         </div>
@@ -412,18 +408,18 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
                       {/* Right: Status or Chevron */}
                       <div className="shrink-0">
                         {isAllCompleted ? (
-                          <span className="text-[10px] font-mono font-bold text-emerald-400 flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-xs font-mono font-black text-emerald-400 flex items-center gap-1">
+                            <Check className="w-4 h-4 text-emerald-400" />
                             {t.completed}
                           </span>
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
+                          <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
                         )}
                       </div>
                     </div>
 
                     {/* Progress bar */}
-                    <div className="w-full h-1 rounded-full bg-zinc-800 overflow-hidden mt-2.5">
+                    <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden mt-3">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                         style={{ width: `${(completedCount / totalLessons) * 100}%` }}

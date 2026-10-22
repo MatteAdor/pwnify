@@ -749,14 +749,14 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                 </div>
               </div>
 
-              <div className="pt-1 flex items-center justify-between">
-                <div className="text-[11px] font-mono text-zinc-400">
-                  Rating: <span className="text-white font-bold">{userState.elo} ELO</span> ({userRank.tier})
+              <div className="pt-2 flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs font-mono text-zinc-300 font-bold">
+                  Rating: <span className="text-emerald-400 font-black">{userState.elo} ELO</span> ({userRank.tier})
                 </div>
                 <button
                   type="button"
                   onClick={handleStartRankedMatchmaking}
-                  className="py-2.5 px-5 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
+                  className="min-h-[50px] py-3 px-6 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
                 >
                   <Swords className="w-4 h-4" />
                   <span>{isEn ? 'SEARCH RANKED MATCH' : 'TROVA MATCH RANKED'}</span>
@@ -793,7 +793,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                       handleHostRoom();
                     }
                   }}
-                  className="py-2 px-4 rounded-xl font-mono font-bold text-xs text-zinc-200 bg-zinc-900 border border-zinc-700 hover:border-indigo-500/60 transition-colors flex items-center gap-2 cursor-pointer active:scale-[0.98]"
+                  className="min-h-[46px] py-2.5 px-5 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-indigo-500/60 transition-all flex items-center gap-2 cursor-pointer active:scale-[0.98]"
                 >
                   <Users className="w-4 h-4 text-indigo-400" />
                   <span>{isEn ? 'OPEN STAGING ROOM' : 'STANZA AMICHEVOLE'}</span>
@@ -802,11 +802,11 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             </div>
 
             {/* 3. SOLO OFFLINE TRAINING */}
-            <div className="rounded-xl bg-[#0D121D] border border-zinc-800/80 p-3.5 flex items-center justify-between shadow-sm">
+            <div className="rounded-xl bg-[#0D121D] border border-zinc-800 p-4 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-2.5">
                 <Skull className="w-4 h-4 text-rose-400 shrink-0" />
-                <span className="text-xs font-mono text-zinc-300">
-                  {isEn ? 'Solo Gauntlet Survival' : 'Addestramento Survival Gauntlet'}
+                <span className="text-xs font-mono font-bold text-zinc-200">
+                  {isEn ? 'Solo Gauntlet Survival' : 'Addestramento Survival'}
                 </span>
               </div>
               <button
@@ -815,7 +815,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   sound.playTap();
                   setIsSurvivalOpen(true);
                 }}
-                className="py-1.5 px-3 rounded-lg font-mono font-bold text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 transition-colors cursor-pointer"
+                className="min-h-[42px] py-2 px-3.5 rounded-xl font-mono font-black text-xs text-rose-300 bg-rose-500/15 border border-rose-500/30 hover:border-rose-500/50 transition-all cursor-pointer active:scale-95"
               >
                 <span>{t.survivalGauntlet} (x{userState.survivalHighScore || 0})</span>
               </button>
@@ -1000,18 +1000,18 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
             )}
 
             {/* Options List */}
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-1 gap-2.5">
               {matchMode === 'ranked' ? (
                 // RANKED OPTIONS (Strings, graded exclusively server-side via submit_answer)
                 currentRankedChallenge?.options.map((optText, idx) => {
                   const isSelected = selectedOptionIndex === idx;
-                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200';
+                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-100';
 
                   if (selectedOptionIndex !== null) {
                     if (isSelected) {
                       optStyle = isAnswerGradedCorrect
-                        ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
-                        : 'bg-rose-950/60 border-rose-500 text-rose-300';
+                        ? 'bg-emerald-950/70 border-emerald-500 text-emerald-200'
+                        : 'bg-rose-950/70 border-rose-500 text-rose-200';
                     }
                   }
 
@@ -1021,11 +1021,11 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                       type="button"
                       disabled={selectedOptionIndex !== null}
                       onClick={() => handleRankedAnswer(idx)}
-                      className={`p-3.5 rounded-lg border text-left text-xs sm:text-sm font-mono transition-colors flex items-center justify-between cursor-pointer ${optStyle}`}
+                      className={`min-h-[52px] sm:min-h-[56px] p-4 rounded-xl border text-left text-xs sm:text-sm font-mono font-bold transition-all flex items-center justify-between cursor-pointer active:scale-[0.99] ${optStyle}`}
                     >
-                      <span>{optText}</span>
+                      <span className="font-bold">{optText}</span>
                       {isSelected && isAnswerGradedCorrect && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 ml-2" />
                       )}
                     </button>
                   );
@@ -1034,13 +1034,13 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                 // CASUAL OPTIONS
                 currentCasualChallenge?.options.map((opt, idx) => {
                   const isSelected = selectedOptionIndex === idx;
-                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-200';
+                  let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-100';
 
                   if (selectedOptionIndex !== null) {
                     if (opt.isCorrect) {
-                      optStyle = 'bg-emerald-950/60 border-emerald-500 text-emerald-300';
+                      optStyle = 'bg-emerald-950/70 border-emerald-500 text-emerald-200';
                     } else if (isSelected && !opt.isCorrect) {
-                      optStyle = 'bg-rose-950/60 border-rose-500 text-rose-300';
+                      optStyle = 'bg-rose-950/70 border-rose-500 text-rose-200';
                     }
                   }
 
@@ -1050,11 +1050,11 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                       type="button"
                       disabled={selectedOptionIndex !== null}
                       onClick={() => handleCasualAnswer(opt.id)}
-                      className={`p-3.5 rounded-lg border text-left text-xs sm:text-sm font-mono transition-colors flex items-center justify-between cursor-pointer ${optStyle}`}
+                      className={`min-h-[52px] sm:min-h-[56px] p-4 rounded-xl border text-left text-xs sm:text-sm font-mono font-bold transition-all flex items-center justify-between cursor-pointer active:scale-[0.99] ${optStyle}`}
                     >
-                      <span>{opt.text}</span>
+                      <span className="font-bold">{opt.text}</span>
                       {selectedOptionIndex !== null && opt.isCorrect && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 ml-2" />
                       )}
                     </button>
                   );
@@ -1124,7 +1124,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
           </div>
 
           {/* CTAs */}
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={() => {
@@ -1135,9 +1135,9 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   if (!hostedRoomCode) handleHostRoom();
                 }
               }}
-              className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+              className="w-full min-h-[50px] py-3.5 px-5 rounded-xl font-mono font-black text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4" />
               <span>{isEn ? 'PLAY ANOTHER MATCH' : 'NUOVO MATCH ONLINE'}</span>
             </button>
 
@@ -1153,9 +1153,9 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   setCopiedDuelLink(true);
                   setTimeout(() => setCopiedDuelLink(false), 2500);
                 }}
-                className="flex-1 py-2 px-3 rounded-lg border border-zinc-800 bg-zinc-900 hover:border-zinc-700 text-zinc-300 font-mono text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 min-h-[46px] py-2.5 px-3 rounded-xl border border-zinc-700 bg-zinc-900 hover:border-zinc-600 text-zinc-100 font-mono text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
               >
-                {copiedDuelLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
+                {copiedDuelLink ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-300" />}
                 <span>{copiedDuelLink ? 'LINK COPIATO!' : 'SFIDA CON LINK'}</span>
               </button>
 

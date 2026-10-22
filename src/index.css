@@ -65,17 +65,47 @@ html, body, button, input, select, textarea {
 
 body {
   background-color: #060A12;
-  color: #F1F5F9;
+  color: #F4F4F5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* High-legibility typography reinforcement */
+h1, h2, h3, h4, strong, b {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-weight: 700;
+  touch-action: manipulation;
 }
 
 /* Monospace font for technical elements & telemetry */
 code, pre, .font-mono, .terminal-text {
   font-family: 'JetBrainsMono Nerd Font Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+/* Low-end mobile device GPU optimization */
+.gpu-layer {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Disable expensive filters on low-end hardware for maximum fluidity */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Precision scrollbars */
@@ -95,7 +125,7 @@ code, pre, .font-mono, .terminal-text {
   background: #334155;
 }
 
-/* Solid High-Contrast Surfaces */
+/* Solid High-Contrast Surfaces (Zero blur overhead for 60fps fluidity) */
 .surface-panel {
   background-color: #0D121D;
   border: 1px solid #27272A; /* zinc-800 */
@@ -104,12 +134,16 @@ code, pre, .font-mono, .terminal-text {
 .surface-interactive {
   background-color: #0D121D;
   border: 1px solid #27272A;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
 }
 
 .surface-interactive:hover {
   border-color: #3F3F46; /* zinc-700 */
   background-color: #121826;
+}
+
+.surface-interactive:active {
+  transform: scale(0.985);
 }
 
 /* Accessible focus ring */

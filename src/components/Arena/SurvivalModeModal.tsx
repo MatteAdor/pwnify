@@ -235,7 +235,7 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
                     key={opt.id}
                     disabled={Boolean(selectedOptionId)}
                     onClick={() => handleSelectOption(opt.id)}
-                    className={`w-full p-3.5 rounded-xl border text-left font-mono text-xs sm:text-sm transition-all flex items-center justify-between ${
+                    className={`w-full min-h-[52px] sm:min-h-[56px] p-4 rounded-xl border text-left font-mono font-bold text-xs sm:text-sm transition-all flex items-center justify-between cursor-pointer active:scale-[0.99] ${
                       isSelected 
                         ? opt.isCorrect 
                           ? 'bg-emerald-950/80 border-emerald-400 text-emerald-300' 
@@ -243,7 +243,7 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
                         : 'bg-[#131B2E] border-white/10 hover:border-rose-400/50 hover:bg-white/5 text-slate-200'
                     }`}
                   >
-                    <span>{opt.text}</span>
+                    <span className="font-bold">{opt.text}</span>
                     {isSelected && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
                     )}
@@ -288,7 +288,7 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
             <div className="flex gap-2.5 max-w-sm mx-auto">
               <button
                 onClick={handleStartGame}
-                className="flex-1 py-3 px-4 rounded-xl font-mono font-extrabold text-sm text-slate-950 bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 transition-all shadow-neon-amber flex items-center justify-center gap-2"
+                className="flex-1 min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-sm text-slate-950 bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 transition-all shadow-neon-amber flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
                 <RotateCcw className="w-4 h-4 stroke-[3]" />
                 <span>RETRY NOW</span>
@@ -296,7 +296,7 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="py-3 px-4 rounded-xl font-mono text-xs text-slate-400 hover:text-white bg-surface border border-white/10 hover:border-white/20 transition-colors"
+                className="min-h-[50px] py-3.5 px-5 rounded-xl font-mono font-black text-xs sm:text-sm text-slate-300 hover:text-white bg-zinc-900 border border-zinc-750 hover:border-zinc-600 transition-all cursor-pointer active:scale-98"
               >
                 Exit
               </button>

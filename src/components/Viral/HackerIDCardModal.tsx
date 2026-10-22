@@ -188,17 +188,17 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
           {/* Copy Challenge Link */}
           <button
             onClick={handleCopyChallenge}
-            className="w-full py-3 px-4 rounded-lg font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 active:scale-95"
+            className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
           >
             {copiedLink ? (
               <>
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>CHALLENGE LINK COPIED TO CLIPBOARD!</span>
+                <span>LINK COPIATO NEGLI APPUNTI!</span>
               </>
             ) : (
               <>
                 <Zap className="w-4 h-4 fill-zinc-950" />
-                <span>CHALLENGE A FRIEND TO THIS MATCH (COPY LINK)</span>
+                <span>SFIDA UN AMICO (COPIA LINK)</span>
               </>
             )}
           </button>
@@ -207,10 +207,10 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
           <button
             onClick={handleDownloadCard}
             disabled={isExporting}
-            className="w-full py-2.5 px-3 rounded-lg font-mono text-xs text-zinc-200 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full min-h-[46px] py-3 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-zinc-600 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{isExporting ? 'Generating 9:16 PNG...' : 'Download ID Card (.PNG)'}</span>
+            <Download className="w-4 h-4 text-emerald-400" />
+            <span>{isExporting ? 'Generazione PNG in corso...' : 'Scarica Hacker ID (.PNG)'}</span>
           </button>
         </div>
       </div>

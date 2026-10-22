@@ -177,13 +177,13 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
         <div className="space-y-2 mb-4">
           {shuffledOptions.map((opt) => {
             const isSelected = selectedOptionId === opt.id;
-            let optStyle = 'bg-surface/80 border-white/10 hover:border-amber-500/40 text-slate-200';
+            let optStyle = 'bg-zinc-900 border-zinc-800 hover:border-amber-500/40 text-zinc-100';
 
             if (hasSubmitted) {
               if (opt.isCorrect) {
-                optStyle = 'bg-emerald-950/70 border-emerald-500 text-emerald-300 shadow-neon-emerald';
+                optStyle = 'bg-emerald-950/70 border-emerald-500 text-emerald-200';
               } else if (isSelected && !opt.isCorrect) {
-                optStyle = 'bg-red-950/70 border-red-500 text-red-300';
+                optStyle = 'bg-red-950/70 border-red-500 text-red-200';
               }
             }
 
@@ -192,11 +192,11 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                 key={opt.id}
                 disabled={hasSubmitted}
                 onClick={() => handleSubmit(opt.id)}
-                className={`w-full text-left p-3.5 rounded-xl border text-xs sm:text-sm transition-all flex items-center justify-between ${optStyle} active:scale-99`}
+                className={`w-full text-left min-h-[52px] sm:min-h-[56px] p-4 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-between cursor-pointer active:scale-99 ${optStyle}`}
               >
-                <span className="font-mono">{opt.text}</span>
+                <span className="font-mono font-bold">{opt.text}</span>
                 {hasSubmitted && opt.isCorrect && (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 ml-2" />
                 )}
               </button>
             );
@@ -252,17 +252,17 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
               {/* Wordle-style Bragging Share Button */}
               <button
                 onClick={handleCopyShare}
-                className="py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
               >
                 {copiedShare ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 fill-current" />
-                    <span>SHARE CARD COPIED</span>
+                    <span>RISULTATO COPIATO!</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="w-4 h-4" />
-                    <span>SHARE TRIAGE</span>
+                    <span>CONDIVIDI RISULTATO</span>
                   </>
                 )}
               </button>
@@ -277,10 +277,10 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
                     onClose();
                   }
                 }}
-                className="py-2.5 px-4 rounded-xl font-mono text-xs sm:text-sm border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                className="min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-xs sm:text-sm border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
               >
                 <Lock className="w-4 h-4 text-zinc-400" />
-                <span>HISTORICAL ARCHIVE (PRO)</span>
+                <span>ARCHIVIO STORICO (PRO)</span>
               </button>
             </div>
           </div>
