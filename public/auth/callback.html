@@ -85,8 +85,9 @@
         // Auto trigger deep link intent to reopen app
         window.location.href = deepLink;
       } else {
-        // Desktop browser fallback: redirect to web dashboard with hash
-        window.location.href = '/#' + (hash ? hash.replace(/^#/, '') : 'app');
+        // Desktop browser fallback: redirect to web dashboard preserving query parameters and hash
+        var targetUrl = '/' + (search ? search : '') + (hash ? hash : '#app');
+        window.location.href = targetUrl;
       }
     })();
   </script>

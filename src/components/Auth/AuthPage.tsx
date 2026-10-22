@@ -9,6 +9,7 @@ import {
   loginWithEmailOtp,
   getRegisteredAccounts,
   syncDatabaseWithBackend,
+  getCurrentSession,
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
@@ -100,6 +101,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [githubInputHandle, setGithubInputHandle] = useState('');
   const [githubInputCallsign, setGithubInputCallsign] = useState('');
+  const [githubVerifiedEmail, setGithubVerifiedEmail] = useState('');
 
   // Passwordless Email OTP Login Modal
   const [isEmailOtpModalOpen, setIsEmailOtpModalOpen] = useState(false);
@@ -119,6 +121,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // Load registered accounts on mount, sync with disk database/logins.json, and parse OAuth redirects
   useEffect(() => {
+    let unsubscribeSupabase: (() => void) | undefined;
+
     try {
       // 1. Initial cached accounts
       setSavedAccounts(getRegisteredAccounts());
@@ -130,44 +134,72 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         }
       }).catch(() => {});
 
-      // 3. Listen for Supabase OAuth login events
+      // 3. Listen for Supabase OAuth login events (Google & GitHub)
       if (isSupabaseConfigured) {
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-          if (event === 'SIGNED_IN' && session?.user) {
-            const user = session.user;
-            const userEmail = user.email || '';
-            const metaName = (user.user_metadata?.full_name as string) || 
-                             (user.user_metadata?.name as string) || 
-                             (user.user_metadata?.user_name as string) ||
-                             userEmail.split('@')[0] || 
-                             'Player';
-            const provider = (user.app_metadata?.provider as 'google' | 'github') || 'google';
+        const handleSupabaseUser = (user: any) => {
+          const provider = (user.app_metadata?.provider as 'google' | 'github') || 'google';
+          const rawEmail = (user.email as string) || (user.user_metadata?.email as string) || '';
+          const gitHandle = (user.user_metadata?.user_name as string) || 
+                           (user.user_metadata?.preferred_username as string) || 
+                           (user.user_metadata?.name as string) || 
+                           (rawEmail ? rawEmail.split('@')[0] : '');
+          const effectiveEmail = rawEmail || (gitHandle ? `${gitHandle.toLowerCase()}@users.noreply.github.com` : '');
+          const metaName = (user.user_metadata?.full_name as string) || 
+                           (user.user_metadata?.name as string) || 
+                           gitHandle || 
+                           (effectiveEmail ? effectiveEmail.split('@')[0] : 'Operator');
 
-            const accounts = getRegisteredAccounts();
-            const existing = accounts.find(a => 
-              (userEmail && a.email && a.email.toLowerCase() === userEmail.toLowerCase())
-            );
+          const accounts = getRegisteredAccounts();
+          const existing = accounts.find(a => 
+            (effectiveEmail && a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
+            (provider === 'github' && gitHandle && a.username && a.username.toLowerCase() === gitHandle.toLowerCase())
+          );
 
-            if (existing) {
-              const res = loginWithOAuth(provider, { name: metaName, email: userEmail }, currentUserState);
-              sound.playVictoryFanfare();
-              confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-              onLoginSuccess(res.account);
+          if (existing) {
+            const res = loginWithOAuth(provider, { 
+              name: metaName, 
+              email: effectiveEmail,
+              customUsername: existing.username 
+            }, currentUserState);
+            sound.playVictoryFanfare();
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+            onLoginSuccess(res.account);
+          } else {
+            // Brand new OAuth registration: allow user to select and confirm callsign
+            if (provider === 'google') {
+              setGoogleInputEmail(effectiveEmail);
+              const suggested = metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '') || effectiveEmail.split('@')[0];
+              setGoogleInputCallsign(suggested);
+              setIsGoogleModalOpen(true);
             } else {
-              // Brand new OAuth registration: allow user to select and confirm callsign
-              if (provider === 'google') {
-                setGoogleInputEmail(userEmail);
-                const suggested = metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '') || userEmail.split('@')[0];
-                setGoogleInputCallsign(suggested);
-                setIsGoogleModalOpen(true);
-              } else {
-                setGithubInputHandle(userEmail.split('@')[0]);
-                setGithubInputCallsign(metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, ''));
-                setIsGitHubModalOpen(true);
-              }
+              setGithubInputHandle(gitHandle || metaName);
+              const suggested = (gitHandle || metaName.split(' ')[0]).replace(/[^a-zA-Z0-9_]/g, '') || 'Operator_0x';
+              setGithubInputCallsign(suggested);
+              setGithubVerifiedEmail(effectiveEmail);
+              setIsGitHubModalOpen(true);
             }
           }
+        };
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            handleSupabaseUser(session.user);
+          }
         });
+
+        if (authListener?.subscription) {
+          unsubscribeSupabase = () => authListener.subscription.unsubscribe();
+        }
+
+        // Check if session was already established on initial load
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            const activeSession = getCurrentSession();
+            if (!activeSession) {
+              handleSupabaseUser(session.user);
+            }
+          }
+        }).catch(() => {});
       }
 
       // 4. Check for direct Google OAuth Token in URL hash (#access_token=...)
@@ -204,7 +236,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     } catch {
       setSavedAccounts([]);
     }
-  }, [onLoginSuccess, isEn]);
+
+    return () => {
+      if (unsubscribeSupabase) {
+        unsubscribeSupabase();
+      }
+    };
+  }, [onLoginSuccess, isEn, currentUserState]);
 
   // Timer for 2FA resend cooldown
   useEffect(() => {
@@ -517,6 +555,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           provider: 'github',
           options: {
             redirectTo: redirectUrl,
+            scopes: 'read:user user:email',
             skipBrowserRedirect: isNativeApp()
           }
         });
@@ -558,25 +597,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
-    const finalName = githubInputCallsign.trim() || cleanHandle;
+    const cleanCallsign = (githubInputCallsign.trim() || cleanHandle).replace(/[^a-zA-Z0-9_]/g, '');
+    if (!cleanCallsign || cleanCallsign.length < 3 || cleanCallsign.length > 20) {
+      setErrorMsg(isEn ? 'Callsign must be 3-20 characters.' : 'Il Callsign deve contenere tra 3 e 20 caratteri.');
+      sound.playPayloadBlocked();
+      return;
+    }
 
     setIsProcessing(true);
     sound.playTap();
     setErrorMsg(null);
 
     setTimeout(() => {
-      const gitEmail = `${cleanHandle.toLowerCase()}@users.noreply.github.com`;
+      const gitEmail = githubVerifiedEmail.trim() || `${cleanHandle.toLowerCase()}@users.noreply.github.com`;
       const res = loginWithOAuth('github', { 
-        name: finalName, 
+        name: cleanCallsign, 
         email: gitEmail,
-        customUsername: githubInputCallsign.trim() || undefined
+        customUsername: cleanCallsign
       }, currentUserState);
+
+      // Ensure new account begins at OnboardingFunnel
+      if (res.account.userState) {
+        res.account.userState.onboardingCompleted = false;
+      }
+
       setIsProcessing(false);
       setIsGitHubModalOpen(false);
       sound.playVictoryFanfare();
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 400);
+    }, 300);
   };
 
 
@@ -1267,61 +1317,103 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* MODAL 2: GITHUB AUTHENTICATION MODAL */}
       {/* ============================================================== */}
       {isGitHubModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-          <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3.5 text-slate-100">
-            <div className="flex items-center justify-between pb-2.5 border-b border-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-sm bg-[#0C1322] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-zinc-100 font-mono">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-slate-800 border border-white/20 flex items-center justify-center">
-                  <GitHubIcon className="w-4 h-4 text-white" />
+                <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center shadow-sm shrink-0">
+                  <GitHubIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-tight">{t.githubOAuthTitle}</h3>
-                  <p className="text-[10px] text-slate-400 font-mono">{t.githubOAuthSubtitle}</p>
+                  <h3 className="font-bold text-sm text-white leading-tight">
+                    {githubInputHandle ? (isEn ? 'GITHUB CONNECTED' : 'ACCOUNT GITHUB COLLEGATO') : t.githubOAuthTitle}
+                  </h3>
+                  <p className="text-[10px] text-emerald-400 font-bold">
+                    {githubInputHandle ? (isEn ? 'CHOOSE YOUR CALLSIGN' : 'SCEGLI IL TUO NOME UTENTE') : t.githubOAuthSubtitle}
+                  </p>
                 </div>
               </div>
               <button 
                 onClick={() => setIsGitHubModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+                aria-label="Chiudi"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              {t.githubOAuthDesc}
-            </p>
+            {/* Error banner */}
+            {errorMsg && (
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-            {/* Custom GitHub handle form */}
-            <div className="pt-1">
-              <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
-                {t.orEnterGithubHandle}
-              </span>
-              <form onSubmit={handleGitHubSubmit} className="space-y-2.5">
+            <form onSubmit={handleGitHubSubmit} className="space-y-3.5">
+              {/* GitHub Handle / Identity Badge */}
+              {githubInputHandle ? (
+                <div className="p-3 rounded-xl bg-zinc-900 border border-emerald-500/30 flex items-center justify-between">
+                  <div className="truncate">
+                    <span className="text-[10px] text-zinc-400 uppercase block font-bold">
+                      {isEn ? 'Verified GitHub Identity' : 'Profilo GitHub Verificato'}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-400 truncate block font-mono">
+                      @{githubInputHandle.replace(/^@/, '')}
+                    </span>
+                  </div>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[10px] text-zinc-400 block mb-1 uppercase font-bold">
+                    {isEn ? 'GitHub Username:' : 'Username GitHub:'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="octocat"
+                    value={githubInputHandle}
+                    onChange={(e) => setGithubInputHandle(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 focus:border-emerald-500 text-xs text-white font-mono"
+                  />
+                </div>
+              )}
+
+              {/* Callsign / Username Input */}
+              <div>
+                <label className="text-[10px] text-zinc-300 block mb-1 uppercase font-bold tracking-wider">
+                  {isEn ? 'Choose Your Callsign / Username:' : 'Scegli il tuo Callsign / Nome Operatore:'}
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="Username GitHub (es. octocat o tuo-handle)"
-                  value={githubInputHandle}
-                  onChange={(e) => setGithubInputHandle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-white text-xs text-white font-mono"
-                />
-                <input
-                  type="text"
-                  placeholder={isEn ? 'Choose username / callsign' : 'Scegli username / callsign'}
+                  autoFocus
+                  minLength={3}
+                  maxLength={20}
+                  placeholder={isEn ? 'e.g. DarkGhost_0x' : 'es. DarkGhost_0x'}
                   value={githubInputCallsign}
                   onChange={(e) => setGithubInputCallsign(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
+                  className="w-full px-3.5 py-3 rounded-xl bg-zinc-950 border border-emerald-500/40 focus:border-emerald-400 text-sm text-white font-mono shadow-inner focus:outline-none"
                 />
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-500 hover:bg-emerald-400 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer font-mono shadow-md"
-                >
-                  <GitHubIcon className="w-3.5 h-3.5 text-slate-950" />
-                  <span>{t.authorizeGithubBtn}</span>
-                </button>
-              </form>
-            </div>
+                <p className="text-[10px] text-zinc-400 mt-1.5 font-mono">
+                  {isEn 
+                    ? '3-20 characters · Required before continuing to onboarding' 
+                    : '3-20 caratteri · Necessario prima di accedere all\'addestramento'}
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="w-full py-3.5 rounded-xl font-mono font-bold text-xs uppercase tracking-wider text-slate-950 bg-emerald-400 hover:bg-emerald-300 border border-emerald-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/25 active:scale-98"
+              >
+                <span>{isEn ? 'CONFIRM & START ONBOARDING' : 'CONFERMA E INIZIA ADDESTRAMENTO'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}
