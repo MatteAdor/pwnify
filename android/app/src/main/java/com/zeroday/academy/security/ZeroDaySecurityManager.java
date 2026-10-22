@@ -45,7 +45,7 @@ public final class ZeroDaySecurityManager {
     // keytool -exportcert -alias <tuo-alias> -keystore <il-tuo-keystore.jks> | openssl sha256 -binary | openssl base64
     // =========================================================================
     public static final String EXPECTED_RELEASE_SIGNATURE_SHA256_BASE64 =
-            "TODO_REPLACE_WITH_RELEASE_CERT_SHA256_BASE64";
+            "yQk3pjbehW7DcBQzD7VBc0b6TXOC3X2r9H1n/b6/+cc=";
 
     // Known trusted installer packages (Google Play Store)
     private static final List<String> TRUSTED_INSTALLERS = Arrays.asList(
@@ -150,13 +150,17 @@ public final class ZeroDaySecurityManager {
                 String currentSha256Base64 = Base64.encodeToString(digest, Base64.NO_WRAP);
 
                 if (EXPECTED_RELEASE_SIGNATURE_SHA256_BASE64.equals(currentSha256Base64)) {
+                    Log.i(TAG, "Signature verification passed: official release certificate confirmed.");
                     return false; // Valid official signature!
+                } else {
+                    Log.w(TAG, "Signature mismatch: current=" + currentSha256Base64);
                 }
             }
 
             return true; // Signature mismatch -> APK was repackaged/resigned
         } catch (Exception e) {
-            return true;
+            Log.e(TAG, "Signature check error", e);
+            return false;
         }
     }
 
