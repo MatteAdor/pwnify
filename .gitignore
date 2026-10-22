@@ -38,3 +38,6 @@ supabase/*.enc
 *.keystore
 keystore.properties
 
+
+.agent
+.claude

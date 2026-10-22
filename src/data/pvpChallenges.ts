@@ -493,6 +493,15 @@ export const PVP_CHALLENGES: PvPChallenge[] = [
 
 export const SMART_BOTS: PvPPlayer[] = [
   {
+    id: 'bot_novice',
+    name: '0x_ScriptApprentice',
+    avatar: 'SA',
+    elo: 180,
+    rank: 'Script Kiddie',
+    winStreak: 1,
+    isBot: true
+  },
+  {
     id: 'bot_spectre',
     name: '0x_Spectre',
     avatar: 'SP',
@@ -503,18 +512,18 @@ export const SMART_BOTS: PvPPlayer[] = [
   },
   {
     id: 'bot_null',
-    name: 'null_ptr_exception',
+    name: 'null_ptr_sniffer',
     avatar: 'NP',
     elo: 1275,
-    rank: 'Red Teamer',
+    rank: 'Packet Sniffer',
     winStreak: 4,
     isBot: true
   },
   {
     id: 'bot_kernel',
-    name: 'Kernel_Pan1c',
+    name: 'Kernel_RedTeam',
     avatar: 'KP',
-    elo: 1390,
+    elo: 1450,
     rank: 'Red Teamer',
     winStreak: 3,
     isBot: true

@@ -1,21 +1,59 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# =====================================================================
+# ZeroDay Security & Hardening ProGuard / R8 Rules
+# =====================================================================
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Aggressive Obfuscation & Optimization
+-repackageclasses ''
+-allowaccessmodification
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Total Log Stripping in Release
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Strip System.out and System.err
+-assumenosideeffects class java.io.PrintStream {
+    public void println(java.lang.String);
+    public void print(java.lang.String);
+}
+
+# Preserve Line Numbers / SourceFile attributes for crashes (optional, but keep obfuscated)
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,*Annotation*,EnclosingMethod
+
+# JavaScript Interface preservation (Essential for Capacitor WebView Bridge)
+-keepattributes JavascriptInterface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# Capacitor Framework Rules
+-keep public class com.getcapacitor.** { *; }
+-keep public class * extends com.getcapacitor.Plugin
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    public <methods>;
+}
+-keep class com.getcapacitor.Bridge
+-keep class com.getcapacitor.PluginCall { *; }
+-keep class com.getcapacitor.JSObject { *; }
+-keep class com.getcapacitor.JSArray { *; }
+
+# Cordova Compatibility
+-keep public class * extends org.apache.cordova.CordovaPlugin
+-keep class org.apache.cordova.** { *; }
+
+# Keep App Entry & RASP
+-keep public class com.zeroday.academy.MainActivity
+-keep public class com.zeroday.academy.ZeroDayApp
+-keep public class com.zeroday.academy.security.ZeroDaySecurityManager {
+    public static void init(...);
+}
+
+# Don't warn on missing optional libraries
+-dontwarn com.google.android.gms.**
+-dontwarn org.apache.cordova.**
+-dontwarn androidx.**

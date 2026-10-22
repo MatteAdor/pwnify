@@ -4,7 +4,7 @@ export const ELO_RANKS: EloRankInfo[] = [
   {
     tier: 'Script Kiddie',
     minElo: 0,
-    maxElo: 799,
+    maxElo: 1199,
     badgeColor: '#94A3B8', // Slate grey
     glowColor: 'rgba(148, 163, 184, 0.3)',
     iconName: 'Terminal',
@@ -12,8 +12,8 @@ export const ELO_RANKS: EloRankInfo[] = [
   },
   {
     tier: 'Packet Sniffer',
-    minElo: 800,
-    maxElo: 1199,
+    minElo: 1200,
+    maxElo: 1399,
     badgeColor: '#06B6D4', // Cyan
     glowColor: 'rgba(6, 182, 212, 0.4)',
     iconName: 'Radio',
@@ -21,7 +21,7 @@ export const ELO_RANKS: EloRankInfo[] = [
   },
   {
     tier: 'Red Teamer',
-    minElo: 1200,
+    minElo: 1400,
     maxElo: 1599,
     badgeColor: '#6366F1', // Electric Indigo
     glowColor: 'rgba(99, 102, 241, 0.5)',
@@ -31,7 +31,7 @@ export const ELO_RANKS: EloRankInfo[] = [
   {
     tier: 'APT Operator',
     minElo: 1600,
-    maxElo: 1999,
+    maxElo: 1899,
     badgeColor: '#F59E0B', // Amber Gold
     glowColor: 'rgba(245, 158, 11, 0.5)',
     iconName: 'ShieldAlert',
@@ -39,7 +39,7 @@ export const ELO_RANKS: EloRankInfo[] = [
   },
   {
     tier: 'ZeroDay Hunter',
-    minElo: 2000,
+    minElo: 1900,
     maxElo: 3500,
     badgeColor: '#10B981', // Emerald Neon
     glowColor: 'rgba(16, 185, 129, 0.6)',

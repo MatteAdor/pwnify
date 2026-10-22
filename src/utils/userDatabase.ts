@@ -49,8 +49,13 @@ export function sanitizeBounties(bounties?: UserState['dailyBounties']): UserSta
 }
 
 export function sanitizeUserState(state: UserState): UserState {
+  const elo = typeof state.elo === 'number' 
+    ? (state.elo === 1000 && (state.xp || 0) === 0 && (!state.completedNodeIds || state.completedNodeIds.length === 0) ? 100 : Math.max(100, state.elo))
+    : 100;
+
   return {
     ...state,
+    elo,
     dailyBounties: sanitizeBounties(state.dailyBounties)
   };
 }
@@ -109,7 +114,7 @@ export function mergeUserStates(base: UserState, incoming?: UserState | null): U
   ]));
 
   const maxXp = Math.max(base.xp || 0, incoming.xp || 0);
-  const maxElo = Math.max(base.elo || 1000, incoming.elo || 1000);
+  const maxElo = Math.max(base.elo ?? 100, incoming.elo ?? 100);
   const maxStreak = Math.max(base.streakDays || 0, incoming.streakDays || 0);
   const maxSurvival = Math.max(base.survivalHighScore || 0, incoming.survivalHighScore || 0);
 
@@ -173,7 +178,7 @@ export function createCleanAccountState(
     licenseKey: autoPro ? '0xPRO-CONTRIBUTOR-LIFETIME' : undefined,
     streakDays: 0,
     streakShieldActive: false,
-    elo: 1000,
+    elo: 100,
     arenaTickets: 3,
     maxTickets: 3,
     winStreak: 0,

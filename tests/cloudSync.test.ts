@@ -107,13 +107,13 @@ describe('Step 2: Progress Migration & Cache Versioning (cloudSync.ts)', () => {
     assert.equal(resolved.inventory.customTitle, 'ZeroDay Champion');
   });
 
-  test('one-shot migration caps XP at 15000 and locks initial ranked ELO to 1000', () => {
+  test('one-shot migration caps XP at 15000 and locks initial ranked ELO to 100', () => {
     const rawLegacyXp = 99999; // Excessive legacy XP
     const cappedXp = Math.min(Math.max(rawLegacyXp, 0), 15000);
-    const initialRankedElo = 1000;
+    const initialRankedElo = 100;
 
     assert.equal(cappedXp, 15000, 'Legacy XP import must be clamped strictly to 15000');
-    assert.equal(initialRankedElo, 1000, 'Ranked ELO must never import legacy rating, reset to 1000');
+    assert.equal(initialRankedElo, 100, 'Ranked ELO must never import legacy rating, reset to 100');
   });
 
   test('localStorage v2 cache versioning ensures clean isolation from legacy v1 cache', () => {

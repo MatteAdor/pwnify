@@ -804,6 +804,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               setViewMode('portal');
               window.location.hash = '';
             }}
+            currentTitle={currentTitle}
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}
@@ -960,6 +961,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               setIsLegalModalOpen(true);
             }}
             onOpenCookiePrefs={() => setForceCookieBanner(true)}
+            currentTitle={currentTitle}
           />
 
           {/* ZeroDay PRO Paywall Modal (Stripe Bridge & License Key Restore) */}

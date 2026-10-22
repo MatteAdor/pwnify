@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserState } from '../types';
-import { getRankFromElo } from '../data/ranks';
+import { getRankFromElo, getNextRankProgress } from '../data/ranks';
 import { sound } from '../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../utils/language';
 import { getCachedVersionInfo } from '../utils/platform';
@@ -8,7 +8,8 @@ import {
   Flame, Ticket, Sparkles, Terminal, Smartphone, 
   Volume2, VolumeX, RotateCcw, Palette,
   LogIn, UserCheck, Settings, X, Shield,
-  Globe, Edit3, Check, Zap, AlertCircle
+  Globe, Edit3, Check, Zap, AlertCircle,
+  Radio, Crosshair, ShieldAlert, Award
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -23,6 +24,7 @@ interface NavbarProps {
   onUpdateUsername?: (newUsername: string) => { success: boolean; error?: string };
   onUpdateLanguage?: (lang: 'it' | 'en') => void;
   onOpenPortal?: () => void;
+  currentTitle?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,12 +38,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onUpdateUsername,
   onUpdateLanguage,
-  onOpenPortal
+  onOpenPortal,
+  currentTitle
 }) => {
   const { lang, setLanguage, t } = useLanguage();
   const rank = getRankFromElo(userState.elo);
+  const rankProgress = getNextRankProgress(userState.elo);
+  const activeTitle = currentTitle || userState.customTitle || rank.tier;
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  const renderRankIcon = (iconName: string, className = "w-3.5 h-3.5") => {
+    switch (iconName) {
+      case 'Terminal': return <Terminal className={className} />;
+      case 'Radio': return <Radio className={className} />;
+      case 'Crosshair': return <Crosshair className={className} />;
+      case 'ShieldAlert': return <ShieldAlert className={className} />;
+      case 'Zap': return <Zap className={className} />;
+      default: return <Shield className={className} />;
+    }
+  };
 
   // Username edit state in settings
   const [isEditingUsername, setIsEditingUsername] = useState<boolean>(false);
@@ -142,6 +158,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Minimalist Top Telemetry & Controls: Visible & High Contrast */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Operator ELO Rank Badge */}
+            <div 
+              onClick={() => {
+                sound.playTap();
+                setUsernameInput(userState.username);
+                setUsernameError(null);
+                setUsernameSuccess(null);
+                setIsSettingsOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer select-none"
+              title={`${rank.tier} · ${userState.elo} ELO`}
+            >
+              <div style={{ color: rank.badgeColor }}>
+                {renderRankIcon(rank.iconName, "w-3.5 h-3.5")}
+              </div>
+              <span className="font-mono font-bold text-xs" style={{ color: rank.badgeColor }}>
+                {userState.elo} <span className="text-[10px] text-zinc-500 font-normal hidden sm:inline">ELO</span>
+              </span>
+            </div>
+
             {/* 2x XP Telemetry Indicator / Paywall Trigger */}
             <div 
               onClick={() => {
@@ -254,25 +290,52 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
                   {t.activeOperator}
                 </span>
+                {/* Active Callsign Title */}
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-[10px] font-mono font-bold">
+                  <Award className="w-3 h-3 text-indigo-400" />
+                  <span>{activeTitle}</span>
+                </div>
               </div>
 
-              {/* Profession Displayed Above Username */}
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-mono font-bold w-fit">
-                <Shield className="w-3 h-3 text-emerald-400" />
-                <span className="uppercase tracking-wide">{chosenProfession}</span>
+              {/* Profession & Rank Tier Badges */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] font-mono font-bold">
+                  <Shield className="w-3 h-3 text-emerald-400" />
+                  <span className="uppercase tracking-wide">{chosenProfession}</span>
+                </div>
+                <div 
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded border text-[11px] font-mono font-bold"
+                  style={{ 
+                    backgroundColor: `${rank.badgeColor}15`, 
+                    borderColor: `${rank.badgeColor}40`, 
+                    color: rank.badgeColor 
+                  }}
+                >
+                  {renderRankIcon(rank.iconName, "w-3 h-3")}
+                  <span>{rank.tier}</span>
+                </div>
               </div>
 
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="w-9 h-9 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 font-mono">
+                  <div 
+                    className="w-10 h-10 rounded-lg border flex items-center justify-center font-bold text-xs shrink-0 font-mono shadow-sm"
+                    style={{ 
+                      backgroundColor: `${rank.badgeColor}15`, 
+                      borderColor: `${rank.badgeColor}40`, 
+                      color: rank.badgeColor 
+                    }}
+                  >
                     {userState.username.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="truncate">
                     <p className="font-mono font-bold text-sm text-white truncate">
                       {userState.username}
                     </p>
-                    <p className="text-[10px] font-mono text-emerald-400">
-                      {userState.elo} ELO · Streak {userState.streakDays}d
+                    <p className="text-[10px] font-mono text-zinc-400 flex items-center gap-1.5">
+                      <span className="font-bold" style={{ color: rank.badgeColor }}>{userState.elo} ELO</span>
+                      <span>·</span>
+                      <span>Streak {userState.streakDays}d</span>
                     </p>
                   </div>
                 </div>
@@ -291,7 +354,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     title="Modifica Callsign"
                   >
                     <Edit3 className="w-3 h-3 text-zinc-300" />
-                    <span className="hidden sm:inline">Modifica</span>
+                    <span className="hidden sm:inline">{t.changeCallsign}</span>
                   </button>
 
                   <button
@@ -314,6 +377,33 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </>
                     )}
                   </button>
+                </div>
+              </div>
+
+              {/* ELO Rank Progression Bar */}
+              <div className="pt-2 border-t border-zinc-800 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-zinc-400 text-[10px] font-bold uppercase">
+                    {t.rankTierLabel}: <span style={{ color: rank.badgeColor }}>{rank.tier}</span>
+                  </span>
+                  {rankProgress.nextTier ? (
+                    <span className="text-zinc-400 text-[10px]">
+                      <strong className="text-white">{rankProgress.pointsToNext}</strong> {t.pointsToPromote} ({rankProgress.nextTier})
+                    </span>
+                  ) : (
+                    <span className="text-emerald-400 font-bold text-[10px]">
+                      {t.apexRankAchieved}
+                    </span>
+                  )}
+                </div>
+                <div className="w-full h-1.5 bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${rankProgress.progressPercent}%`, 
+                      backgroundColor: rank.badgeColor 
+                    }}
+                  />
                 </div>
               </div>
 

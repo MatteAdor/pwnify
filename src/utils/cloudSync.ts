@@ -173,7 +173,7 @@ export async function executeOneShotMigration(
   localState: Partial<UserState>
 ): Promise<MigrationResult> {
   if (!isSupabaseConfigured) {
-    return { success: false, importedXp: 0, elo: 1000 };
+    return { success: false, importedXp: 0, elo: 100 };
   }
 
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
@@ -196,7 +196,7 @@ export async function executeOneShotMigration(
   if (error) {
     // If already imported, retrieve existing profile cleanly
     if (error.message.includes('already imported')) {
-      return { success: true, importedXp: cappedXp, elo: 1000, alreadyImported: true };
+      return { success: true, importedXp: cappedXp, elo: 100, alreadyImported: true };
     }
     throw new Error(`Migration failed: ${error.message}`);
   }
@@ -205,7 +205,7 @@ export async function executeOneShotMigration(
   return {
     success: result?.success ?? false,
     importedXp: result?.imported_xp ?? cappedXp,
-    elo: result?.elo ?? 1000
+    elo: result?.elo ?? 100
   };
 }
 

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Liquid Chrome Metallic Gradient -->
+    <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="18%" stop-color="#E2EEF8" />
+      <stop offset="42%" stop-color="#93B8D4" />
+      <stop offset="50%" stop-color="#4B6E8C" />
+      <stop offset="52%" stop-color="#1E3347" />
+      <stop offset="58%" stop-color="#3A5D7C" />
+      <stop offset="78%" stop-color="#B8D7ED" />
+      <stop offset="92%" stop-color="#EBF4FA" />
+      <stop offset="100%" stop-color="#8DA7BC" />
+    </linearGradient>
+
+    <!-- Chrome Rim Specular Highlight -->
+    <linearGradient id="chromeBevel" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+      <stop offset="35%" stop-color="#CCE3F5" stop-opacity="0.85" />
+      <stop offset="65%" stop-color="#2D4D6B" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.95" />
+    </linearGradient>
+
+
+  </defs>
+
+  <!-- Clean, Flat, Solid Pitch Black Squircle Background (No gradients, No border rim) -->
+  <rect x="0" y="0" width="512" height="512" rx="115" ry="115" fill="#000000" />
+
+  <!-- 3D Chrome Emblem: Slashed Zero 'Ø' + 'x' -->
+  <g>
+    <!-- Slashed Zero (0/) -->
+    <path d="M 172,135 
+             C 228,135 260,180 260,256 
+             C 260,332 228,377 172,377 
+             C 116,377 84,332 84,256 
+             C 84,180 116,135 172,135 Z 
+             M 172,180 
+             C 142,180 128,210 128,256 
+             C 128,302 142,332 172,332 
+             C 202,332 216,302 216,256 
+             C 216,210 202,180 172,180 Z" 
+          fill="url(#chromeGrad)" 
+          stroke="url(#chromeBevel)" 
+          stroke-width="5" 
+          fill-rule="evenodd" />
+
+    <!-- Center Slash '/' cutting through the zero -->
+    <polygon points="106,372 126,384 236,140 216,128" 
+             fill="url(#chromeGrad)" 
+             stroke="url(#chromeBevel)" 
+             stroke-width="4" />
+
+    <!-- Letter 'x' in 3D Liquid Chrome -->
+    <path d="M 288,198 
+             L 328,198 
+             L 372,260 
+             L 416,198 
+             L 456,198 
+             L 394,280 
+             L 460,370 
+             L 420,370 
+             L 372,302 
+             L 324,370 
+             L 284,370 
+             L 350,280 Z" 
+          fill="url(#chromeGrad)" 
+          stroke="url(#chromeBevel)" 
+          stroke-width="5" />
+  </g>
+
+
+</svg>

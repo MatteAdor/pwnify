@@ -3,6 +3,7 @@ import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { sanitizeCallsign } from '../../utils/security';
 import { useLanguage } from '../../utils/language';
+import { getRankFromElo } from '../../data/ranks';
 import { 
   registerAccount, 
   loginAccount, 
@@ -12,7 +13,8 @@ import {
 } from '../../utils/userDatabase';
 import { 
   X, Lock, Mail, User, ShieldCheck, 
-  ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2, Trash2 
+  ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2, Trash2,
+  Terminal, Radio, Crosshair, ShieldAlert, Zap, Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -24,6 +26,7 @@ interface AuthModalProps {
   onLogout: () => void;
   onOpenLegal?: (tab: 'privacy' | 'terms' | 'refund' | 'cookies') => void;
   onOpenCookiePrefs?: () => void;
+  currentTitle?: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -33,10 +36,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
   onLogout,
   onOpenLegal,
-  onOpenCookiePrefs
+  onOpenCookiePrefs,
+  currentTitle
 }) => {
   const { lang, t } = useLanguage();
   const isEn = lang === 'en';
+  const rank = getRankFromElo(userState.elo);
+  const activeTitle = currentTitle || userState.customTitle || rank.tier;
+
+  const renderRankIcon = (iconName: string, className = "w-3.5 h-3.5") => {
+    switch (iconName) {
+      case 'Terminal': return <Terminal className={className} />;
+      case 'Radio': return <Radio className={className} />;
+      case 'Crosshair': return <Crosshair className={className} />;
+      case 'ShieldAlert': return <ShieldAlert className={className} />;
+      case 'Zap': return <Zap className={className} />;
+      default: return <ShieldCheck className={className} />;
+    }
+  };
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [callsign, setCallsign] = useState('');
@@ -163,6 +180,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">{t.callsign}</span>
                 <span className="font-bold text-emerald-400 text-sm">{userState.username}</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-slate-400">{isEn ? 'CALLSIGN TITLE' : 'TITOLO CALLSIGN'}</span>
+                <span className="font-bold text-indigo-300 flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>{activeTitle}</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-slate-400">{isEn ? 'RANK TIER' : 'GRADO TIER'}</span>
+                <span className="font-bold flex items-center gap-1.5" style={{ color: rank.badgeColor }}>
+                  {renderRankIcon(rank.iconName, "w-3.5 h-3.5")}
+                  <span>{rank.tier}</span>
+                </span>
               </div>
               {userState.userEmail && (
                 <div className="flex items-center justify-between border-b border-white/5 pb-2">

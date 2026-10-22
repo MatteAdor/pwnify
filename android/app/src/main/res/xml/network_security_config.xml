@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Base configuration: Strictly HTTPS only, reject cleartext traffic -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Certificate Pinning Template for API & Backend endpoints -->
+    <!-- Pin bypasses MITM proxies (Charles, Burp, HTTP Toolkit) unless pinned cert matches -->
+    <domain-config>
+        <domain includeSubdomains="true">zeroday.gg</domain>
+        <domain includeSubdomains="true">api.zeroday.gg</domain>
+        <pin-set expiration="2027-12-31">
+            <!-- 
+                TODO: Inserisci il digest SHA-256 Base64 della chiave pubblica (SPKI) del tuo certificato server.
+                Estraibile con:
+                openssl s_client -servername api.zeroday.gg -connect api.zeroday.gg:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+            -->
+            <!-- Backup Pin (consigliato per rotazione certificati) -->
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
+        </pin-set>
+    </domain-config>
+
+    <!-- Debug overrides for local development only -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

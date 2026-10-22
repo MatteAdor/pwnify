@@ -80,7 +80,11 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
 
 export const CALLSIGN_TITLES = [
   { id: 't_skid', title: 'Script Kiddie', minElo: 0, proOnly: false },
-  { id: 't_packet', title: 'Packet Whisperer', minElo: 1150, proOnly: false },
+  { id: 't_packet_sniffer', title: 'Packet Sniffer', minElo: 1200, proOnly: false },
+  { id: 't_red_teamer', title: 'Red Teamer', minElo: 1400, proOnly: false },
+  { id: 't_apt_operator', title: 'APT Operator', minElo: 1600, proOnly: true },
+  { id: 't_zeroday_hunter', title: 'ZeroDay Hunter', minElo: 1900, proOnly: true },
+  { id: 't_packet', title: 'Packet Whisperer', minElo: 1200, proOnly: false },
   { id: 't_kernel', title: 'Kernel Spectre', minElo: 1400, proOnly: false },
   { id: 't_c2', title: 'C2 Architect', minElo: 1600, proOnly: true },
   { id: 't_zeroday', title: '0xDAY Sovereign', minElo: 1900, proOnly: true }
