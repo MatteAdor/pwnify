@@ -401,48 +401,57 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    // In native app: directly open in-app Google registration & callsign modal.
-    // This keeps the user 100% inside the app, avoids external browser redirects,
-    // and prompts for the desired callsign/username immediately.
-    if (isNativeApp()) {
-      setIsGoogleModalOpen(true);
-      return;
-    }
-
     if (isSupabaseConfigured) {
       setIsProcessing(true);
       try {
+        const redirectUrl = isNativeApp()
+          ? 'https://zeroday-app.vercel.app/auth/callback'
+          : `${window.location.origin}/auth/callback`;
+
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/#app`
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: isNativeApp()
           }
         });
+
         if (error) {
           console.warn('Supabase Google OAuth error:', error.message);
           setErrorMsg(error.message);
           setIsProcessing(false);
-          setIsGoogleModalOpen(true);
           return;
         }
+
         if (data?.url) {
-          window.location.href = data.url;
+          if (isNativeApp()) {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ url: data.url, windowName: '_self' });
+            setIsProcessing(false);
+          } else {
+            window.location.href = data.url;
+          }
           return;
         }
-        return;
       } catch (err: unknown) {
         setIsProcessing(false);
-        setIsGoogleModalOpen(true);
+        const msg = err instanceof Error ? err.message : 'Google OAuth failed';
+        setErrorMsg(msg);
         return;
       }
     }
 
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (googleClientId && googleClientId.trim()) {
-      const redirectUri = window.location.origin;
+      const redirectUri = `${window.location.origin}/auth/callback`;
       const scope = encodeURIComponent('email profile openid');
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId.trim())}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${scope}&prompt=select_account`;
-      window.location.href = authUrl;
+      if (isNativeApp()) {
+        const { Browser } = await import('@capacitor/browser');
+        await Browser.open({ url: authUrl, windowName: '_self' });
+      } else {
+        window.location.href = authUrl;
+      }
       return;
     }
 
@@ -458,32 +467,35 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       return;
     }
 
+    const cleanCallsign = googleInputCallsign.trim();
+    if (!cleanCallsign || cleanCallsign.length < 3 || cleanCallsign.length > 20) {
+      setErrorMsg(isEn ? 'Callsign must be 3-20 characters.' : 'Il Callsign deve contenere tra 3 e 20 caratteri.');
+      sound.playPayloadBlocked();
+      return;
+    }
+
     setIsProcessing(true);
     sound.playTap();
     setErrorMsg(null);
 
-    const cleanCallsign = googleInputCallsign.trim();
-    if (cleanCallsign && (cleanCallsign.length < 3 || cleanCallsign.length > 20)) {
-      setErrorMsg(isEn ? 'Callsign must be 3-20 characters.' : 'Il Callsign deve contenere tra 3 e 20 caratteri.');
-      sound.playPayloadBlocked();
-      setIsProcessing(false);
-      return;
-    }
-
     setTimeout(() => {
-      const defaultName = cleanMail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-      const finalName = cleanCallsign || defaultName || 'Player';
       const res = loginWithOAuth('google', { 
-        name: finalName, 
+        name: cleanCallsign, 
         email: cleanMail,
-        customUsername: cleanCallsign || undefined
+        customUsername: cleanCallsign
       }, currentUserState);
+      
+      // Ensure new account begins at OnboardingFunnel
+      if (res.account.userState) {
+        res.account.userState.onboardingCompleted = false;
+      }
+      
       setIsProcessing(false);
       setIsGoogleModalOpen(false);
       sound.playVictoryFanfare();
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.5 } });
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 400);
+    }, 300);
   };
 
   // ---------------------------------------------------------------------------
@@ -494,41 +506,44 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (isNativeApp()) {
-      setIsGitHubModalOpen(true);
-      return;
-    }
-
     if (isSupabaseConfigured) {
       setIsProcessing(true);
       try {
-        const { error } = await supabase.auth.signInWithOAuth({
+        const redirectUrl = isNativeApp()
+          ? 'https://zeroday-app.vercel.app/auth/callback'
+          : `${window.location.origin}/auth/callback`;
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
-            redirectTo: `${window.location.origin}/#app`
+            redirectTo: redirectUrl,
+            skipBrowserRedirect: isNativeApp()
           }
         });
+
         if (error) {
           console.warn('Supabase GitHub OAuth error:', error.message);
           setErrorMsg(error.message);
           setIsProcessing(false);
-          setIsGitHubModalOpen(true);
           return;
         }
-        return;
+
+        if (data?.url) {
+          if (isNativeApp()) {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ url: data.url, windowName: '_self' });
+            setIsProcessing(false);
+          } else {
+            window.location.href = data.url;
+          }
+          return;
+        }
       } catch (err: unknown) {
         setIsProcessing(false);
-        setIsGitHubModalOpen(true);
+        const msg = err instanceof Error ? err.message : 'GitHub OAuth failed';
+        setErrorMsg(msg);
         return;
       }
-    }
-
-    const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-    if (githubClientId && githubClientId.trim()) {
-      const redirectUri = window.location.origin;
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(githubClientId.trim())}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user,user:email`;
-      window.location.href = authUrl;
-      return;
     }
 
     setIsGitHubModalOpen(true);
@@ -1151,44 +1166,53 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* MODAL 1: GOOGLE AUTHENTICATION MODAL */}
       {/* ============================================================== */}
       {isGoogleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in font-sans">
-          <div className="relative w-full max-w-sm bg-[#0E1526] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-sm bg-[#0C1322] border border-emerald-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-zinc-100 font-mono">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
                   <GoogleIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-tight">{t.googleOAuthTitle}</h3>
-                  <p className="text-[10px] text-slate-400 font-mono">{t.googleOAuthSubtitle}</p>
+                  <h3 className="font-bold text-sm text-white leading-tight">
+                    {googleInputEmail ? (isEn ? 'GOOGLE CONNECTED' : 'ACCOUNT GOOGLE COLLEGATO') : t.googleOAuthTitle}
+                  </h3>
+                  <p className="text-[10px] text-emerald-400 font-bold">
+                    {googleInputEmail ? (isEn ? 'CHOOSE YOUR CALLSIGN' : 'SCEGLI IL TUO NOME UTENTE') : t.googleOAuthSubtitle}
+                  </p>
                 </div>
               </div>
               <button 
                 onClick={() => setIsGoogleModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
+                aria-label="Chiudi"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              {t.googleOAuthDesc}
-            </p>
+            {/* Error banner */}
+            {errorMsg && (
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 font-mono">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-            {/* Custom Google account input form */}
-            <div className="pt-1">
-              <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
-                {t.orEnterGmail}
-              </span>
-              <form onSubmit={handleGoogleSubmit} className="space-y-3">
-                {errorMsg && (
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 font-mono">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
-                    <span>{errorMsg}</span>
+            <form onSubmit={handleGoogleSubmit} className="space-y-3.5">
+              {/* Email display or input */}
+              {googleInputEmail ? (
+                <div className="p-3 rounded-xl bg-zinc-900 border border-emerald-500/30 flex items-center justify-between">
+                  <div className="truncate">
+                    <span className="text-[10px] text-zinc-400 uppercase block">Email Verificata</span>
+                    <span className="text-xs font-bold text-emerald-400 truncate block">{googleInputEmail}</span>
                   </div>
-                )}
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 ml-2" />
+                </div>
+              ) : (
                 <div>
-                  <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase tracking-wider">
+                  <label className="text-[10px] text-zinc-400 block mb-1 uppercase font-bold">
                     {isEn ? 'Google Account Email:' : 'Email Account Google:'}
                   </label>
                   <input
@@ -1197,37 +1221,44 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="your.email@gmail.com"
                     value={googleInputEmail}
                     onChange={(e) => setGoogleInputEmail(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
+                    className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 focus:border-emerald-500 text-xs text-white font-mono"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase tracking-wider">
-                    {isEn ? 'Choose Callsign / Username:' : 'Scegli Callsign / Username:'}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    minLength={3}
-                    maxLength={20}
-                    placeholder={isEn ? 'e.g. GhostOperator_0x' : 'es. GhostOperator_0x'}
-                    value={googleInputCallsign}
-                    onChange={(e) => setGoogleInputCallsign(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
-                  />
-                  <p className="text-[9px] text-zinc-500 mt-1 font-mono">
-                    {isEn ? '3-20 chars · Used across PvP arena & leaderboards' : '3-20 caratteri · Usato in Arena PvP e classifiche'}
-                  </p>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full py-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 border border-emerald-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{t.confirmAndSignIn}</span>
-                </button>
-              </form>
-            </div>
+              )}
+
+              {/* Callsign / Username Input */}
+              <div>
+                <label className="text-[10px] text-zinc-300 block mb-1 uppercase font-bold tracking-wider">
+                  {isEn ? 'Choose Your Callsign / Username:' : 'Scegli il tuo Callsign / Nome Operatore:'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  minLength={3}
+                  maxLength={20}
+                  placeholder={isEn ? 'e.g. DarkGhost_0x' : 'es. DarkGhost_0x'}
+                  value={googleInputCallsign}
+                  onChange={(e) => setGoogleInputCallsign(e.target.value)}
+                  className="w-full px-3.5 py-3 rounded-xl bg-zinc-950 border border-emerald-500/40 focus:border-emerald-400 text-sm text-white font-mono shadow-inner focus:outline-none"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1.5 font-mono">
+                  {isEn 
+                    ? '3-20 characters · Required before continuing to onboarding' 
+                    : '3-20 caratteri · Necessario prima di accedere all\'addestramento'}
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="w-full py-3.5 rounded-xl font-mono font-bold text-xs uppercase tracking-wider text-slate-950 bg-emerald-400 hover:bg-emerald-300 border border-emerald-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/25 active:scale-98"
+              >
+                <span>{isEn ? 'CONFIRM & START ONBOARDING' : 'CONFERMA E INIZIA ADDESTRAMENTO'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}

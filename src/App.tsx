@@ -168,6 +168,10 @@ export const App: React.FC = () => {
         CapApp.addListener('appUrlOpen', async (data) => {
           if (!isMounted) return;
           console.log('[DeepLink] App opened with URL:', data.url);
+          try {
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.close();
+          } catch {}
           const rawHash = data.url.includes('#') ? data.url.split('#')[1] : '';
           if (rawHash && rawHash.includes('access_token=')) {
             const params = new URLSearchParams(rawHash);
