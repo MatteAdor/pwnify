@@ -142,6 +142,56 @@ export const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // OAuth callback auto-bounce into native app when in mobile browser
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isNativeApp()) {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const isAuthCallback = hash.includes('access_token=') || search.includes('code=');
+      if (isAuthCallback && /android/i.test(navigator.userAgent)) {
+        const deepLink = `com.zeroday.academy://auth/callback${search}${hash}`;
+        const timer = setTimeout(() => {
+          try {
+            window.location.href = deepLink;
+          } catch {}
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
+  // Native Capacitor deep link listener for incoming OAuth redirects
+  useEffect(() => {
+    if (isNativeApp()) {
+      let isMounted = true;
+      import('@capacitor/app').then(({ App: CapApp }) => {
+        CapApp.addListener('appUrlOpen', async (data) => {
+          if (!isMounted) return;
+          console.log('[DeepLink] App opened with URL:', data.url);
+          const rawHash = data.url.includes('#') ? data.url.split('#')[1] : '';
+          if (rawHash && rawHash.includes('access_token=')) {
+            const params = new URLSearchParams(rawHash);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            if (accessToken && refreshToken) {
+              try {
+                const { supabase, isSupabaseConfigured } = await import('./config/supabase');
+                if (isSupabaseConfigured) {
+                  await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                }
+              } catch (err) {
+                console.warn('[DeepLink] Session set error:', err);
+              }
+            }
+          }
+        }).catch(() => {});
+      }).catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, []);
+
   useEffect(() => {
     updateManager.setArenaDuelActive(activeTab === 'arena');
   }, [activeTab]);
@@ -153,7 +203,13 @@ export const App: React.FC = () => {
         // Native Capacitor: skip the web marketing portal entirely
         if (isNativeApp()) return 'app';
         const searchParams = new URLSearchParams(window.location.search);
-        if (searchParams.get('view') === 'app' || window.location.hash === '#app') {
+        const hash = window.location.hash;
+        const isAuthCallback = 
+          hash.includes('access_token=') || 
+          hash.includes('error=') || 
+          hash.includes('type=recovery') ||
+          searchParams.has('code');
+        if (searchParams.get('view') === 'app' || hash === '#app' || isAuthCallback) {
           return 'app';
         }
       }

@@ -12,6 +12,7 @@ import {
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
+import { isNativeApp } from '../../utils/platform';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 import { 
@@ -141,10 +142,30 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                              userEmail.split('@')[0] || 
                              'Player';
             const provider = (user.app_metadata?.provider as 'google' | 'github') || 'google';
-            const res = loginWithOAuth(provider, { name: metaName, email: userEmail }, currentUserState);
-            sound.playVictoryFanfare();
-            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-            onLoginSuccess(res.account);
+
+            const accounts = getRegisteredAccounts();
+            const existing = accounts.find(a => 
+              (userEmail && a.email && a.email.toLowerCase() === userEmail.toLowerCase())
+            );
+
+            if (existing) {
+              const res = loginWithOAuth(provider, { name: metaName, email: userEmail }, currentUserState);
+              sound.playVictoryFanfare();
+              confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+              onLoginSuccess(res.account);
+            } else {
+              // Brand new OAuth registration: allow user to select and confirm callsign
+              if (provider === 'google') {
+                setGoogleInputEmail(userEmail);
+                const suggested = metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '') || userEmail.split('@')[0];
+                setGoogleInputCallsign(suggested);
+                setIsGoogleModalOpen(true);
+              } else {
+                setGithubInputHandle(userEmail.split('@')[0]);
+                setGithubInputCallsign(metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, ''));
+                setIsGitHubModalOpen(true);
+              }
+            }
           }
         });
       }
@@ -380,19 +401,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    // In native app: directly open in-app Google registration & callsign modal.
+    // This keeps the user 100% inside the app, avoids external browser redirects,
+    // and prompts for the desired callsign/username immediately.
+    if (isNativeApp()) {
+      setIsGoogleModalOpen(true);
+      return;
+    }
+
     if (isSupabaseConfigured) {
       setIsProcessing(true);
       try {
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin
+            redirectTo: `${window.location.origin}/#app`
           }
         });
         if (error) {
           console.warn('Supabase Google OAuth error:', error.message);
           setErrorMsg(error.message);
           setIsProcessing(false);
+          setIsGoogleModalOpen(true);
           return;
         }
         if (data?.url) {
@@ -402,8 +432,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         return;
       } catch (err: unknown) {
         setIsProcessing(false);
-        const msg = err instanceof Error ? err.message : 'Google OAuth failed';
-        setErrorMsg(msg);
+        setIsGoogleModalOpen(true);
         return;
       }
     }
@@ -433,13 +462,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
     setErrorMsg(null);
 
+    const cleanCallsign = googleInputCallsign.trim();
+    if (cleanCallsign && (cleanCallsign.length < 3 || cleanCallsign.length > 20)) {
+      setErrorMsg(isEn ? 'Callsign must be 3-20 characters.' : 'Il Callsign deve contenere tra 3 e 20 caratteri.');
+      sound.playPayloadBlocked();
+      setIsProcessing(false);
+      return;
+    }
+
     setTimeout(() => {
       const defaultName = cleanMail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
-      const finalName = googleInputCallsign.trim() || `Google_${defaultName}`;
+      const finalName = cleanCallsign || defaultName || 'Player';
       const res = loginWithOAuth('google', { 
         name: finalName, 
         email: cleanMail,
-        customUsername: googleInputCallsign.trim() || undefined
+        customUsername: cleanCallsign || undefined
       }, currentUserState);
       setIsProcessing(false);
       setIsGoogleModalOpen(false);
@@ -457,13 +494,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    if (isNativeApp()) {
+      setIsGitHubModalOpen(true);
+      return;
+    }
+
     if (isSupabaseConfigured) {
       setIsProcessing(true);
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
-            redirectTo: window.location.origin
+            redirectTo: `${window.location.origin}/#app`
           }
         });
         if (error) {
@@ -1138,28 +1180,50 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <span className="text-[10px] font-mono text-slate-400 block mb-2 uppercase tracking-wider">
                 {t.orEnterGmail}
               </span>
-              <form onSubmit={handleGoogleSubmit} className="space-y-2.5">
-                <input
-                  type="email"
-                  required
-                  placeholder="your.email@gmail.com"
-                  value={googleInputEmail}
-                  onChange={(e) => setGoogleInputEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
-                />
-                <input
-                  type="text"
-                  placeholder={isEn ? 'Choose username / callsign' : 'Scegli username / callsign'}
-                  value={googleInputCallsign}
-                  onChange={(e) => setGoogleInputCallsign(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#090D17] border border-white/10 focus:border-blue-500 text-xs text-white font-mono"
-                />
+              <form onSubmit={handleGoogleSubmit} className="space-y-3">
+                {errorMsg && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 font-mono">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase tracking-wider">
+                    {isEn ? 'Google Account Email:' : 'Email Account Google:'}
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="your.email@gmail.com"
+                    value={googleInputEmail}
+                    onChange={(e) => setGoogleInputEmail(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono text-zinc-400 block mb-1 uppercase tracking-wider">
+                    {isEn ? 'Choose Callsign / Username:' : 'Scegli Callsign / Username:'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={20}
+                    placeholder={isEn ? 'e.g. GhostOperator_0x' : 'es. GhostOperator_0x'}
+                    value={googleInputCallsign}
+                    onChange={(e) => setGoogleInputCallsign(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#090D17] border border-white/10 focus:border-emerald-500 text-xs text-white font-mono"
+                  />
+                  <p className="text-[9px] text-zinc-500 mt-1 font-mono">
+                    {isEn ? '3-20 chars · Used across PvP arena & leaderboards' : '3-20 caratteri · Usato in Arena PvP e classifiche'}
+                  </p>
+                </div>
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-2.5 rounded-xl font-mono font-bold text-xs text-white bg-blue-600 hover:bg-blue-500 border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  className="w-full py-3 rounded-xl font-mono font-bold text-xs text-slate-950 bg-emerald-400 hover:bg-emerald-300 border border-emerald-400/30 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/20"
                 >
-                  <GoogleIcon className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-4 h-4" />
                   <span>{t.confirmAndSignIn}</span>
                 </button>
               </form>
