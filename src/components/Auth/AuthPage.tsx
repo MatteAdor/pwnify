@@ -9,7 +9,8 @@ import {
   loginWithEmailOtp,
   getRegisteredAccounts,
   syncDatabaseWithBackend,
-  isUsernameAvailable,`r`n  getCurrentSession,
+  isUsernameAvailable,
+  getCurrentSession,
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
@@ -611,7 +612,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsGitHubModalOpen(true);
   };
 
-  const handleGitHubSubmit = (e: React.FormEvent) => {
+  const handleGitHubSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanHandle = githubInputHandle.trim().replace(/^@/, '');
     if (!cleanHandle || cleanHandle.length < 2) {
@@ -631,8 +632,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
     setErrorMsg(null);
 
+    const gitEmail = githubVerifiedEmail.trim() || `${cleanHandle.toLowerCase()}@users.noreply.github.com`;
+
+    try {
+      const check = await isUsernameAvailable(cleanCallsign, gitEmail);
+      if (!check.available) {
+        setIsProcessing(false);
+        setErrorMsg(check.error || (isEn ? 'Callsign already taken.' : 'Questo nome utente è già in uso. Scegline un altro.'));
+        sound.playPayloadBlocked();
+        return;
+      }
+    } catch {
+      // Continue if network check fails
+    }
+
     setTimeout(() => {
-      const gitEmail = githubVerifiedEmail.trim() || `${cleanHandle.toLowerCase()}@users.noreply.github.com`;
       const res = loginWithOAuth('github', { 
         name: cleanCallsign, 
         email: gitEmail,
@@ -649,7 +663,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       sound.playVictoryFanfare();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 300);
+    }, 200);
   };
 
 
