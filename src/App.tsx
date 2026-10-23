@@ -41,6 +41,9 @@ import {
   sanitizeUserState,
   syncDatabaseWithBackend,
   updateOperatorUsername,
+  recordActivityAndUpdateStreak,
+  recordCertPassed,
+  toggleStreakFreeze,
   UserAccount 
 } from './utils/userDatabase';
 import { isContributor } from './utils/licenseEngine';
@@ -498,16 +501,28 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleDailyBreachSuccess = (xpGained: number, eloGained: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
-      const currentStreak = prev.dailyBreachStreak || 0;
+      const currentBreachStreak = prev.dailyBreachStreak || 0;
       const todayStr = new Date().toISOString().split('T')[0];
-      return {
-        ...prev,
-        xp: prev.xp + xpGained * xpMultiplier,
-        elo: prev.elo + eloGained,
-        dailyBreachStreak: currentStreak + 1,
+      const { updatedState } = recordActivityAndUpdateStreak(prev);
+
+      const nextState: UserState = {
+        ...updatedState,
+        xp: updatedState.xp + xpGained * xpMultiplier,
+        elo: updatedState.elo + eloGained,
+        dailyBreachStreak: currentBreachStreak + 1,
         lastDailyBreachDate: todayStr,
-        readinessScore: Math.min(100, prev.readinessScore + 5)
+        readinessScore: Math.min(100, updatedState.readinessScore + 5)
       };
+      persistActiveAccountState(nextState);
+      return nextState;
+    });
+  };
+
+  const handlePassCert = (certId: string, scorePercent: number) => {
+    setUserState(prev => {
+      const nextState = recordCertPassed(prev, certId, scorePercent);
+      persistActiveAccountState(nextState);
+      return nextState;
     });
   };
 
@@ -636,16 +651,20 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         return b;
       });
 
-      return {
-        ...prev,
-        xp: prev.xp + gainedXp * xpMultiplier,
-        elo: prev.elo + gainedElo,
-        readinessScore: Math.min(100, prev.readinessScore + 6),
-        completedNodeIds: prev.completedNodeIds.includes(nodeId)
-          ? prev.completedNodeIds
-          : [...prev.completedNodeIds, nodeId],
+      const { updatedState } = recordActivityAndUpdateStreak(prev);
+
+      const nextState: UserState = {
+        ...updatedState,
+        xp: updatedState.xp + gainedXp * xpMultiplier,
+        elo: updatedState.elo + gainedElo,
+        readinessScore: Math.min(100, updatedState.readinessScore + 6),
+        completedNodeIds: updatedState.completedNodeIds.includes(nodeId)
+          ? updatedState.completedNodeIds
+          : [...updatedState.completedNodeIds, nodeId],
         dailyBounties: updatedBounties
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
 
     // In web browser: remind the user periodically to download the native APK!
@@ -687,14 +706,18 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         return b;
       });
 
-      return {
-        ...prev,
-        elo: prev.elo + eloGain,
-        winStreak: prev.winStreak + 1,
-        xp: prev.xp + 80 * xpMultiplier,
-        readinessScore: Math.min(100, prev.readinessScore + 3),
+      const { updatedState } = recordActivityAndUpdateStreak(prev);
+
+      const nextState: UserState = {
+        ...updatedState,
+        elo: updatedState.elo + eloGain,
+        winStreak: updatedState.winStreak + 1,
+        xp: updatedState.xp + 80 * xpMultiplier,
+        readinessScore: Math.min(100, updatedState.readinessScore + 3),
         dailyBounties: updatedBounties
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
   };
 
@@ -758,16 +781,19 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   // PBQ Lab Completion Handler
   const handleCompletePbq = (pbqId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
-      const alreadyDone = prev.completedPbqIds?.includes(pbqId);
-      return {
-        ...prev,
-        xp: prev.xp + (prev.isPro ? gainedXp * 2 : gainedXp),
-        elo: prev.elo + gainedElo,
-        readinessScore: Math.min(100, prev.readinessScore + 8),
+      const { updatedState } = recordActivityAndUpdateStreak(prev);
+      const alreadyDone = updatedState.completedPbqIds?.includes(pbqId);
+      const nextState: UserState = {
+        ...updatedState,
+        xp: updatedState.xp + (updatedState.isPro ? gainedXp * 2 : gainedXp),
+        elo: updatedState.elo + gainedElo,
+        readinessScore: Math.min(100, updatedState.readinessScore + 8),
         completedPbqIds: alreadyDone
-          ? prev.completedPbqIds
-          : [...(prev.completedPbqIds || []), pbqId]
+          ? updatedState.completedPbqIds
+          : [...(updatedState.completedPbqIds || []), pbqId]
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
 
     if (isBrowserEnvironment()) {
@@ -1003,6 +1029,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 userState={userState}
                 onOpenPaywallContext={triggerPaywall}
                 onCompletePbq={handleCompletePbq}
+                onPassCert={handlePassCert}
               />
             )}
           </main>

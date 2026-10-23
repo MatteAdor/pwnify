@@ -1,4 +1,4 @@
-import { UserState } from '../types';
+import { UserState, EloRankTier } from '../types';
 import { INITIAL_DAILY_BOUNTIES } from '../data/bountiesAndPbq';
 import { calculateDynamicTelemetry } from './readinessEngine';
 import { sanitizeCallsign } from './security';
@@ -68,7 +68,16 @@ export function sanitizeUserState(state: UserState): UserState {
     arenaTickets,
     maxTickets,
     lastTicketResetDate: todayStr,
-    dailyBounties: sanitizeBounties(state.dailyBounties)
+    dailyBounties: sanitizeBounties(state.dailyBounties),
+    streakDays: typeof state.streakDays === 'number' ? Math.max(0, state.streakDays) : 0,
+    streakShieldsEarned: typeof state.streakShieldsEarned === 'number' ? Math.max(0, state.streakShieldsEarned) : 0,
+    streakFreezeActive: Boolean(state.streakFreezeActive),
+    streakMilestonesUnlocked: Array.isArray(state.streakMilestonesUnlocked) ? state.streakMilestonesUnlocked : [],
+    earnedTitles: Array.isArray(state.earnedTitles) ? state.earnedTitles : [],
+    leagueHistory: Array.isArray(state.leagueHistory) ? state.leagueHistory : [],
+    passedCerts: Array.isArray(state.passedCerts) ? state.passedCerts : [],
+    cpeMaintenanceActive: Boolean(state.cpeMaintenanceActive),
+    leaderboardOptIn: state.leaderboardOptIn !== undefined ? Boolean(state.leaderboardOptIn) : true
   };
 }
 
@@ -162,6 +171,16 @@ export function mergeUserStates(base: UserState, incoming?: UserState | null): U
     customTitle: base.customTitle || incoming.customTitle,
     dailyBreachStreak: Math.max(base.dailyBreachStreak || 0, incoming.dailyBreachStreak || 0),
     lastDailyBreachDate: base.lastDailyBreachDate || incoming.lastDailyBreachDate,
+    lastActiveDate: base.lastActiveDate || incoming.lastActiveDate,
+    streakShieldsEarned: Math.max(base.streakShieldsEarned || 0, incoming.streakShieldsEarned || 0),
+    streakFreezeActive: Boolean(base.streakFreezeActive || incoming.streakFreezeActive),
+    streakFreezeExpiresDate: base.streakFreezeExpiresDate || incoming.streakFreezeExpiresDate,
+    streakMilestonesUnlocked: Array.from(new Set([...(base.streakMilestonesUnlocked || []), ...(incoming.streakMilestonesUnlocked || [])])),
+    earnedTitles: Array.from(new Set([...(base.earnedTitles || []), ...(incoming.earnedTitles || [])])),
+    leagueHistory: [...(base.leagueHistory || []), ...(incoming.leagueHistory || [])].filter((v, i, a) => a.findIndex(t => t.seasonId === v.seasonId) === i),
+    passedCerts: [...(base.passedCerts || []), ...(incoming.passedCerts || [])].filter((v, i, a) => a.findIndex(t => t.certId === v.certId) === i),
+    cpeMaintenanceActive: Boolean(base.cpeMaintenanceActive || incoming.cpeMaintenanceActive),
+    leaderboardOptIn: base.leaderboardOptIn !== undefined ? base.leaderboardOptIn : (incoming.leaderboardOptIn ?? true),
     lastUsernameChangeTimestamp: base.lastUsernameChangeTimestamp || incoming.lastUsernameChangeTimestamp,
     language: base.language || incoming.language
   });
@@ -211,7 +230,15 @@ export function createCleanAccountState(
     dailyCommitment: 15,
     onboardingCompleted: false,
     hasSeenTrial: false,
-    radarScores: dynamic.radarScores
+    radarScores: dynamic.radarScores,
+    streakShieldsEarned: 0,
+    streakFreezeActive: false,
+    streakMilestonesUnlocked: [],
+    earnedTitles: [],
+    leagueHistory: [],
+    passedCerts: [],
+    cpeMaintenanceActive: false,
+    leaderboardOptIn: true
   });
 }
 
@@ -775,5 +802,213 @@ export function updateOperatorUsername(
 
   return { success: true, updatedState };
 }
+
+/**
+ * GAMIFICATION & UNIFIED STREAK ENGINE
+ * Strictly follows ethical retention principles:
+ * - Free earnable shields every 5 consecutive days (never locked to paywall)
+ * - Vacation / freeze pause mode to avoid anxiety
+ * - Tangible milestone rewards (7, 30, 60, 100 days)
+ * - Never shaming the user
+ */
+export interface StreakUpdateResult {
+  updatedState: UserState;
+  streakChanged: boolean;
+  newStreak: number;
+  shieldEarned: boolean;
+  shieldConsumed: boolean;
+  freezeProtected: boolean;
+  milestoneUnlocked?: {
+    days: number;
+    title: string;
+    xpBonus: number;
+  };
+}
+
+export const STREAK_MILESTONES = [
+  { days: 7, title: '7-Day Persistent Operative', xpBonus: 100 },
+  { days: 30, title: 'Monthly Defcon Sentinel', xpBonus: 300 },
+  { days: 60, title: 'ZeroDay Red Team Veteran', xpBonus: 600 },
+  { days: 100, title: 'Centurion Elite Vanguard', xpBonus: 1000 }
+];
+
+export function recordActivityAndUpdateStreak(state: UserState, customToday?: string): StreakUpdateResult {
+  const todayStr = customToday || new Date().toISOString().split('T')[0];
+  const lastActive = state.lastActiveDate;
+
+  // If already trained today, no change to streak length
+  if (lastActive === todayStr) {
+    return {
+      updatedState: state,
+      streakChanged: false,
+      newStreak: state.streakDays || 1,
+      shieldEarned: false,
+      shieldConsumed: false,
+      freezeProtected: false
+    };
+  }
+
+  // Calculate day difference
+  let dayDiff = 1;
+  if (lastActive) {
+    const lastDate = new Date(lastActive + 'T00:00:00Z');
+    const currDate = new Date(todayStr + 'T00:00:00Z');
+    const diffMs = currDate.getTime() - lastDate.getTime();
+    dayDiff = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  } else {
+    dayDiff = 1;
+  }
+
+  let streakDays = state.streakDays || 0;
+  let streakShieldsEarned = state.streakShieldsEarned || 0;
+  let shieldEarned = false;
+  let shieldConsumed = false;
+  let freezeProtected = false;
+  const streakFreezeActive = Boolean(state.streakFreezeActive);
+  const streakFreezeExpiresDate = state.streakFreezeExpiresDate;
+
+  if (dayDiff === 1 || !lastActive) {
+    // Consecutive day
+    streakDays += 1;
+    // Every 5 consecutive training days earns 1 free streak shield
+    if (streakDays > 0 && streakDays % 5 === 0) {
+      streakShieldsEarned += 1;
+      shieldEarned = true;
+    }
+  } else if (dayDiff > 1) {
+    // Gap of 1 or more days
+    const isFreezeValid = streakFreezeActive && (!streakFreezeExpiresDate || todayStr <= streakFreezeExpiresDate);
+    if (isFreezeValid) {
+      freezeProtected = true;
+      streakDays += 1;
+    } else if (streakShieldsEarned > 0) {
+      // Consume 1 earned shield
+      streakShieldsEarned -= 1;
+      shieldConsumed = true;
+      streakDays += 1;
+    } else if (state.isPro && state.streakShieldActive) {
+      // PRO shield protection
+      shieldConsumed = true;
+      streakDays += 1;
+    } else {
+      // Reset streak honestly to 1 (new streak starting today)
+      streakDays = 1;
+    }
+  }
+
+  // Milestone awards
+  let milestoneUnlocked: StreakUpdateResult['milestoneUnlocked'] = undefined;
+  const milestonesUnlocked = [...(state.streakMilestonesUnlocked || [])];
+  const earnedTitles = [...(state.earnedTitles || [])];
+  let bonusXp = 0;
+
+  for (const m of STREAK_MILESTONES) {
+    if (streakDays >= m.days && !milestonesUnlocked.includes(m.days)) {
+      milestonesUnlocked.push(m.days);
+      if (!earnedTitles.includes(m.title)) {
+        earnedTitles.push(m.title);
+      }
+      bonusXp += m.xpBonus;
+      milestoneUnlocked = m;
+    }
+  }
+
+  const updatedState: UserState = {
+    ...state,
+    streakDays,
+    lastActiveDate: todayStr,
+    streakShieldsEarned,
+    streakFreezeActive: freezeProtected ? streakFreezeActive : false,
+    streakMilestonesUnlocked: milestonesUnlocked,
+    earnedTitles,
+    xp: (state.xp || 0) + bonusXp
+  };
+
+  return {
+    updatedState: sanitizeUserState(updatedState),
+    streakChanged: true,
+    newStreak: streakDays,
+    shieldEarned,
+    shieldConsumed,
+    freezeProtected,
+    milestoneUnlocked
+  };
+}
+
+export function toggleStreakFreeze(state: UserState, days: number = 7): UserState {
+  const nextFreezeState = !state.streakFreezeActive;
+  let expiresStr: string | undefined = undefined;
+  if (nextFreezeState) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    expiresStr = d.toISOString().split('T')[0];
+  }
+
+  return sanitizeUserState({
+    ...state,
+    streakFreezeActive: nextFreezeState,
+    streakFreezeExpiresDate: expiresStr
+  });
+}
+
+export function recordCertPassed(state: UserState, certId: string, scorePercent: number): UserState {
+  const passedList = [...(state.passedCerts || [])];
+  const existingIdx = passedList.findIndex(c => c.certId === certId);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  if (existingIdx >= 0) {
+    passedList[existingIdx] = { 
+      certId, 
+      passDate: todayStr, 
+      scorePercent: Math.max(passedList[existingIdx].scorePercent, scorePercent) 
+    };
+  } else {
+    passedList.push({ certId, passDate: todayStr, scorePercent });
+  }
+
+  const newTitles = Array.from(new Set([...(state.earnedTitles || []), `Certified: ${certId}`]));
+
+  return sanitizeUserState({
+    ...state,
+    passedCerts: passedList,
+    cpeMaintenanceActive: true,
+    xp: (state.xp || 0) + 500,
+    earnedTitles: newTitles
+  });
+}
+
+export function recordSeasonArchive(
+  state: UserState,
+  seasonId: string,
+  rankPosition: number,
+  tier: EloRankTier,
+  xp: number
+): UserState {
+  const history = [...(state.leagueHistory || [])];
+  if (!history.some(h => h.seasonId === seasonId)) {
+    history.push({
+      seasonId,
+      rankPosition,
+      tier,
+      xp,
+      date: new Date().toISOString().split('T')[0]
+    });
+  }
+
+  const earnedTitles = [...(state.earnedTitles || [])];
+  if (rankPosition <= 3) {
+    const title = `${seasonId} Top 3 Veteran`;
+    if (!earnedTitles.includes(title)) {
+      earnedTitles.push(title);
+    }
+  }
+
+  return sanitizeUserState({
+    ...state,
+    leagueHistory: history,
+    earnedTitles
+  });
+}
+
 
 

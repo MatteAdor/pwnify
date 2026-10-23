@@ -152,6 +152,16 @@ export interface UserState {
   profession?: string;
   lastUsernameChangeTimestamp?: number;
   language?: 'en' | 'it';
+  lastActiveDate?: string;
+  streakShieldsEarned?: number; // Earned free through 5 consecutive days or 5 triages
+  streakFreezeActive?: boolean; // Ethical vacation/pause mode
+  streakFreezeExpiresDate?: string;
+  streakMilestonesUnlocked?: number[]; // e.g. [7, 30, 60, 100]
+  earnedTitles?: string[]; // Permanent status honor titles
+  leagueHistory?: Array<{ seasonId: string; rankPosition: number; tier: EloRankTier; xp: number; date: string }>;
+  passedCerts?: Array<{ certId: string; passDate: string; scorePercent: number }>;
+  cpeMaintenanceActive?: boolean; // Post-exam continuous education maintenance mode
+  leaderboardOptIn?: boolean; // Privacy-first leaderboard visibility
 }
 
 export type PaywallContext = 

@@ -3,7 +3,9 @@ import { UserState } from '../../types';
 import { 
   getDailyBreachForDate, 
   generateDailyBreachShareCard, 
-  DailyBreachIncident 
+  DailyBreachIncident,
+  calculateBreachTriageRewards,
+  DailyBreachTriageReward
 } from '../../data/dailyBreaches';
 import { shuffleArray } from '../../utils/shuffle';
 import { sound } from '../../utils/soundEngine';
@@ -35,6 +37,7 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
   const [timeTaken, setTimeTaken] = useState<number>(0);
   const [copiedShare, setCopiedShare] = useState<boolean>(false);
+  const [rewards, setRewards] = useState<DailyBreachTriageReward | null>(null);
   
   const startTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<any>(null);
@@ -70,7 +73,9 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
     if (right) {
       sound.playExploitSuccess();
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
-      onSuccess(incident.xpReward, incident.eloReward);
+      const calculated = calculateBreachTriageRewards(incident, timeTaken, userState.isPro);
+      setRewards(calculated);
+      onSuccess(calculated.totalXp, calculated.totalElo);
     } else {
       sound.playPayloadBlocked();
     }
@@ -207,27 +212,61 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
         {hasSubmitted && (
           <div className="space-y-4 animate-fade-in pt-2">
             {/* Status Feedback Banner */}
-            <div className={`p-3.5 rounded-xl border text-xs sm:text-sm flex items-center justify-between ${
+            <div className={`p-3.5 rounded-xl border text-xs sm:text-sm flex flex-col gap-2 ${
               isCorrect 
                 ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300' 
                 : 'bg-red-950/60 border-red-500 text-red-300'
             }`}>
-              <div className="flex items-center gap-2 font-mono font-bold">
-                {isCorrect ? (
-                  <>
-                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                    <span>ZERO-DAY SUCCESSFULLY MITIGATED! (+{incident.eloReward} ELO)</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="w-5 h-5 text-red-400" />
-                    <span>TRIAGE FAILED · MALWARE COMPROMISED TARGET</span>
-                  </>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-mono font-bold">
+                  {isCorrect ? (
+                    <>
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                      <span>ZERO-DAY MITIGATED! (+{rewards?.totalElo || incident.eloReward} ELO)</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-5 h-5 text-red-400" />
+                      <span>TRIAGE FAILED · MALWARE COMPROMISED TARGET</span>
+                    </>
+                  )}
+                </div>
+                <span className="font-mono text-xs text-slate-300">
+                  Time: {timeTaken.toFixed(1)}s
+                </span>
               </div>
-              <span className="font-mono text-xs text-slate-300">
-                Time: {timeTaken.toFixed(1)}s
-              </span>
+
+              {/* Transparent Controlled Rewards Breakdown */}
+              {isCorrect && rewards && (
+                <div className="mt-1 pt-2 border-t border-emerald-500/20 text-xs font-mono space-y-1 text-emerald-400/90">
+                  <div className="flex items-center justify-between">
+                    <span>Base Triage Protocol:</span>
+                    <span className="font-bold">+{rewards.baseXp} XP</span>
+                  </div>
+                  {rewards.isSpeedBonusEarned && (
+                    <div className="flex items-center justify-between text-amber-300">
+                      <span>⚡ Rapid Triage Speed Bonus (&le; 30s):</span>
+                      <span className="font-bold">+{rewards.speedBonusXp} XP</span>
+                    </div>
+                  )}
+                  {rewards.classifiedDossierDiscovered && (
+                    <div className="flex items-center justify-between text-indigo-300">
+                      <span>📁 Classified Dossier (15% Field Anomaly):</span>
+                      <span className="font-bold">+{rewards.dossierBonusXp} XP</span>
+                    </div>
+                  )}
+                  {userState.isPro && (
+                    <div className="flex items-center justify-between text-emerald-300">
+                      <span>⚡ 2x XP Multiplier (PRO):</span>
+                      <span className="font-bold">2X APPLIED</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between font-bold text-emerald-200 border-t border-emerald-500/30 pt-1 text-sm">
+                    <span>Total Awarded:</span>
+                    <span>+{rewards.totalXp} XP</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Root Cause Technical Deep Dive */}

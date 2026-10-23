@@ -5,9 +5,27 @@ import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 import { 
   Trophy, Sparkles, ArrowUp, ArrowDown, 
-  Zap, Crown, Clock, Users, Globe, Wifi, Radio
+  Zap, Crown, Clock, Users, Globe, Wifi, Radio,
+  Award, ShieldCheck, Eye
 } from 'lucide-react';
 import { checkNetworkTelemetry, NetworkTelemetry, fetchRankedLeaderboard } from '../../utils/cloudSync';
+
+function getTimeUntilNextWeeklyReset(isEn: boolean): string {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0 is Sunday
+  const daysUntilSunday = (7 - day) % 7;
+  const targetDate = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + (daysUntilSunday === 0 && now.getUTCHours() >= 23 ? 7 : daysUntilSunday),
+    23, 59, 59
+  ));
+
+  const diffMs = Math.max(0, targetDate.getTime() - now.getTime());
+  const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  return isEn ? `${d}d ${h}h` : `${d}g ${h}h`;
+}
 
 interface LeagueTabProps {
   userState: UserState;
@@ -140,8 +158,8 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
             {isEn ? 'WEEKLY LEAGUE' : 'LEGA SETTIMANALE'}
           </span>
           <span className="text-xs font-mono text-zinc-400 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />
-            {isEn ? 'Ends in: 2d 14h' : 'Termina tra: 2g 14h'}
+            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{isEn ? `Ends in: ${getTimeUntilNextWeeklyReset(true)}` : `Termina tra: ${getTimeUntilNextWeeklyReset(false)}`}</span>
           </span>
         </div>
 
@@ -164,6 +182,46 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Peer Cohort Percentile Mirror */}
+        <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs font-mono">
+          <span className="text-zinc-400">
+            {isEn ? 'Peer Cohort Percentile:' : 'Specchio Coorte Operatori:'}
+          </span>
+          <span className="text-emerald-400 font-bold">
+            {hackers.length > 0 ? (
+              isEn ? `Top ${Math.max(1, Math.round((userPosition / hackers.length) * 100))}% in ${telemetry.region}` : `Top ${Math.max(1, Math.round((userPosition / hackers.length) * 100))}% in ${telemetry.region}`
+            ) : (
+              isEn ? 'Top 10% Active' : 'Top 10% Attivi'
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Permanent Status & Season Honors */}
+      {((userState.leagueHistory && userState.leagueHistory.length > 0) || (userState.earnedTitles && userState.earnedTitles.length > 0)) && (
+        <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-3.5 space-y-2 text-xs font-mono">
+          <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+            <Award className="w-4 h-4" />
+            <span>{isEn ? 'PERMANENT OPERATIONAL HONORS' : 'ONORIFICENZE PERMANENTI'}</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {userState.earnedTitles?.map(title => (
+              <span key={title} className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px]">
+                🎖 {title}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Privacy & Anti-Cheat Safeguards Banner */}
+      <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-zinc-900/50 border border-zinc-800 text-[11px] font-mono text-zinc-400">
+        <span className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          {isEn ? 'Pseudonymous Callsigns · Anti-Cheat Audited' : 'Callsign Pseudonimi · Verificato Anti-Cheat'}
+        </span>
+        <span className="text-zinc-500">GDPR Compliant</span>
       </div>
 
       {/* 2x XP Multiplier & Demotion Shield Banner */}

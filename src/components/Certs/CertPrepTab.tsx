@@ -6,7 +6,8 @@ import { shuffleArray } from '../../utils/shuffle';
 import { useLanguage } from '../../utils/language';
 import { 
   ShieldCheck, Lock, Terminal, 
-  CheckCircle2, AlertTriangle, ArrowRight, X, Play 
+  CheckCircle2, AlertTriangle, ArrowRight, X, Play,
+  Award, Compass, Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -16,6 +17,7 @@ interface CertPrepTabProps {
   userState: UserState;
   onOpenPaywallContext: (context: 'exam_simulator_lock') => void;
   onCompletePbq: (pbqId: string, gainedXp: number, gainedElo: number) => void;
+  onPassCert?: (certId: string, scorePercent: number) => void;
 }
 
 const QUICK_QUESTIONS_BASE = [
@@ -54,9 +56,12 @@ const QUICK_QUESTIONS_BASE = [
 export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   userState,
   onOpenPaywallContext,
-  onCompletePbq
+  onCompletePbq,
+  onPassCert
 }) => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isEn = lang === 'en';
+
   // Quick Domain Check modal state
   const [quickCheckCert, setQuickCheckCert] = useState<string | null>(null);
   const [activeQuickQuestions, setActiveQuickQuestions] = useState(() => 
@@ -73,6 +78,19 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   const [pbqSubmitted, setPbqSubmitted] = useState<boolean>(false);
   const [pbqSuccess, setPbqSuccess] = useState<boolean>(false);
 
+  // Post-Exam Success Celebration modal
+  const [passedExamCandidate, setPassedExamCandidate] = useState<{
+    id: string;
+    name: string;
+    code: string;
+    nextStep: string;
+  } | null>(null);
+
+  // Real dynamic counts from OFFICIAL_PBQ_LABS pool
+  const secPlusLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CompTIA Security+');
+  const ccnaLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'Cisco CCNA');
+  const cehLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CEH v13');
+
   const certs = [
     {
       id: 'sec_plus',
@@ -81,11 +99,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'CompTIA',
       questionCount: 314,
       readiness: userState.readinessScore,
-      totalPBQs: 45,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('secplus') || id.includes('firewall')).length,
-      pbqRef: 'pbq_secplus_firewall',
+      totalPBQs: secPlusLabs.length,
+      completedPBQs: secPlusLabs.filter(l => userState.completedPbqIds.includes(l.id)).length,
+      pbqRef: secPlusLabs[0]?.id || 'pbq_secplus_firewall',
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
-      description: 'Global standard for cybersecurity and Zero Trust. Question pool of 314 authentic questions covering defensive architecture, firewall ACL PBQs, and incident response.'
+      description: 'Global standard for cybersecurity and Zero Trust. Question pool of 314 authentic questions covering defensive architecture, firewall ACL PBQs, and incident response.',
+      nextStep: 'CompTIA CySA+ / Cisco CCNA'
     },
     {
       id: 'ccna',
@@ -94,11 +113,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'Cisco Systems',
       questionCount: 402,
       readiness: Math.round(userState.readinessScore * 0.7),
-      totalPBQs: 52,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ccna') || id.includes('router') || id.includes('vlan')).length,
-      pbqRef: 'pbq_secplus_firewall',
+      totalPBQs: ccnaLabs.length,
+      completedPBQs: ccnaLabs.filter(l => userState.completedPbqIds.includes(l.id)).length,
+      pbqRef: ccnaLabs[0]?.id || 'pbq_ccna_subnetting_vlan',
       color: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
-      description: 'OSPF routing, VLSM subnetting, VLAN switching, 802.1X security, and API network automation. Complete pool of 402 official questions.'
+      description: 'OSPF routing, VLSM subnetting, VLAN switching, 802.1X security, and API network automation. Complete pool of 402 official questions.',
+      nextStep: 'Cisco CCNP Enterprise / CompTIA Security+'
     },
     {
       id: 'netplus',
@@ -107,11 +127,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'CompTIA',
       questionCount: 300,
       readiness: Math.round(userState.readinessScore * 0.75),
-      totalPBQs: 40,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('net') || id.includes('packet')).length,
-      pbqRef: 'pbq_secplus_firewall',
+      totalPBQs: 1,
+      completedPBQs: userState.completedPbqIds.includes('pbq_ids_c2_mitigation') ? 1 : 0,
+      pbqRef: 'pbq_ids_c2_mitigation',
       color: 'border-blue-500/40 text-blue-400 bg-blue-500/10',
-      description: 'Network topologies, OSI stack, distance-vector and link-state routing, Wi-Fi 6E, and fiber optics. 300 official exam questions.'
+      description: 'Network topologies, OSI stack, distance-vector and link-state routing, Wi-Fi 6E, and fiber optics. 300 official exam questions.',
+      nextStep: 'Cisco CCNA / CompTIA Security+'
     },
     {
       id: 'aplus_core1',
@@ -120,11 +141,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'CompTIA',
       questionCount: 303,
       readiness: Math.round(userState.readinessScore * 0.8),
-      totalPBQs: 35,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap1')).length,
+      totalPBQs: 1,
+      completedPBQs: userState.completedPbqIds.includes('pbq_secplus_firewall') ? 1 : 0,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
-      description: 'Hardware, mobile connectivity, networking, virtualization, and cloud infrastructure. 303 certified exam questions.'
+      description: 'Hardware, mobile connectivity, networking, virtualization, and cloud infrastructure. 303 certified exam questions.',
+      nextStep: 'CompTIA Network+ / Security+'
     },
     {
       id: 'aplus_core2',
@@ -133,11 +155,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'CompTIA',
       questionCount: 305,
       readiness: Math.round(userState.readinessScore * 0.8),
-      totalPBQs: 35,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ap2')).length,
+      totalPBQs: 1,
+      completedPBQs: userState.completedPbqIds.includes('pbq_secplus_firewall') ? 1 : 0,
       pbqRef: 'pbq_secplus_firewall',
       color: 'border-orange-500/40 text-orange-400 bg-orange-500/10',
-      description: 'Windows/Linux/macOS operating systems, 7-step malware removal, Bash/PowerShell scripting, and operational security. 305 official questions.'
+      description: 'Windows/Linux/macOS operating systems, 7-step malware removal, Bash/PowerShell scripting, and operational security. 305 official questions.',
+      nextStep: 'CompTIA Security+'
     },
     {
       id: 'ceh',
@@ -146,11 +169,12 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       issuer: 'EC-Council',
       questionCount: 120,
       readiness: Math.round(userState.readinessScore * 0.5),
-      totalPBQs: 60,
-      completedPBQs: userState.completedPbqIds.filter(id => id.includes('ceh') || id.includes('killchain')).length,
-      pbqRef: 'pbq_ceh_killchain',
+      totalPBQs: cehLabs.length,
+      completedPBQs: cehLabs.filter(l => userState.completedPbqIds.includes(l.id)).length,
+      pbqRef: cehLabs[0]?.id || 'pbq_ceh_killchain',
       color: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
-      description: 'Advanced penetration testing, Nmap enumeration, Active Directory Kerberoasting, malware memory forensics, and reverse engineering.'
+      description: 'Advanced penetration testing, Nmap enumeration, Active Directory Kerberoasting, malware memory forensics, and reverse engineering.',
+      nextStep: 'OffSec OSCP / CISSP'
     }
   ];
 
@@ -222,106 +246,178 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
         </p>
       </div>
 
+      {/* Post-Exam CPE Maintenance & Active Credentials Banner */}
+      {(userState.cpeMaintenanceActive || (userState.passedCerts && userState.passedCerts.length > 0)) && (
+        <div className="rounded-2xl bg-[#08131B] border border-emerald-500/30 p-4 sm:p-5 flex items-start gap-3.5 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 mt-0.5">
+            <Award className="w-5 h-5" />
+          </div>
+          <div className="space-y-1 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-sm sm:text-base text-white">
+                {isEn ? 'Continuous Professional Education (CPE) Active' : 'Mantenimento Competenze (CPE) Attivo'}
+              </h3>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+                {userState.passedCerts?.length || 1} {isEn ? 'CERTIFIED' : 'CERTIFICATO'}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              {isEn
+                ? 'Your certification is officially achieved. To maintain field proficiency with zero burnout, complete 1 weekly real-world CVE triage instead of daily grinding.'
+                : 'La tua certificazione è ufficialmente conseguita. Per mantenere la prontezza senza stress, completa 1 triage settimanale CVE invece del grinding quotidiano.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Certifications List */}
       <div className="space-y-4">
-        {certs.map((cert) => (
-          <div 
-            key={cert.id}
-            className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
-                    {cert.code}
-                  </span>
-                  <span className="text-xs text-zinc-400 font-mono">
-                    {cert.issuer}
+        {certs.map((cert) => {
+          const passedRecord = userState.passedCerts?.find(c => c.certId === cert.id);
+          const isPassed = Boolean(passedRecord);
+
+          return (
+            <div 
+              key={cert.id}
+              className={`rounded-2xl bg-[#0D121D] border p-5 space-y-4 transition-all ${
+                isPassed ? 'border-emerald-500/40 bg-[#0A1218]' : 'border-zinc-800'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold">
+                      {cert.code}
+                    </span>
+                    <span className="text-xs text-zinc-400 font-mono">
+                      {cert.issuer}
+                    </span>
+                    {isPassed && (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        {isEn ? 'CERTIFIED' : 'SUPERATO'}
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-white">
+                    {cert.name}
+                  </h2>
+                </div>
+
+                <div className="text-right font-mono">
+                  <span className="text-[10px] text-zinc-500 block">{t.passProbability}</span>
+                  <span className={`text-lg font-bold ${cert.readiness < 50 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {cert.readiness}%
                   </span>
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-white">
-                  {cert.name}
-                </h2>
               </div>
 
-              <div className="text-right font-mono">
-                <span className="text-[10px] text-zinc-500 block">{t.passProbability}</span>
-                <span className={`text-lg font-bold ${cert.readiness < 50 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {cert.readiness}%
-                </span>
-              </div>
-            </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                {cert.description}
+              </p>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              {cert.description}
-            </p>
+              {/* Status if passed: Next Roadmap */}
+              {isPassed ? (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-emerald-300">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{isEn ? `Credential verified on ${passedRecord?.passDate}` : `Esame convalidato il ${passedRecord?.passDate}`}</span>
+                  </div>
+                  <div className="text-zinc-400 flex items-center gap-1.5 text-[11px]">
+                    <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{isEn ? 'Next Roadmap:' : 'Prossimo Obiettivo:'} <strong className="text-zinc-200">{cert.nextStep}</strong></span>
+                  </div>
+                </div>
+              ) : (
+                /* Honest PBQ Progress Bar */
+                <div className="space-y-1.5 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-zinc-400">Authentic PBQ Labs</span>
+                    <span className="text-emerald-400 font-bold">{cert.completedPBQs} / {cert.totalPBQs}</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                    <div 
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${cert.totalPBQs > 0 ? (cert.completedPBQs / cert.totalPBQs) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
-            {/* PBQ Progress Bar */}
-            <div className="space-y-1.5 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-zinc-400">PBQ Labs</span>
-                <span className="text-emerald-400 font-bold">{cert.completedPBQs} / {cert.totalPBQs}</span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                <div 
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(cert.completedPBQs / cert.totalPBQs) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Dual Action Buttons (Free Quick Check vs Pro Official PBQ Lab) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              {/* Option 1: Free Quick Domain Check */}
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  const pool = getRandomQuestionsForCert(cert.id, 5);
-                  const formatted = pool.length > 0 
-                    ? pool.map(q => ({
-                        q: q.question,
-                        options: shuffleArray(q.options.map((opt, oIdx) => ({
-                          id: `${q.id}_${oIdx}`,
-                          text: opt,
-                          isCorrect: oIdx === q.correctIndex
-                        }))),
-                        expl: q.explanation || `Correct answer: ${q.correctAnswer}`
-                      }))
-                    : QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
-
-                  setActiveQuickQuestions(formatted);
-                  setQuickCheckCert(cert.name);
-                  setQuickQuestionIndex(0);
-                  setQuickScore(0);
-                  setQuickAnswered(false);
-                  setQuickCompleted(false);
-                }}
-                className="min-h-[48px] py-3 px-3.5 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-              >
-                <Play className="w-4 h-4 text-zinc-300 fill-current" />
-                <span>{t.quickCheckBtn}</span>
-              </button>
-
-              {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
-              <button
-                onClick={() => handleStartPbq(cert.pbqRef)}
-                className="min-h-[48px] py-3 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
-              >
-                {!userState.isPro ? (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>{t.pbqLabBtnPro}</span>
-                  </>
-                ) : (
-                  <>
-                    <Terminal className="w-4 h-4" />
-                    <span>{t.pbqLabBtnActive}</span>
-                  </>
+              {/* Post-Exam Claim Action & Dual Buttons */}
+              <div className="flex flex-col gap-2.5 pt-1">
+                {!isPassed && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playTap();
+                      setPassedExamCandidate({
+                        id: cert.id,
+                        name: cert.name,
+                        code: cert.code,
+                        nextStep: cert.nextStep
+                      });
+                    }}
+                    className="text-xs font-mono text-zinc-400 hover:text-emerald-400 flex items-center gap-1.5 transition-colors cursor-pointer self-start"
+                  >
+                    <Award className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{isEn ? 'I passed this official exam (+500 XP & CPE mode)' : 'Ho superato questo esame (+500 XP e modalità CPE)'}</span>
+                  </button>
                 )}
-              </button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Option 1: Free Quick Domain Check */}
+                  <button
+                    onClick={() => {
+                      sound.playTap();
+                      const pool = getRandomQuestionsForCert(cert.id, 5);
+                      const formatted = pool.length > 0 
+                        ? pool.map(q => ({
+                            q: q.question,
+                            options: shuffleArray(q.options.map((opt, oIdx) => ({
+                              id: `${q.id}_${oIdx}`,
+                              text: opt,
+                              isCorrect: oIdx === q.correctIndex
+                            }))),
+                            expl: q.explanation || `Correct answer: ${q.correctAnswer}`
+                          }))
+                        : QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
+
+                      setActiveQuickQuestions(formatted);
+                      setQuickCheckCert(cert.name);
+                      setQuickQuestionIndex(0);
+                      setQuickScore(0);
+                      setQuickAnswered(false);
+                      setQuickCompleted(false);
+                    }}
+                    className="min-h-[48px] py-3 px-3.5 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    <Play className="w-4 h-4 text-zinc-300 fill-current" />
+                    <span>{t.quickCheckBtn}</span>
+                  </button>
+
+                  {/* Option 2: Full Mock Exam & Interactive PBQ Lab (PRO) */}
+                  <button
+                    onClick={() => handleStartPbq(cert.pbqRef)}
+                    className="min-h-[48px] py-3 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
+                  >
+                    {!userState.isPro ? (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        <span>{t.pbqLabBtnPro}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Terminal className="w-4 h-4" />
+                        <span>{t.pbqLabBtnActive}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* QUICK DOMAIN CHECK MODAL (FREE ACCESS) */}
@@ -562,6 +658,73 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                 CLOSE EXAM LAB
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* POST-EXAM CELEBRATION MODAL */}
+      {passedExamCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
+          <div className="relative w-full max-w-md bg-[#0D121D] border border-emerald-500/50 rounded-2xl p-5 sm:p-6 shadow-2xl text-zinc-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold uppercase">
+                <Award className="w-4 h-4" />
+                <span>{isEn ? 'OFFICIAL CERTIFICATION CONGRATULATIONS' : 'CONGRATULAZIONI PER LA CERTIFICAZIONE'}</span>
+              </div>
+              <button
+                onClick={() => setPassedExamCandidate(null)}
+                className="text-zinc-500 hover:text-white p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <span>{passedExamCandidate.name}</span>
+                <Sparkles className="w-5 h-5 text-amber-400" />
+              </h3>
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                {isEn 
+                  ? 'Passing the official exam is the ultimate objective! ZeroDay celebrates your real-world achievement. We will never trap you in forced daily grinding.'
+                  : 'Superare l\'esame ufficiale è il vero successo! ZeroDay celebra il tuo traguardo reale senza trattenerti con pressioni o grinding forzato.'}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between text-emerald-400">
+                <span>{isEn ? 'Milestone Bonus:' : 'Bonus Traguardo:'}</span>
+                <span className="font-bold">+500 XP</span>
+              </div>
+              <div className="flex items-center justify-between text-zinc-300">
+                <span>{isEn ? 'Title Unlocked:' : 'Titolo Sbloccato:'}</span>
+                <span className="font-bold">Certified: {passedExamCandidate.name}</span>
+              </div>
+              <div className="border-t border-zinc-800 pt-2 text-zinc-400">
+                <span>{isEn ? 'Recommended Next Milestone:' : 'Prossimo Obiettivo:'}</span>
+                <span className="block text-white font-bold mt-0.5">{passedExamCandidate.nextStep}</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              {isEn
+                ? 'Activating CPE Maintenance mode: 1 weekly CVE scenario to keep your technical reflex sharp with zero burnout.'
+                : 'Attivazione modalità CPE Maintenance: 1 scenario CVE alla settimana per mantenere i riflessi affilati senza stress.'}
+            </p>
+
+            <button
+              onClick={() => {
+                sound.playVictoryFanfare();
+                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+                if (onPassCert) {
+                  onPassCert(passedExamCandidate.id, userState.readinessScore || 85);
+                }
+                setPassedExamCandidate(null);
+              }}
+              className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer shadow-md active:scale-98"
+            >
+              {isEn ? 'CONFIRM & ACTIVATE CPE MAINTENANCE' : 'CONFERMA E ATTIVA MANTENIMENTO CPE'}
+            </button>
           </div>
         </div>
       )}
