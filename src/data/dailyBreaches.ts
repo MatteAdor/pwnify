@@ -1,5 +1,3 @@
-import { SkillDomain } from '../types';
-
 export interface DailyBreachIncident {
   id: string;
   dayIndex: number;
