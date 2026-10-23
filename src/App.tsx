@@ -20,6 +20,7 @@ import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
+import { supabase, isSupabaseConfigured } from './config/supabase';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -201,7 +202,7 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Native Capacitor deep link listener for incoming OAuth redirects
+  // Native Capacitor deep link listener for incoming OAuth redirects (Google & GitHub)
   useEffect(() => {
     if (isNativeApp()) {
       let isMounted = true;
@@ -213,21 +214,45 @@ export const App: React.FC = () => {
             const { Browser } = await import('@capacitor/browser');
             await Browser.close();
           } catch {}
-          const rawHash = data.url.includes('#') ? data.url.split('#')[1] : '';
-          if (rawHash && rawHash.includes('access_token=')) {
-            const params = new URLSearchParams(rawHash);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-            if (accessToken && refreshToken) {
-              try {
-                const { supabase, isSupabaseConfigured } = await import('./config/supabase');
-                if (isSupabaseConfigured) {
-                  await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-                }
-              } catch (err) {
-                console.warn('[DeepLink] Session set error:', err);
+
+          try {
+            const { supabase, isSupabaseConfigured } = await import('./config/supabase');
+            if (!isSupabaseConfigured) return;
+
+            // 1. Check for PKCE Authorization Code (?code=... or &code=...)
+            let code: string | null = null;
+            try {
+              const urlObj = new URL(data.url);
+              code = urlObj.searchParams.get('code');
+            } catch {
+              const match = data.url.match(/[?&]code=([^&#]+)/);
+              if (match) code = decodeURIComponent(match[1]);
+            }
+
+            if (code) {
+              console.log('[DeepLink] Exchanging OAuth PKCE code for session...');
+              const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
+              if (error) {
+                console.warn('[DeepLink] PKCE exchangeCodeForSession failed:', error.message);
+              } else if (sessionData?.session) {
+                console.log('[DeepLink] Session established successfully via PKCE exchange.');
+              }
+              return;
+            }
+
+            // 2. Check for Implicit Flow Tokens (#access_token=... & refresh_token=...)
+            const rawHash = data.url.includes('#') ? data.url.split('#')[1] : '';
+            if (rawHash && rawHash.includes('access_token=')) {
+              const params = new URLSearchParams(rawHash);
+              const accessToken = params.get('access_token');
+              const refreshToken = params.get('refresh_token');
+              if (accessToken && refreshToken) {
+                console.log('[DeepLink] Setting session from hash tokens...');
+                await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
               }
             }
+          } catch (err) {
+            console.warn('[DeepLink] Session handling error:', err);
           }
         }).catch(() => {});
       }).catch(() => {});
@@ -496,6 +521,9 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleLogout = () => {
     setCurrentSession(null);
     setUserState(createDefaultGuestState());
+    if (isSupabaseConfigured) {
+      supabase.auth.signOut().catch(() => {});
+    }
   };
 
   // Trigger Paywall Helper
