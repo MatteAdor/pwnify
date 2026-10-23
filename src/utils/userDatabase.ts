@@ -53,9 +53,21 @@ export function sanitizeUserState(state: UserState): UserState {
     ? (state.elo === 1000 && (state.xp || 0) === 0 && (!state.completedNodeIds || state.completedNodeIds.length === 0) ? 100 : Math.max(100, state.elo))
     : 100;
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isNewDay = !state.lastTicketResetDate || state.lastTicketResetDate !== todayStr;
+
+  const maxTickets = 5;
+  let arenaTickets = typeof state.arenaTickets === 'number' ? Math.max(0, state.arenaTickets) : 5;
+  if (isNewDay || (state.maxTickets && state.maxTickets <= 3)) {
+    arenaTickets = 5;
+  }
+
   return {
     ...state,
     elo,
+    arenaTickets,
+    maxTickets,
+    lastTicketResetDate: todayStr,
     dailyBounties: sanitizeBounties(state.dailyBounties)
   };
 }
@@ -179,8 +191,8 @@ export function createCleanAccountState(
     streakDays: 0,
     streakShieldActive: false,
     elo: 100,
-    arenaTickets: 3,
-    maxTickets: 3,
+    arenaTickets: 5,
+    maxTickets: 5,
     winStreak: 0,
     xp: 0,
     readinessScore: 0,
@@ -485,8 +497,7 @@ export function loginWithOAuth(
   const accounts = getRegisteredAccounts();
 
   let existing = accounts.find(a => 
-    (cleanEmail && a.email && a.email.toLowerCase() === cleanEmail) ||
-    a.username.toLowerCase() === baseName.toLowerCase()
+    cleanEmail && a.email && a.email.toLowerCase() === cleanEmail
   );
 
   const guestFallback = currentProgress || getCachedGuestState();
@@ -654,6 +665,57 @@ export function purgeAllUserAccounts(): void {
   } catch (e) {
     console.error('Failed to purge accounts', e);
   }
+}
+
+/**
+ * Verifies whether a given username/callsign is unique across all operators.
+ * Checks both local accounts database and remote Supabase profiles.
+ */
+export async function isUsernameAvailable(
+  candidateUsername: string,
+  excludeEmail?: string
+): Promise<{ available: boolean; error?: string }> {
+  const clean = candidateUsername.trim();
+  if (clean.length < 3) {
+    return { available: false, error: 'Il nome utente deve avere almeno 3 caratteri.' };
+  }
+  if (clean.length > 20) {
+    return { available: false, error: 'Il nome utente non può superare i 20 caratteri.' };
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(clean)) {
+    return { available: false, error: 'Sono consentiti solo lettere, numeri, trattini e underscore.' };
+  }
+
+  const lower = clean.toLowerCase();
+
+  // 1. Check local accounts database
+  const accounts = getRegisteredAccounts();
+  const localMatch = accounts.find(a => 
+    a.username.toLowerCase() === lower &&
+    (!excludeEmail || (a.email && a.email.toLowerCase() !== excludeEmail.toLowerCase()))
+  );
+  if (localMatch) {
+    return { available: false, error: 'Questo nome utente è già in uso. Scegline un altro.' };
+  }
+
+  // 2. Check remote Supabase profiles table
+  try {
+    const { supabase, isSupabaseConfigured } = await import('../config/supabase');
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nick')
+        .ilike('nick', clean);
+
+      if (!error && data && data.length > 0) {
+        return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+      }
+    }
+  } catch (err) {
+    console.warn('[Validation] Remote username check error:', err);
+  }
+
+  return { available: true };
 }
 
 /**

@@ -314,7 +314,8 @@ export async function checkNetworkTelemetry(): Promise<NetworkTelemetry> {
 }
 
 /**
- * Global leaderboard with live Supabase fallback or local simulation.
+ * Global leaderboard with real Supabase accounts.
+ * Strictly excludes any simulated / fake bot accounts.
  */
 export async function fetchRankedLeaderboard(): Promise<GlobalLeaderboardEntry[]> {
   if (isSupabaseConfigured) {
@@ -323,56 +324,55 @@ export async function fetchRankedLeaderboard(): Promise<GlobalLeaderboardEntry[]
         .from('profiles')
         .select('*')
         .order('elo', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (!error && data && data.length > 0) {
         const cached = getCachedProfileV2();
         return data.map((p, index) => ({
           rank: index + 1,
           username: p.nick,
-          avatar: (p.nick.slice(0, 2) || 'OP').toUpperCase(),
-          elo: p.elo,
-          xp: p.xp,
-          division: p.rank,
-          winStreak: 3,
+          avatar: (p.nick?.slice(0, 2) || 'OP').toUpperCase(),
+          elo: p.elo ?? 100,
+          xp: p.xp ?? 0,
+          division: p.rank || 'Bronze Recruit',
+          winStreak: 0,
           isOnline: true,
           isCurrentUser: cached?.userId === p.id
         }));
       }
     } catch (e) {
-      console.warn('[Leaderboard] Remote fetch failed, falling back to cached roster:', e);
+      console.warn('[Leaderboard] Remote fetch failed, using local registered accounts:', e);
     }
   }
 
-  return getFallbackLeaderboard();
+  // Fallback strictly to local real registered accounts (Zero fake bots)
+  return getLocalRealLeaderboard();
 }
 
-function getFallbackLeaderboard(): GlobalLeaderboardEntry[] {
-  const globalRoster = [
-    { username: '0x_Sovereign', elo: 2480, xp: 48900, division: 'Cyber Warlord', winStreak: 14, avatar: 'SV' },
-    { username: 'k3rnel_panic', elo: 2310, xp: 41200, division: 'Grandmaster Elite', winStreak: 9, avatar: 'KP' },
-    { username: 'syn_flood_99', elo: 2190, xp: 37500, division: 'Diamond Vanguard', winStreak: 7, avatar: 'SF' },
-    { username: 'b4sh_pwn3r', elo: 2040, xp: 32100, division: 'Diamond Vanguard', winStreak: 5, avatar: 'BP' },
-    { username: 'null_byte_ninja', elo: 1890, xp: 26800, division: 'Platinum Specialist', winStreak: 6, avatar: 'NN' },
-    { username: 'buffer_overflow', elo: 1740, xp: 22400, division: 'Platinum Specialist', winStreak: 4, avatar: 'BO' },
-    { username: 'wireshark_sniff', elo: 1620, xp: 19100, division: 'Gold Specialist', winStreak: 3, avatar: 'WS' },
-    { username: 'packet_chaser', elo: 1480, xp: 15300, division: 'Gold Specialist', winStreak: 2, avatar: 'PC' },
-    { username: 'crypto_ghost', elo: 1350, xp: 12200, division: 'Silver Operative', winStreak: 1, avatar: 'CG' },
-    { username: 'sudo_su_root', elo: 1210, xp: 9800, division: 'Silver Operative', winStreak: 2, avatar: 'SU' },
-    { username: 'script_k1d_x', elo: 980, xp: 4500, division: 'Bronze Recruit', winStreak: 0, avatar: 'SK' }
-  ];
-
-  return globalRoster.map((entry, index) => ({
-    rank: index + 1,
-    username: entry.username,
-    avatar: entry.avatar,
-    elo: entry.elo,
-    xp: entry.xp,
-    division: entry.division,
-    winStreak: entry.winStreak,
-    isOnline: true,
-    isCurrentUser: false
-  }));
+function getLocalRealLeaderboard(): GlobalLeaderboardEntry[] {
+  try {
+    const raw = localStorage.getItem('0xday_registered_accounts_v1');
+    if (raw) {
+      const accounts = JSON.parse(raw);
+      if (Array.isArray(accounts) && accounts.length > 0) {
+        return accounts
+          .filter((a: any) => a.userState?.username && !a.userState.username.startsWith('0x_Anonymous'))
+          .sort((a: any, b: any) => (b.userState?.elo ?? 100) - (a.userState?.elo ?? 100))
+          .map((a: any, index: number) => ({
+            rank: index + 1,
+            username: a.userState.username,
+            avatar: (a.userState.username.slice(0, 2) || 'OP').toUpperCase(),
+            elo: a.userState.elo ?? 100,
+            xp: a.userState.xp ?? 0,
+            division: a.userState.rank?.tier || 'Bronze Recruit',
+            winStreak: a.userState.winStreak || 0,
+            isOnline: true,
+            isCurrentUser: true
+          }));
+      }
+    }
+  } catch {}
+  return [];
 }
 
 /**

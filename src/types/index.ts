@@ -119,7 +119,7 @@ export interface UserState {
   streakDays: number;
   streakShieldActive: boolean;
   elo: number;
-  arenaTickets: number; // Max 3 for free users
+  arenaTickets: number; // Max 5 for free users
   maxTickets: number;
   winStreak: number;
   xp: number;
@@ -145,6 +145,7 @@ export interface UserState {
   activeTheme?: string;
   customTitle?: string;
   lastDailyBreachDate?: string;
+  lastTicketResetDate?: string;
   hasSeenTrial?: boolean;
   userEmail?: string;
   isLoggedIn?: boolean;

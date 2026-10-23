@@ -686,9 +686,6 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   <Swords className="w-4 h-4 text-emerald-400" />
                   {t.blitzArenaTitle}
                 </h1>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold">
-                  SERVER AUTHORITATIVE
-                </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {t.blitzArenaSub}

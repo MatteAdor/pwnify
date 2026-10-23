@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserState, SkillNode, PaywallContext } from './types';
 import { INITIAL_DAILY_BOUNTIES } from './data/bountiesAndPbq';
 import { Navbar } from './components/Navbar';
@@ -132,6 +132,47 @@ export const App: React.FC = () => {
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
+  const MAIN_TABS: ActiveTab[] = ['tree', 'arena', 'missions', 'radar', 'certs'];
+
+  // Horizontal Swipe Gestures for Seamless Tab Navigation
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [data-prevent-swipe="true"]')) return;
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now()
+    };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+
+    const deltaX = e.changedTouches[0].clientX - start.x;
+    const deltaY = e.changedTouches[0].clientY - start.y;
+    const deltaTime = Date.now() - start.time;
+
+    // Minimum swipe distance 55px, horizontal dominance (> 1.4x vertical), max duration 650ms
+    if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4 && deltaTime < 650) {
+      const currentIndex = MAIN_TABS.indexOf(activeTab);
+      if (currentIndex === -1) return;
+
+      if (deltaX < 0 && currentIndex < MAIN_TABS.length - 1) {
+        // Swiped Left -> Move to Next Tab
+        sound.playTap();
+        setActiveTab(MAIN_TABS[currentIndex + 1]);
+      } else if (deltaX > 0 && currentIndex > 0) {
+        // Swiped Right -> Move to Previous Tab
+        sound.playTap();
+        setActiveTab(MAIN_TABS[currentIndex - 1]);
+      }
+    }
+  };
 
   // In-App Update Engine State & Active Lifecycle
   const [updateState, setUpdateState] = useState<UpdateManagerState>(() => updateManager.getState());
@@ -832,7 +873,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 }}
                 className="text-amber-400 hover:text-amber-300 underline font-semibold"
               >
-                Reset Tickets to 0/3 (Win Streak Trap)
+                Reset Tickets to 0/5 (Win Streak Trap)
               </button>
               <span className="text-slate-600">|</span>
               <button
@@ -879,7 +920,11 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           )}
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto">
+          <main 
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="flex-1 overflow-y-auto"
+          >
             {activeTab === 'tree' && (
               <TacticalSkillTree
                 userState={userState}

@@ -7,7 +7,7 @@ import {
   Trophy, Sparkles, ArrowUp, ArrowDown, 
   Zap, Crown, Clock, Users, Globe, Wifi, Radio
 } from 'lucide-react';
-import { checkNetworkTelemetry, NetworkTelemetry } from '../../utils/cloudSync';
+import { checkNetworkTelemetry, NetworkTelemetry, fetchRankedLeaderboard } from '../../utils/cloudSync';
 
 interface LeagueTabProps {
   userState: UserState;
@@ -39,70 +39,77 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Generate 14 simulated league competitors around user's XP
+  // Real accounts only — strictly zero mock/fake bot profiles
   const [hackers, setHackers] = useState<LeagueHacker[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const mockHackerProfiles = [
-      { name: '0x_V0rtex', avatar: 'VX', streak: 7, baseDiff: 240 },
-      { name: 'K3rnel_Crush3r', avatar: 'KC', streak: 5, baseDiff: 180 },
-      { name: 'syn_flood_99', avatar: 'SF', streak: 4, baseDiff: 120 },
-      { name: 'b4sh_pwn3r', avatar: 'BP', streak: 6, baseDiff: 70 },
-      { name: 'cyber_samurai', avatar: 'CS', streak: 3, baseDiff: 25 },
-      // User inserted dynamically
-      { name: 'spectre_v4', avatar: 'SP', streak: 2, baseDiff: -40 },
-      { name: 'null_byte_ninja', avatar: 'NN', streak: 4, baseDiff: -95 },
-      { name: 'packet_chaser', avatar: 'PC', streak: 2, baseDiff: -150 },
-      { name: 'sudo_su_root', avatar: 'SU', streak: 1, baseDiff: -210 },
-      { name: 'crypto_ghost', avatar: 'CG', streak: 3, baseDiff: -280 },
-      { name: 'buffer_overflow', avatar: 'BO', streak: 0, baseDiff: -360 },
-      { name: 'wireshark_sniff', avatar: 'WS', streak: 1, baseDiff: -440 },
-      { name: 'reverse_eng_0', avatar: 'RE', streak: 0, baseDiff: -510 },
-      { name: 'script_k1d_x', avatar: 'SK', streak: 0, baseDiff: -600 }
-    ];
+    let isMounted = true;
+    setIsLoading(true);
 
-    const currentXp = userState.xp;
+    fetchRankedLeaderboard().then(entries => {
+      if (!isMounted) return;
 
-    const list: { username: string; avatar: string; xp: number; isUser: boolean; winStreak: number }[] = [
-      {
-        username: userState.username,
-        avatar: (userState.username.slice(0, 2) || 'OP').toUpperCase(),
-        xp: currentXp,
-        isUser: true,
-        winStreak: userState.winStreak
-      },
-      ...mockHackerProfiles.map(p => ({
-        username: p.name,
-        avatar: p.avatar,
-        xp: Math.max(100, currentXp + p.baseDiff),
-        isUser: false,
-        winStreak: p.streak
-      }))
-    ];
+      const currentUsername = userState.username;
+      const currentXp = userState.xp || 0;
+      const currentElo = userState.elo ?? 100;
 
-    // Sort descending by XP
-    list.sort((a, b) => b.xp - a.xp);
+      // Ensure user is present in leaderboard
+      const hasUser = entries.some(e => e.username.toLowerCase() === currentUsername.toLowerCase() || e.isCurrentUser);
 
-    const formatted: LeagueHacker[] = list.map((item, index) => {
-      const position = index + 1;
-      let status: 'promoted' | 'safe' | 'demoted' = 'safe';
-      if (position <= 3) status = 'promoted';
-      else if (position >= 13) status = 'demoted';
+      const combined = [...entries];
+      if (!hasUser) {
+        combined.push({
+          rank: combined.length + 1,
+          username: currentUsername,
+          avatar: (currentUsername.slice(0, 2) || 'OP').toUpperCase(),
+          elo: currentElo,
+          xp: currentXp,
+          division: userRank.tier,
+          winStreak: userState.winStreak || 0,
+          isOnline: true,
+          isCurrentUser: true
+        });
+      }
 
-      return {
-        rankPosition: position,
-        username: item.username,
-        avatar: item.avatar,
-        tier: userRank.tier,
-        xp: item.xp,
-        isUser: item.isUser,
-        winStreak: item.winStreak,
-        status
-      };
+      // Sort descending by ELO, then XP
+      combined.sort((a, b) => {
+        if (b.elo !== a.elo) return b.elo - a.elo;
+        return b.xp - a.xp;
+      });
+
+      const formatted: LeagueHacker[] = combined.map((item, index) => {
+        const position = index + 1;
+        let status: 'promoted' | 'safe' | 'demoted' = 'safe';
+        if (position <= 3) status = 'promoted';
+        else if (position >= Math.max(10, combined.length - 2)) status = 'demoted';
+
+        const isUser = item.isCurrentUser || item.username.toLowerCase() === currentUsername.toLowerCase();
+        const itemTier = getRankFromElo(item.elo).tier;
+
+        return {
+          rankPosition: position,
+          username: item.username,
+          avatar: item.avatar,
+          tier: itemTier,
+          xp: item.xp,
+          isUser,
+          winStreak: isUser ? (userState.winStreak || 0) : item.winStreak,
+          status
+        };
+      });
+
+      setHackers(formatted);
+      setIsLoading(false);
+    }).catch(err => {
+      console.warn('[LeagueTab] Error loading real accounts:', err);
+      setIsLoading(false);
     });
 
-    setHackers(formatted);
-  }, [userState.xp, userState.username, userRank.tier, userState.winStreak]);
+    return () => {
+      isMounted = false;
+    };
+  }, [userState.xp, userState.username, userRank.tier, userState.winStreak, userState.elo]);
 
   const userHacker = hackers.find(h => h.isUser);
   const userPosition = userHacker ? userHacker.rankPosition : 6;
@@ -153,7 +160,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
           <div className="text-right font-mono">
             <span className="text-[10px] text-zinc-400 block">{isEn ? 'YOUR RANK' : 'TUA POSIZIONE'}</span>
             <span className={`text-xl font-black ${userPosition <= 3 ? 'text-emerald-400' : userPosition >= 13 ? 'text-rose-400' : 'text-zinc-200'}`}>
-              #{userPosition} <span className="text-xs text-zinc-400 font-normal">/ 15</span>
+              #{userPosition} <span className="text-xs text-zinc-400 font-normal">/ {hackers.length}</span>
             </span>
           </div>
         </div>
@@ -214,7 +221,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
         <div className="divide-y divide-zinc-800/80">
           {hackers.map((hacker) => {
             const isTop3 = hacker.rankPosition <= 3;
-            const isBottom3 = hacker.rankPosition >= 13;
+            const isBottom3 = hackers.length > 5 && hacker.rankPosition > hackers.length - 3;
 
             return (
               <div

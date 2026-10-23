@@ -5,6 +5,7 @@ import { sound } from '../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../utils/language';
 import { getCachedVersionInfo } from '../utils/platform';
 import { updateManager } from '../utils/updateManager';
+import { isUsernameAvailable } from '../utils/userDatabase';
 import { 
   Flame, Ticket, Sparkles, Terminal, Smartphone, 
   Volume2, VolumeX, RotateCcw, Palette,
@@ -67,6 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [usernameInput, setUsernameInput] = useState<string>(userState.username);
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameSuccess, setUsernameSuccess] = useState<string | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState<boolean>(false);
 
   // Calculate 7-day cooldown for username change
   const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
@@ -91,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsMuted(muted);
   };
 
-  const handleSaveUsername = () => {
+  const handleSaveUsername = async () => {
     setUsernameError(null);
     setUsernameSuccess(null);
 
@@ -113,8 +115,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       return;
     }
 
+    const cleanInput = usernameInput.trim();
+    if (cleanInput.toLowerCase() !== userState.username.toLowerCase()) {
+      setIsCheckingUsername(true);
+      const check = await isUsernameAvailable(cleanInput, userState.userEmail);
+      setIsCheckingUsername(false);
+      if (!check.available) {
+        setUsernameError(check.error || (lang === 'it' ? 'Nome utente non disponibile.' : 'Username not available.'));
+        sound.playPayloadBlocked();
+        return;
+      }
+    }
+
     if (onUpdateUsername) {
-      const res = onUpdateUsername(usernameInput.trim());
+      const res = onUpdateUsername(cleanInput);
       if (!res.success) {
         setUsernameError(res.error || (lang === 'it' ? 'Errore durante il salvataggio' : 'Failed to update username'));
         sound.playPayloadBlocked();
@@ -156,14 +170,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       <header className="sticky top-0 z-40 w-full bg-[#090D16] border-b border-zinc-800 px-3 sm:px-6 pt-safe pb-2.5 min-h-[56px] flex items-center">
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2.5">
-          {/* Brand Logo & Portal Navigation */}
+          {/* Brand Logo — non-clickable, purely decorative identity mark */}
           <div 
-            onClick={() => {
-              sound.playTap();
-              if (onOpenPortal) onOpenPortal();
-            }}
-            className="flex items-center gap-2.5 cursor-pointer select-none shrink-0"
-            title={lang === 'it' ? 'Torna al Portale & Download APK' : 'Back to Portal & Download APK'}
+            className="flex items-center gap-2.5 select-none shrink-0"
           >
             <img 
               src="/zerox-rounded.png" 
@@ -184,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Minimalist Top Telemetry & Controls: Visible & High Contrast */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Operator ELO Rank Badge */}
             <div 
               onClick={() => {
@@ -194,24 +203,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setUsernameSuccess(null);
                 setIsSettingsOpen(true);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 min-h-[40px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer select-none"
+              className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-2 min-h-[38px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer select-none"
               title={`${rank.tier} · ${userState.elo} ELO`}
             >
               <div style={{ color: rank.badgeColor }}>
-                {renderRankIcon(rank.iconName, "w-4 h-4")}
+                {renderRankIcon(rank.iconName, "w-3.5 h-3.5 sm:w-4 sm:h-4")}
               </div>
               <span className="font-mono font-black text-xs sm:text-sm" style={{ color: rank.badgeColor }}>
                 {userState.elo} <span className="text-[10px] text-zinc-400 font-bold hidden sm:inline">ELO</span>
               </span>
             </div>
 
-            {/* 2x XP Telemetry Indicator / Paywall Trigger */}
+            {/* 2x XP Telemetry Indicator / Paywall Trigger (Hidden on small mobile to prevent overflow) */}
             <div 
               onClick={() => {
                 sound.playTap();
                 if (!userState.isPro) onOpenPaywall();
               }}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-xl border transition-all cursor-pointer font-mono font-black text-xs ${
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 min-h-[38px] rounded-xl border transition-all cursor-pointer font-mono font-black text-xs ${
                 userState.isPro
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm'
                   : 'bg-zinc-900 border-zinc-800 hover:border-amber-500/50 text-zinc-400 hover:text-amber-300'
@@ -225,10 +234,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Daily Streak Counter */}
             <div 
               onClick={() => sound.playTap()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 min-h-[38px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
               title={t.dailyStreak}
             >
-              <Flame className="w-4 h-4 text-amber-400" />
+              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span className="font-mono font-black text-xs sm:text-sm text-amber-300">
                 {userState.streakDays}d
               </span>
@@ -236,10 +245,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Arena Tickets Counter */}
             <div 
-              className="flex items-center gap-1.5 px-2.5 py-1.5 min-h-[40px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-indigo-500/40 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 min-h-[38px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-indigo-500/40 transition-colors"
               title={t.arenaTickets}
             >
-              <Ticket className="w-4 h-4 text-indigo-400" />
+              <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
               <span className="font-mono font-black text-xs sm:text-sm text-indigo-300">
                 {userState.isPro ? (
                   <span className="text-emerald-400 font-black">PRO</span>
@@ -249,21 +258,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
 
-            {/* PRO Upgrade CTA (Only if free) */}
-            {!userState.isPro && (
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  onOpenPaywall();
-                }}
-                className="hidden xs:flex items-center gap-1.5 px-3.5 py-1.5 min-h-[40px] rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-black text-xs sm:text-sm transition-all transform active:scale-95 cursor-pointer shadow-sm"
-              >
-                <Sparkles className="w-3.5 h-3.5 fill-zinc-950" />
-                <span>PRO</span>
-              </button>
-            )}
-
-            {/* Settings & Account Gear Button */}
+            {/* Settings & Account Gear Button (Always pinned and visible) */}
             <button
               onClick={() => {
                 sound.playTap();
@@ -272,7 +267,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setUsernameSuccess(null);
                 setIsSettingsOpen(true);
               }}
-              className="flex items-center justify-center p-2 sm:p-2.5 min-h-[40px] min-w-[40px] rounded-xl bg-zinc-900 border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
+              className="flex items-center justify-center p-2 min-h-[38px] min-w-[38px] rounded-xl bg-zinc-900 border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
               title="Impostazioni & Account"
               aria-label="Settings and Profile"
             >
@@ -459,11 +454,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="flex-1 px-3 py-2 min-h-[44px] rounded-xl bg-zinc-950 border border-zinc-700 focus:border-emerald-500 text-xs font-mono font-bold text-white disabled:opacity-50"
                     />
                     <button
-                      disabled={isUsernameCooldownActive}
+                      disabled={isUsernameCooldownActive || isCheckingUsername}
                       onClick={handleSaveUsername}
                       className="px-4 py-2 min-h-[44px] rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-mono font-black text-xs transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      {isCheckingUsername ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
                       <span>{t.saveBtn}</span>
                     </button>
                   </div>

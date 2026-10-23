@@ -9,6 +9,7 @@ import {
   loginWithEmailOtp,
   getRegisteredAccounts,
   syncDatabaseWithBackend,
+  isUsernameAvailable,
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
@@ -314,24 +315,35 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsProcessing(true);
     sound.playTap();
 
-    setTimeout(() => {
-      const res = completeEmailRegistration(email, callsign, password, currentUserState);
-      setIsProcessing(false);
-
-      if (!res.success || !res.account) {
-        setErrorMsg(res.error || (isEn ? 'Error creating account.' : 'Errore durante la creazione dell\'account.'));
+    isUsernameAvailable(callsign, email).then(check => {
+      if (!check.available) {
+        setIsProcessing(false);
+        setErrorMsg(check.error || (isEn ? 'Callsign already taken.' : 'Questo nome utente è già in uso. Scegline un altro.'));
         sound.playPayloadBlocked();
         return;
       }
 
-      sound.playVictoryFanfare();
-      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-      setSuccessMsg(isEn ? `Account ${res.account.username} created successfully!` : `Account per ${res.account.username} creato con successo!`);
-      
       setTimeout(() => {
-        onLoginSuccess(res.account!);
-      }, 700);
-    }, 400);
+        const res = completeEmailRegistration(email, callsign, password, currentUserState);
+        setIsProcessing(false);
+
+        if (!res.success || !res.account) {
+          setErrorMsg(res.error || (isEn ? 'Error creating account.' : 'Errore durante la creazione dell\'account.'));
+          sound.playPayloadBlocked();
+          return;
+        }
+
+        sound.playVictoryFanfare();
+        confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+        setSuccessMsg(isEn ? `Account ${res.account.username} created successfully!` : `Account per ${res.account.username} creato con successo!`);
+        
+        setTimeout(() => {
+          onLoginSuccess(res.account!);
+        }, 700);
+      }, 300);
+    }).catch(() => {
+      setIsProcessing(false);
+    });
   };
 
   // ---------------------------------------------------------------------------
@@ -458,7 +470,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsGoogleModalOpen(true);
   };
 
-  const handleGoogleSubmit = (e: React.FormEvent) => {
+  const handleGoogleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanMail = googleInputEmail.trim().toLowerCase();
     if (!cleanMail || !cleanMail.includes('@') || !cleanMail.includes('.')) {
@@ -478,6 +490,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     sound.playTap();
     setErrorMsg(null);
 
+    try {
+      const check = await isUsernameAvailable(cleanCallsign, cleanMail);
+      if (!check.available) {
+        setIsProcessing(false);
+        setErrorMsg(check.error || (isEn ? 'Callsign already taken.' : 'Questo nome utente è già in uso. Scegline un altro.'));
+        sound.playPayloadBlocked();
+        return;
+      }
+    } catch {
+      // Continue if network check fails
+    }
+
     setTimeout(() => {
       const res = loginWithOAuth('google', { 
         name: cleanCallsign, 
@@ -495,7 +519,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       sound.playVictoryFanfare();
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
       onLoginSuccess(res.account);
-    }, 300);
+    }, 200);
   };
 
   // ---------------------------------------------------------------------------
