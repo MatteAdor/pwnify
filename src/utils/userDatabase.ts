@@ -698,17 +698,28 @@ export async function isUsernameAvailable(
     return { available: false, error: 'Questo nome utente è già in uso. Scegline un altro.' };
   }
 
-  // 2. Check remote Supabase profiles table
+  // 2. Check remote Supabase profiles via security definer RPC
   try {
     const { supabase, isSupabaseConfigured } = await import('../config/supabase');
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('public_profiles')
-        .select('id, nick')
-        .ilike('nick', clean);
+      const { data, error } = await (supabase.rpc as any)('is_nick_available', {
+        p_nick: clean
+      });
 
-      if (!error && data && data.length > 0) {
-        return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+      if (!error && typeof data === 'boolean') {
+        if (!data) {
+          return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+        }
+      } else if (error) {
+        // Fail-open fallback: check public_profiles view if RPC not yet deployed
+        const { data: viewData, error: viewError } = await supabase
+          .from('public_profiles')
+          .select('id, nick')
+          .ilike('nick', clean);
+
+        if (!viewError && viewData && viewData.length > 0) {
+          return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+        }
       }
     }
   } catch (err) {

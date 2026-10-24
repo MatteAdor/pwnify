@@ -285,6 +285,9 @@ isOneToOne: false
               "category": string,"code_snippet": string,"id": string,"options": Json,"question": string,"question_order": number
             }[]
                            },
+"is_nick_available":
+{ Args: { "p_nick": string }; Returns: boolean
+                           },
 "get_tier_from_elo":
 { Args: { "p_elo": number }; Returns: string
                            },
