@@ -322,7 +322,7 @@ export async function fetchRankedLeaderboard(): Promise<GlobalLeaderboardEntry[]
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, nick, elo, rank, xp')
         .order('elo', { ascending: false })
         .limit(100);
 

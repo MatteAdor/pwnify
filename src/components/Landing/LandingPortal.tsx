@@ -606,7 +606,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               <span>{isEn ? 'PREDICTIVE READINESS RADAR' : 'RADAR DI IDONEITÀ ALL\'ESAME'}</span>
             </div>
             <h3 className="text-lg font-bold text-white">
-              {isEn ? 'Telemetry that predicts your exam pass rate' : 'Telemetria che prevede il tuo superamento dell\'esame'}
+              {isEn ? 'Telemetry that tracks your preparation index across 6 domains' : 'Telemetria che misura il tuo indice di preparazione sui 6 domini'}
             </h3>
             <p className="text-sm text-slate-300 leading-relaxed">
               {isEn
@@ -614,7 +614,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 : 'L\'algoritmo di telemetria a 6 assi calcola le tue competenze in AppSec, Difesa di Rete, Crittografia, IAM, Risposta a Incidenti e Governance per dirti se sei pronto per l\'esame.'}
             </p>
             <div className="pt-2 text-xs font-mono text-slate-400">
-              Pass probability calculated with 94.2% historical accuracy
+              Stima trasparente basata sui tuoi progressi pratici
             </div>
           </div>
 

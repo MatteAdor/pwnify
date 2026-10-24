@@ -152,6 +152,16 @@ export interface UserState {
   profession?: string;
   lastUsernameChangeTimestamp?: number;
   language?: 'en' | 'it';
+  // Server-authoritative unified streak engine state
+  streakShieldCount?: number;
+  freezeUntilDate?: string | null;
+  lastFreezeActivatedDate?: string | null;
+  inGracePeriod?: boolean;
+  graceExpiryTimestamp?: number | null;
+  lastActiveDate?: string | null;
+  lastActiveTimestamp?: number;
+  userTimezone?: string;
+  lastShieldAwardedStreak?: number | null;
 }
 
 export type PaywallContext = 

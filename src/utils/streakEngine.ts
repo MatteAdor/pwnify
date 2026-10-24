@@ -20,6 +20,7 @@ export interface StreakState {
   inGracePeriod: boolean;        // true if missed 1 day and can recover within 24h
   graceExpiryTimestamp: number | null;
   timezone: string;
+  lastShieldAwardedStreak?: number | null;
 }
 
 export interface ActivityResult {
@@ -168,7 +169,12 @@ export function recordLearningActivity(
       message = `Streak continuato! Giorno ${newStreak}.`;
 
       // Merit-based shield earn: every 5 consecutive days, earn 1 shield (max 1 for free)
-      if (newStreak % 5 === 0 && currentState.streakShieldCount < 1) {
+      // Awarded once per threshold and strictly if slot is not already full
+      const isThreshold = newStreak > 0 && newStreak % 5 === 0;
+      const slotEmpty = currentState.streakShieldCount < 1;
+      const notAwardedForThisThreshold = currentState.lastShieldAwardedStreak !== newStreak;
+
+      if (isThreshold && slotEmpty && notAwardedForThisThreshold) {
         shieldEarned = true;
       }
     } else {
@@ -221,7 +227,8 @@ export function recordLearningActivity(
     streakShieldCount: updatedShieldCount,
     streakShieldActive: Boolean(options?.isPro || updatedShieldCount > 0),
     inGracePeriod: false,
-    graceExpiryTimestamp: null
+    graceExpiryTimestamp: null,
+    lastShieldAwardedStreak: shieldEarned ? newStreak : (currentState.lastShieldAwardedStreak ?? null)
   };
 
   return {
@@ -290,18 +297,20 @@ export function getStreakThresholdTitle(streakDays: number): {
   title: string;
   badgeId: string;
   daysRequired: number;
+  badge: string;
+  color: string;
 } | null {
   if (streakDays >= 100) {
-    return { title: 'ZeroDay Centurion', badgeId: 'badge_streak_100', daysRequired: 100 };
+    return { title: 'ZeroDay Centurion', badgeId: 'badge_streak_100', daysRequired: 100, badge: '100D', color: '#10b981' };
   }
   if (streakDays >= 42) {
-    return { title: 'Incident Responder', badgeId: 'badge_streak_42', daysRequired: 42 };
+    return { title: 'Incident Responder', badgeId: 'badge_streak_42', daysRequired: 42, badge: '42D', color: '#8b5cf6' };
   }
   if (streakDays >= 21) {
-    return { title: 'Threat Analyst', badgeId: 'badge_streak_21', daysRequired: 21 };
+    return { title: 'Threat Analyst', badgeId: 'badge_streak_21', daysRequired: 21, badge: '21D', color: '#3b82f6' };
   }
   if (streakDays >= 7) {
-    return { title: 'Apprentice Defender', badgeId: 'badge_streak_7', daysRequired: 7 };
+    return { title: 'Apprentice Defender', badgeId: 'badge_streak_7', daysRequired: 7, badge: '7D', color: '#f59e0b' };
   }
   return null;
 }

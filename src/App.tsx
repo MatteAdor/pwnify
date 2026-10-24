@@ -31,6 +31,7 @@ import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
+import { recordLearningActivity, StreakState } from './utils/streakEngine';
 import { 
   createDefaultGuestState, 
   getCachedGuestState,
@@ -421,7 +422,7 @@ Features Unlocked:
   - Interactive PBQ Labs with Real-Time Validation
   - Unlimited 1v1 Blitz Arena Tickets & Win Streak Shields
   - Uncensored Root Cause Exploit Breakdowns & PoCs
-  - 2x XP Multiplier & Weekly League Safe Shield
+  - 2x XP Multiplier & Unlimited Arena Access
 Issued:              ${new Date().toISOString()}
 Verification:        Zero-Knowledge Algorithmic Checksum Passed
 =====================================================`;
@@ -494,18 +495,50 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     setUserState(prev => ({ ...prev, customTitle: title }));
   };
 
+
+// Helper to bridge user state with server-authoritative streak engine
+function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boolean }): UserState {
+  const streakState: StreakState = {
+    streakDays: prev.streakDays || prev.dailyBreachStreak || 0,
+    lastActiveDate: prev.lastActiveDate || prev.lastDailyBreachDate || null,
+    lastActiveTimestamp: prev.lastActiveTimestamp || 0,
+    streakShieldCount: prev.streakShieldCount || 0,
+    streakShieldActive: Boolean(prev.streakShieldActive),
+    freezeUntilDate: prev.freezeUntilDate || null,
+    lastFreezeActivatedDate: prev.lastFreezeActivatedDate || null,
+    inGracePeriod: Boolean(prev.inGracePeriod),
+    graceExpiryTimestamp: prev.graceExpiryTimestamp || null,
+    timezone: prev.userTimezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'),
+    lastShieldAwardedStreak: prev.lastShieldAwardedStreak || null
+  };
+
+  const { updatedState: nextStreak } = recordLearningActivity(streakState, Date.now(), {
+    isPbqPerfect: options?.isPbqPerfect,
+    isPro: prev.isPro
+  });
+
+  return {
+    ...prev,
+    streakDays: nextStreak.streakDays,
+    dailyBreachStreak: nextStreak.streakDays,
+    lastActiveDate: nextStreak.lastActiveDate,
+    lastActiveTimestamp: nextStreak.lastActiveTimestamp,
+    lastDailyBreachDate: nextStreak.lastActiveDate || undefined,
+    streakShieldCount: nextStreak.streakShieldCount,
+    streakShieldActive: nextStreak.streakShieldActive,
+    lastShieldAwardedStreak: nextStreak.lastShieldAwardedStreak
+  };
+}
+
   // Daily 0xBreach Completion Handler
   const handleDailyBreachSuccess = (xpGained: number, eloGained: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
-      const currentStreak = prev.dailyBreachStreak || 0;
-      const todayStr = new Date().toISOString().split('T')[0];
+      const updated = applyLearningActivity(prev);
       return {
-        ...prev,
+        ...updated,
         xp: prev.xp + xpGained * xpMultiplier,
         elo: prev.elo + eloGained,
-        dailyBreachStreak: currentStreak + 1,
-        lastDailyBreachDate: todayStr,
         readinessScore: Math.min(100, prev.readinessScore + 5)
       };
     });
@@ -625,6 +658,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleCompleteNode = (nodeId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
+      const updated = applyLearningActivity(prev);
       const updatedBounties = (prev.dailyBounties || INITIAL_DAILY_BOUNTIES).map(b => {
         if (b.id === 'bounty_zeroday') {
           const nextProg = Math.min(b.target, b.progress + 1);
@@ -637,7 +671,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
       });
 
       return {
-        ...prev,
+        ...updated,
         xp: prev.xp + gainedXp * xpMultiplier,
         elo: prev.elo + gainedElo,
         readinessScore: Math.min(100, prev.readinessScore + 6),
@@ -759,8 +793,9 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleCompletePbq = (pbqId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
       const alreadyDone = prev.completedPbqIds?.includes(pbqId);
+      const updated = applyLearningActivity(prev, { isPbqPerfect: true });
       return {
-        ...prev,
+        ...updated,
         xp: prev.xp + (prev.isPro ? gainedXp * 2 : gainedXp),
         elo: prev.elo + gainedElo,
         readinessScore: Math.min(100, prev.readinessScore + 8),

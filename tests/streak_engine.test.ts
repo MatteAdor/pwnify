@@ -161,6 +161,40 @@ describe('ZeroDay Unified Streak Engine (B0 Audit Suite)', () => {
       assert.equal(res.result.shieldEarned, true);
       assert.equal(res.updatedState.streakShieldCount, 1);
       assert.equal(res.updatedState.streakShieldActive, true);
+      assert.equal(res.updatedState.lastShieldAwardedStreak, 5);
+    });
+
+    it('does not award shield at multiple of 5 if shield slot is already full (max 1 for free)', () => {
+      let state = createInitialState();
+      state.streakDays = 9;
+      state.lastActiveDate = '2026-10-23';
+      state.lastActiveTimestamp = Date.UTC(2026, 9, 23, 10, 0, 0);
+      state.streakShieldCount = 1; // Slot already full
+      state.streakShieldActive = true;
+      state.lastShieldAwardedStreak = 5;
+
+      const day10 = Date.UTC(2026, 9, 24, 10, 0, 0);
+      const res = recordLearningActivity(state, day10);
+
+      assert.equal(res.result.newStreak, 10);
+      assert.equal(res.result.shieldEarned, false, 'Shield should NOT be earned because slot is already full');
+      assert.equal(res.updatedState.streakShieldCount, 1, 'Shield count must remain capped at 1');
+    });
+
+    it('does not award shield again for the same threshold if already awarded', () => {
+      let state = createInitialState();
+      state.streakDays = 4;
+      state.lastActiveDate = '2026-10-23';
+      state.lastActiveTimestamp = Date.UTC(2026, 9, 23, 10, 0, 0);
+      state.streakShieldCount = 0; // Slot emptied
+      state.lastShieldAwardedStreak = 5; // Already claimed for day 5
+
+      const day5 = Date.UTC(2026, 9, 24, 10, 0, 0);
+      const res = recordLearningActivity(state, day5);
+
+      assert.equal(res.result.newStreak, 5);
+      assert.equal(res.result.shieldEarned, false, 'Shield must not be awarded twice for same threshold');
+      assert.equal(res.updatedState.streakShieldCount, 0);
     });
 
     it('earns 1 Streak Shield upon achieving 100% on a PBQ Lab', () => {
