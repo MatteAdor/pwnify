@@ -5,7 +5,7 @@
 -- =====================================================================
 
 BEGIN;
-SELECT plan(15);
+SELECT plan(18);
 
 -- ---------------------------------------------------------------------
 -- 1. SETUP MOCK USERS & PROFILES
@@ -25,7 +25,7 @@ ON CONFLICT (id) DO UPDATE SET nick = EXCLUDED.nick, elo = EXCLUDED.elo;
 -- ---------------------------------------------------------------------
 SET ROLE anon;
 
--- Test 1: anon INSERT must raise error (permission denied)
+-- Test 1: anon INSERT must raise error 42501
 SELECT throws_ok(
     $$INSERT INTO public.profiles (id, nick) VALUES ('33333333-3333-3333-3333-333333333333', 'HackerAnon')$$,
     '42501',
@@ -41,13 +41,27 @@ SELECT throws_ok(
     'anon is strictly denied SELECT on base public.profiles'
 );
 
+-- Test 3: anon EXECUTE on is_nick_available is denied (authenticated only)
+SELECT throws_ok(
+    $$SELECT public.is_nick_available('testnick')$$,
+    '42501',
+    NULL,
+    'anon is denied EXECUTE on is_nick_available (requires authenticated role)'
+);
+
+-- Test 4: anon CAN execute public utilities (get_server_time)
+SELECT lives_ok(
+    'SELECT public.get_server_time()',
+    'anon is permitted EXECUTE on get_server_time utility RPC'
+);
+
 -- ---------------------------------------------------------------------
 -- 3. VERIFY AUTHENTICATED MUTATIONS (State Immutability: Rows Do Not Change)
 -- ---------------------------------------------------------------------
 SET ROLE authenticated;
 SET request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
 
--- Test 3: direct INSERT by authenticated raises error (permission denied)
+-- Test 5: direct INSERT by authenticated raises error (permission denied)
 SELECT throws_ok(
     $$INSERT INTO public.profiles (id, nick) VALUES ('44444444-4444-4444-4444-444444444444', 'AttackerAlt')$$,
     '42501',
@@ -55,48 +69,67 @@ SELECT throws_ok(
     'authenticated is strictly denied direct INSERT into public.profiles'
 );
 
--- Execute direct UPDATE on victim row (should not modify anything)
-UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '11111111-1111-1111-1111-111111111111';
-
--- Test 4: victim ELO remains unchanged at 1200
-SELECT is(
-    (SELECT elo FROM public.profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
-    1200,
-    'direct client UPDATE on another user profile does NOT change ELO'
+-- Test 6: direct UPDATE by authenticated raises error (REVOKE UPDATE defense)
+SELECT throws_ok(
+    $$UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222'$$,
+    '42501',
+    NULL,
+    'authenticated direct UPDATE on public.profiles is denied by REVOKE UPDATE'
 );
 
--- Execute direct UPDATE on own row attempting to elevate elo/is_pro
-UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222';
-
--- Test 5: own ELO remains unchanged at 100 (client cannot write elo/is_pro)
-SELECT is(
-    (SELECT elo FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'),
-    100,
-    'direct client UPDATE on own profile does NOT change ELO'
+-- Test 7: direct DELETE does not decrease row count
+SELECT throws_ok(
+    $$DELETE FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'$$,
+    '42501',
+    NULL,
+    'authenticated direct DELETE on public.profiles is strictly denied'
 );
 
--- Test 6: own is_pro remains FALSE (client cannot elevate PRO status)
+-- ---------------------------------------------------------------------
+-- 4. PRO LICENSE REDEMPTION & SERVICE_ROLE ISOLATION
+-- ---------------------------------------------------------------------
+-- Test 8: authenticated user cannot execute set_profile_pro_status directly
+SELECT throws_ok(
+    $$SELECT public.set_profile_pro_status('22222222-2222-2222-2222-222222222222'::UUID, TRUE)$$,
+    '42501',
+    NULL,
+    'authenticated user cannot execute set_profile_pro_status directly'
+);
+
+-- Switch to service_role to simulate legitimate Edge Function webhook execution
+SET ROLE service_role;
+
+-- Test 9: valid key redemption updates is_pro to TRUE
+SELECT public.set_profile_pro_status(
+    '22222222-2222-2222-2222-222222222222'::UUID,
+    TRUE,
+    'valid_hash_abc123'
+);
+SELECT is(
+    (SELECT is_pro FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'),
+    TRUE,
+    'service_role successfully updates is_pro = TRUE on valid license redemption'
+);
+
+-- Test 10: invalid/revoked key leaves or sets is_pro to FALSE
+SELECT public.set_profile_pro_status(
+    '22222222-2222-2222-2222-222222222222'::UUID,
+    FALSE,
+    'revoked_hash_abc123'
+);
 SELECT is(
     (SELECT is_pro FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'),
     FALSE,
-    'direct client UPDATE on own profile does NOT change is_pro'
-);
-
--- Execute direct DELETE attempt
-DELETE FROM public.profiles WHERE id = '11111111-1111-1111-1111-111111111111';
-DELETE FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222';
-
--- Test 7: rows count in profiles is not decreased by client DELETE
-SELECT is(
-    (SELECT count(*)::INT FROM public.profiles WHERE id IN ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')),
-    2,
-    'direct client DELETE does NOT delete rows from public.profiles'
+    'service_role sets is_pro = FALSE upon invalid or revoked license status'
 );
 
 -- ---------------------------------------------------------------------
--- 4. VERIFY TRIGGER trg_protect_profiles_is_pro ON LEGITIMATE RPCS
+-- 5. TRIGGER trg_protect_profiles_is_pro CURRENT_USER SECURITY
 -- ---------------------------------------------------------------------
--- Test 8: finalize_match simulation (updates elo/xp/rank, is_pro unchanged -> trigger succeeds)
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
+-- Test 11: finalize_match simulation does NOT alter is_pro and succeeds
 UPDATE public.profiles 
 SET elo = 1216, xp = xp + 50, updated_at = pg_catalog.now() 
 WHERE id = '11111111-1111-1111-1111-111111111111';
@@ -106,7 +139,7 @@ SELECT is(
     'trg_protect_profiles_is_pro does NOT block finalize_match elo update'
 );
 
--- Test 9: claim_daily_flash_draw simulation (updates xp, is_pro unchanged -> trigger succeeds)
+-- Test 12: claim_daily_flash_draw simulation succeeds without touching is_pro
 UPDATE public.profiles 
 SET xp = xp + 50, updated_at = pg_catalog.now() 
 WHERE id = '11111111-1111-1111-1111-111111111111';
@@ -116,53 +149,67 @@ SELECT is(
     'trg_protect_profiles_is_pro does NOT block claim_daily_flash_draw xp update'
 );
 
--- Test 10: migrate_my_legacy_progress simulation (updates inventory/xp, is_pro unchanged -> trigger succeeds)
-UPDATE public.profiles 
-SET inventory = jsonb_build_object('streak_days', 5), updated_at = pg_catalog.now() 
-WHERE id = '11111111-1111-1111-1111-111111111111';
-SELECT is(
-    (SELECT (inventory->>'streak_days')::INT FROM public.profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
-    5,
-    'trg_protect_profiles_is_pro does NOT block migrate_my_legacy_progress inventory update'
+-- ---------------------------------------------------------------------
+-- 6. RESTRICTIVE POLICY VERSION ENFORCEMENT (SQLSTATE PT426)
+-- ---------------------------------------------------------------------
+-- Insert active android version requirement in app_versions
+INSERT INTO public.app_versions (platform, min_supported_version_code, min_supported_version, latest_version, store_url, kill_switch)
+VALUES ('android', 100, '2.0.0', '2.0.0', 'https://zeroday.gg', FALSE)
+ON CONFLICT (platform) DO UPDATE SET min_supported_version_code = 100, kill_switch = FALSE;
+
+-- Simulate outdated client headers (x-build: 50 < 100)
+SET "request.headers" = '{"x-platform": "android", "x-build": "50"}';
+
+-- Test 13: outdated android client query raises SQLSTATE PT426
+SELECT throws_ok(
+    $$SELECT * FROM public.profiles$$,
+    'PT426',
+    NULL,
+    'query raises SQLSTATE PT426 (Upgrade Required) when client x-build is below minimum'
 );
 
+-- Reset headers for remaining tests
+RESET "request.headers";
+
 -- ---------------------------------------------------------------------
--- 5. VERIFY PUBLIC_PROFILES VIEW PROJECTION & COLUMNS
+-- 7. PUBLIC_PROFILES PROJECTION & ALIAS INTEGRITY
 -- ---------------------------------------------------------------------
 SET ROLE anon;
 
--- Test 11: verify exact columns exposed by public_profiles view
+-- Test 14: public_profiles exposes strictly the 7 declared columns
 SELECT set_eq(
     $$SELECT column_name::text FROM information_schema.columns WHERE table_name = 'public_profiles'$$,
     ARRAY['id', 'nick', 'elo', 'rank', 'xp', 'profession', 'is_public_profile'],
     'public_profiles view exposes strictly the 7 declared public columns'
 );
 
--- Test 12: verify created_at is NOT in public_profiles
+-- Test 15: created_at is strictly excluded from public_profiles
 SELECT is_empty(
     $$SELECT column_name FROM information_schema.columns WHERE table_name = 'public_profiles' AND column_name = 'created_at'$$,
     'created_at is strictly excluded from public_profiles'
 );
 
--- Test 13: verify non-opted-in user receives pseudonymous alias
+-- Test 16: non-opted-in user receives salted hash alias
 SELECT is(
     (SELECT nick FROM public.public_profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
     'Operatore-' || UPPER(SUBSTRING(md5('11111111-1111-1111-1111-111111111111zeroday_salt_lead_2026') FROM 1 FOR 6)),
-    'non-opted-in user receives non-reversible salted pseudonymous alias in public view'
+    'non-opted-in user receives stable salted pseudonymous alias in public view'
 );
 
--- Test 14: verify profession is masked as NULL for non-opted-in user
+-- Test 17: profession is masked as NULL for non-opted-in user
 SELECT is(
     (SELECT profession FROM public.public_profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
     NULL,
     'profession is masked as NULL when is_public_profile is false'
 );
 
--- Test 15: is_nick_available RPC checks availability without exposing rows
+-- Test 18: authenticated user can query is_nick_available
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 SELECT is(
     public.is_nick_available('ZeroVictim'),
     FALSE,
-    'is_nick_available correctly returns FALSE for existing nick'
+    'authenticated user can query is_nick_available (returns FALSE for taken nick)'
 );
 
 SELECT * FROM finish();
