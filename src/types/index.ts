@@ -162,6 +162,7 @@ export interface UserState {
   lastActiveTimestamp?: number;
   userTimezone?: string;
   lastShieldAwardedStreak?: number | null;
+  lastStreakSource?: 'server' | 'local';
 }
 
 export type PaywallContext = 

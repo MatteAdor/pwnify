@@ -703,7 +703,7 @@ export async function isUsernameAvailable(
     const { supabase, isSupabaseConfigured } = await import('../config/supabase');
     if (isSupabaseConfigured) {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, nick')
         .ilike('nick', clean);
 

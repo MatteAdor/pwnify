@@ -1,12 +1,15 @@
 -- =====================================================================
--- ZERODAY SERVER-VALIDATED STREAK ENGINE & MIGRATION SCHEMA
+-- ZERODAY SERVER-VALIDATED STREAK ENGINE & MIGRATION SCHEMA (HARDENED)
 -- Migration: 20261024000001_server_validated_streak.sql
 -- Status: PROPOSAL FILE ONLY (DO NOT APPLY DIRECTLY TO PRODUCTION)
 -- =====================================================================
--- 1. Creates `public.user_streaks` with timezone awareness & shield caps.
--- 2. Migrates existing client/profile streaks additively without zeroing out.
--- 3. Provides `public.get_server_time()` and `public.record_user_streak_activity()`.
--- 4. Strictly denies direct client writes; enforces RLS read own only.
+-- 1. Creates `public.user_streaks` with timezone validation, 30d timezone rate-limit,
+--    and capped merit shields.
+-- 2. Seed query guarantees no zombie streaks: streaks older than 1 day are set to 0,
+--    and values from inventory are strictly capped at 365.
+-- 3. `record_user_streak_activity` runs as SECURITY DEFINER with fixed search_path,
+--    verifies auth.uid(), rejects client boolean spoofing for PBQs, and restricts EXECUTE
+--    strictly to authenticated role.
 -- =====================================================================
 
 CREATE TABLE IF NOT EXISTS public.user_streaks (
@@ -18,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.user_streaks (
     freeze_until_date DATE,
     last_freeze_activated_date DATE,
     timezone TEXT NOT NULL DEFAULT 'UTC',
+    timezone_updated_at TIMESTAMPTZ,
     last_shield_awarded_streak INT DEFAULT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now()
@@ -26,29 +30,58 @@ CREATE TABLE IF NOT EXISTS public.user_streaks (
 CREATE INDEX IF NOT EXISTS idx_user_streaks_user ON public.user_streaks(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_streaks_days ON public.user_streaks(streak_days);
 
+-- Optional server-side verified PBQ completions table (if present in schema)
+CREATE TABLE IF NOT EXISTS public.pbq_verified_completions (
+    id UUID PRIMARY KEY DEFAULT pg_catalog.gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    pbq_id TEXT NOT NULL,
+    score INT NOT NULL CHECK (score >= 0 AND score <= 100),
+    verified_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now(),
+    shield_claimed BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_pbq_verified_user ON public.pbq_verified_completions(user_id, shield_claimed);
+
 -- ---------------------------------------------------------------------
--- MIGRATION: SEED FROM EXISTING PROFILES WITHOUT RESETTING
--- Preserves highest recorded streak (from profiles.inventory or baseline)
+-- MIGRATION SEED: NO ZOMBIE STREAKS & VALUE CAPS
+-- If last activity is older than yesterday, streak is dead (0).
+-- Values extracted from inventory are strictly bounded between 0 and 365.
 -- ---------------------------------------------------------------------
-INSERT INTO public.user_streaks (user_id, streak_days, last_active_date, timezone)
+INSERT INTO public.user_streaks (
+    user_id, streak_days, last_active_date, last_active_timestamp, timezone
+)
 SELECT 
     p.id AS user_id,
-    GREATEST(
-        0, 
-        COALESCE((p.inventory->>'streakDays')::int, 0),
-        COALESCE((p.inventory->>'dailyBreachStreak')::int, 0)
-    ) AS streak_days,
-    CURRENT_DATE AS last_active_date,
+    CASE 
+        -- If user has no recorded activity, or last activity is older than yesterday, streak is 0
+        WHEN p.last_ranked_at IS NULL THEN 0
+        WHEN p.last_ranked_at < (pg_catalog.now() - INTERVAL '48 hours') THEN 0
+        ELSE LEAST(365, GREATEST(0, COALESCE((p.inventory->>'streakDays')::int, 0)))
+    END AS streak_days,
+    CASE 
+        WHEN p.last_ranked_at IS NOT NULL AND p.last_ranked_at >= (pg_catalog.now() - INTERVAL '48 hours') 
+        THEN p.last_ranked_at::DATE 
+        ELSE NULL 
+    END AS last_active_date,
+    p.last_ranked_at AS last_active_timestamp,
     'UTC' AS timezone
 FROM public.profiles p
 ON CONFLICT (user_id) DO UPDATE SET
-    streak_days = GREATEST(public.user_streaks.streak_days, EXCLUDED.streak_days);
+    streak_days = EXCLUDED.streak_days,
+    last_active_date = EXCLUDED.last_active_date,
+    last_active_timestamp = EXCLUDED.last_active_timestamp;
 
 -- ---------------------------------------------------------------------
 -- RPC: GET AUTHORITATIVE SERVER TIME
+-- Strictly SECURITY DEFINER with fixed search_path
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_server_time()
-RETURNS JSONB AS $$
+RETURNS JSONB
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
 BEGIN
     RETURN json_build_object(
         'server_now_iso', pg_catalog.now(),
@@ -56,20 +89,31 @@ BEGIN
         'server_date_utc', CURRENT_DATE
     );
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_server_time() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_server_time() TO authenticated;
 
 -- ---------------------------------------------------------------------
 -- RPC: AUTHORITATIVE ACTIVITY REGISTRATION (SERVER-VALIDATED)
+-- Hardened: validates timezone against pg_timezone_names, enforces 30d
+-- timezone rate limit, verifies PBQ server records, runs with fixed search_path.
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.record_user_streak_activity(
-    p_timezone TEXT DEFAULT 'UTC',
-    p_is_pbq_perfect BOOLEAN DEFAULT FALSE
+    p_timezone TEXT DEFAULT NULL,
+    p_verified_pbq_completion_id UUID DEFAULT NULL
 )
-RETURNS JSONB AS $$
+RETURNS JSONB
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
 DECLARE
     v_user_id UUID;
     v_streak RECORD;
     v_server_now TIMESTAMPTZ;
+    v_effective_tz TEXT;
     v_today DATE;
     v_days_diff INT;
     v_new_streak INT;
@@ -77,39 +121,71 @@ DECLARE
     v_shield_consumed BOOLEAN := FALSE;
     v_shield_count INT;
     v_is_pro BOOLEAN;
+    v_tz_updated_at TIMESTAMPTZ;
+    v_valid_pbq BOOLEAN := FALSE;
 BEGIN
+    -- 1. Authentication Check
     v_user_id := auth.uid();
     IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'Authentication required' USING ERRCODE = '42501';
+        RAISE EXCEPTION 'Access denied: authentication required' USING ERRCODE = '42501';
     END IF;
 
-    -- Fetch user pro status
+    v_server_now := pg_catalog.now();
+
+    -- 2. Fetch user pro status
     SELECT is_pro INTO v_is_pro FROM public.profiles WHERE id = v_user_id;
 
-    -- Calculate current calendar date in user's specified timezone
-    v_server_now := pg_catalog.now();
-    v_today := (v_server_now AT TIME ZONE COALESCE(p_timezone, 'UTC'))::DATE;
-
-    -- Lock streak row for atomic update
+    -- 3. Lock streak row for atomic update
     SELECT * INTO v_streak FROM public.user_streaks WHERE user_id = v_user_id FOR UPDATE;
 
-    IF NOT FOUND THEN
-        -- First recorded activity
+    -- 4. Timezone Validation & Rate-Limiting (max 1 change per 30 days)
+    IF v_streak IS NULL THEN
+        -- Initial timezone resolution
+        v_effective_tz := COALESCE(p_timezone, 'UTC');
+        IF NOT EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = v_effective_tz) THEN
+            v_effective_tz := 'UTC';
+        END IF;
+        v_tz_updated_at := v_server_now;
+    ELSE
+        v_effective_tz := v_streak.timezone;
+        v_tz_updated_at := v_streak.timezone_updated_at;
+
+        -- User requested a timezone change
+        IF p_timezone IS NOT NULL AND p_timezone <> v_streak.timezone THEN
+            -- Validate timezone exists in Postgres timezone database
+            IF EXISTS (SELECT 1 FROM pg_timezone_names WHERE name = p_timezone) THEN
+                -- Enforce 30-day cooldown between timezone migrations
+                IF v_streak.timezone_updated_at IS NULL OR v_server_now >= v_streak.timezone_updated_at + INTERVAL '30 days' THEN
+                    v_effective_tz := p_timezone;
+                    v_tz_updated_at := v_server_now;
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+
+    -- Calculate current calendar date in user's authoritative timezone
+    v_today := (v_server_now AT TIME ZONE v_effective_tz)::DATE;
+
+    -- 5. First-ever activity handling
+    IF v_streak IS NULL THEN
         INSERT INTO public.user_streaks (
             user_id, streak_days, last_active_date, last_active_timestamp, 
-            streak_shield_count, timezone
+            streak_shield_count, timezone, timezone_updated_at
         ) VALUES (
-            v_user_id, 1, v_today, v_server_now, 0, COALESCE(p_timezone, 'UTC')
+            v_user_id, 1, v_today, v_server_now, 0, v_effective_tz, v_tz_updated_at
         );
         RETURN json_build_object(
             'streak_days', 1,
             'shield_earned', FALSE,
             'shield_consumed', FALSE,
+            'streak_shield_count', 0,
+            'effective_date', v_today,
+            'timezone', v_effective_tz,
             'message', 'Streak iniziato! 1° giorno.'
         );
     END IF;
 
-    -- Evaluate calendar day difference
+    -- 6. Evaluate calendar day difference
     IF v_streak.last_active_date IS NULL THEN
         v_days_diff := 1;
     ELSE
@@ -125,12 +201,15 @@ BEGIN
             'streak_days', v_new_streak,
             'shield_earned', FALSE,
             'shield_consumed', FALSE,
+            'streak_shield_count', v_shield_count,
+            'effective_date', v_today,
+            'timezone', v_effective_tz,
             'message', 'Attività già registrata per oggi.'
         );
     ELSIF v_days_diff = 1 THEN
         -- Legitimate consecutive day
-        v_new_streak := v_new_streak + 1;
-        -- Earn shield every 5 days if slot is empty (max 1) and not already awarded
+        v_new_streak := LEAST(365, v_new_streak + 1);
+        -- Earn shield every 5 days if slot is empty (max 1 for free) and not already awarded for this threshold
         IF v_new_streak % 5 = 0 AND v_shield_count < 1 AND COALESCE(v_streak.last_shield_awarded_streak, 0) != v_new_streak THEN
             v_shield_earned := TRUE;
             v_shield_count := 1;
@@ -139,33 +218,45 @@ BEGIN
         -- Missed 1 or more days (days_diff > 1)
         IF v_streak.freeze_until_date IS NOT NULL AND v_today <= v_streak.freeze_until_date THEN
             -- Protected by vacation pause
-            v_new_streak := v_new_streak + 1;
+            v_new_streak := LEAST(365, v_new_streak + 1);
         ELSIF v_shield_count > 0 OR v_is_pro THEN
             -- Protected by shield
             IF NOT v_is_pro THEN
                 v_shield_consumed := TRUE;
                 v_shield_count := GREATEST(0, v_shield_count - 1);
             END IF;
-            v_new_streak := v_new_streak + 1;
+            v_new_streak := LEAST(365, v_new_streak + 1);
         ELSE
             -- Streak resets to 1
             v_new_streak := 1;
         END IF;
     END IF;
 
-    -- PBQ 100% bonus check
-    IF p_is_pbq_perfect AND v_shield_count < 1 THEN
-        v_shield_earned := TRUE;
-        v_shield_count := 1;
+    -- 7. PBQ 100% Score Shield Bonus: NEVER trust client boolean!
+    -- Strictly check server-verified completion record
+    IF p_verified_pbq_completion_id IS NOT NULL AND v_shield_count < 1 THEN
+        UPDATE public.pbq_verified_completions
+        SET shield_claimed = TRUE
+        WHERE id = p_verified_pbq_completion_id
+          AND user_id = v_user_id
+          AND score = 100
+          AND shield_claimed = FALSE
+        RETURNING TRUE INTO v_valid_pbq;
+
+        IF v_valid_pbq IS TRUE THEN
+            v_shield_earned := TRUE;
+            v_shield_count := 1;
+        END IF;
     END IF;
 
-    -- Persist authoritative state
+    -- 8. Persist authoritative state
     UPDATE public.user_streaks SET
         streak_days = v_new_streak,
         last_active_date = v_today,
         last_active_timestamp = v_server_now,
         streak_shield_count = v_shield_count,
-        timezone = COALESCE(p_timezone, v_streak.timezone),
+        timezone = v_effective_tz,
+        timezone_updated_at = v_tz_updated_at,
         last_shield_awarded_streak = CASE WHEN v_shield_earned THEN v_new_streak ELSE v_streak.last_shield_awarded_streak END,
         updated_at = v_server_now
     WHERE user_id = v_user_id;
@@ -175,10 +266,15 @@ BEGIN
         'shield_earned', v_shield_earned,
         'shield_consumed', v_shield_consumed,
         'streak_shield_count', v_shield_count,
-        'effective_date', v_today
+        'effective_date', v_today,
+        'timezone', v_effective_tz
     );
 END;
-$$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+$$;
+
+-- Revoke execute from public and anon, grant strictly to authenticated
+REVOKE ALL ON FUNCTION public.record_user_streak_activity FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_user_streak_activity TO authenticated;
 
 -- ---------------------------------------------------------------------
 -- RLS POLICIES FOR user_streaks
@@ -190,5 +286,4 @@ CREATE POLICY "user_streaks_read_own" ON public.user_streaks
     FOR SELECT TO authenticated
     USING (auth.uid() = user_id);
 
--- Explicitly revoke public/anon access
 REVOKE ALL ON public.user_streaks FROM anon;

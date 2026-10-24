@@ -8,7 +8,17 @@ export type Database = {
             [_ in never]: never
           }
           Views: {
-            [_ in never]: never
+            public_profiles: {
+              Row: {
+                id: string
+                nick: string
+                elo: number
+                rank: string
+                xp: number
+                profession: string | null
+              }
+              Relationships: []
+            }
           }
           Functions: {
             "graphql":
@@ -210,9 +220,42 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            public_profiles: {
+              Row: {
+                id: string
+                nick: string
+                elo: number
+                rank: string
+                xp: number
+                profession: string | null
+              }
+              Relationships: []
+            }
           }
           Functions: {
+            "get_server_time": {
+              Args: Record<PropertyKey, never>;
+              Returns: {
+                server_now_iso: string;
+                server_timestamp_ms: number;
+                server_date_utc: string;
+              };
+            },
+            "record_user_streak_activity": {
+              Args: {
+                p_timezone?: string;
+                p_verified_pbq_completion_id?: string | null;
+              };
+              Returns: {
+                streak_days: number;
+                shield_earned: boolean;
+                shield_consumed: boolean;
+                streak_shield_count: number;
+                effective_date: string;
+                timezone: string;
+                message?: string;
+              };
+            },
             "apply_elo_decay":
 { Args: Record<PropertyKey, never>; Returns: number
                            },

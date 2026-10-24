@@ -237,9 +237,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div 
               onClick={() => sound.playTap()}
               className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 min-h-[38px] rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/40 transition-colors cursor-pointer"
-              title={streakThresholdTitle ? `${t.dailyStreak} — Titolo: ${streakThresholdTitle.title}` : t.dailyStreak}
+              title={`${streakThresholdTitle ? `${t.dailyStreak} — Titolo: ${streakThresholdTitle.title} · ` : `${t.dailyStreak} · `}${userState.lastStreakSource === 'server' ? 'Verificato dal server' : 'Registrato in locale (offline)'}`}
             >
-              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <div className="relative">
+                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                {userState.lastStreakSource === 'server' && (
+                  <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" title="Verificato dal server" />
+                )}
+              </div>
               <span className="font-mono font-black text-xs sm:text-sm text-amber-300">
                 {userState.streakDays}d
               </span>

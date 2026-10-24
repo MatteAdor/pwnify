@@ -32,6 +32,7 @@ import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { recordLearningActivity, StreakState } from './utils/streakEngine';
+import { syncAuthoritativeActivity } from './utils/streakSync';
 import { 
   createDefaultGuestState, 
   getCachedGuestState,
@@ -542,6 +543,40 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
         readinessScore: Math.min(100, prev.readinessScore + 5)
       };
     });
+
+    // Authoritative Server Validation with Fail-Open UX
+    if (isSupabaseConfigured) {
+      const curStreakState: StreakState = {
+        streakDays: userState.streakDays || 0,
+        lastActiveDate: userState.lastActiveDate || null,
+        lastActiveTimestamp: userState.lastActiveTimestamp || 0,
+        streakShieldCount: userState.streakShieldCount || 0,
+        streakShieldActive: userState.streakShieldActive,
+        freezeUntilDate: userState.freezeUntilDate || null,
+        lastFreezeActivatedDate: userState.lastFreezeActivatedDate || null,
+        inGracePeriod: Boolean(userState.inGracePeriod),
+        graceExpiryTimestamp: userState.graceExpiryTimestamp || null,
+        timezone: userState.userTimezone || 'UTC',
+        lastShieldAwardedStreak: userState.lastShieldAwardedStreak || null
+      };
+
+      syncAuthoritativeActivity(curStreakState, { isPro: userState.isPro })
+        .then(res => {
+          if (res.source === 'server') {
+            setUserState(cur => ({
+              ...cur,
+              streakDays: res.streakDays,
+              streakShieldCount: res.streakShieldCount,
+              streakShieldActive: res.streakShieldActive,
+              lastActiveDate: res.lastActiveDate,
+              lastStreakSource: 'server'
+            }));
+          }
+        })
+        .catch(err => {
+          console.warn('[StreakSync] Background sync bypassed (fail-open):', err);
+        });
+    }
   };
 
   // Operator Authentication Modal State
