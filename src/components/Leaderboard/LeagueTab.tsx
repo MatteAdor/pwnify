@@ -139,10 +139,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
             {isEn ? 'WEEKLY LEAGUE' : 'LEGA SETTIMANALE'}
           </span>
-          <span className="text-xs font-mono text-zinc-400 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />
-            {isEn ? 'Ends in: 2d 14h' : 'Termina tra: 2g 14h'}
-          </span>
+          {/* Server closing date omitted until active season scheduler is live */}
         </div>
 
         <div className="flex items-start justify-between gap-3">
