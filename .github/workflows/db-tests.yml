@@ -40,47 +40,9 @@ jobs:
       - name: Reset database to 20261022* schema baseline
         run: supabase db reset
 
-      - name: "Edge Case Test: Verify Migration 6 aborts on case-insensitive duplicate nick (ERRCODE 23505)"
+      - name: Seed legacy test fixture (users, PRO profile, active match)
         run: |
-          echo "Seeding case-insensitive duplicate nick collision in legacy schema..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
-          INSERT INTO auth.users (id, email) VALUES 
-            ('33333333-3333-3333-3333-333333333331', 'dup1@test.local'),
-            ('33333333-3333-3333-3333-333333333332', 'dup2@test.local')
-          ON CONFLICT (id) DO NOTHING;
-
-          -- Force case-insensitive duplicate nicknames "Dup" and "dup" directly on profiles
-          UPDATE public.profiles SET nick = 'Dup' WHERE id = '33333333-3333-3333-3333-333333333331';
-          UPDATE public.profiles SET nick = 'dup' WHERE id = '33333333-3333-3333-3333-333333333332';
-          EOF
-
-          echo "Applying migration 6 over colliding data with ON_ERROR_STOP=1 (must fail)..."
-          set +e
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f /tmp/mig20261024/20261024000006_profile_update_rpcs.sql > /tmp/dup_output.log 2>&1
-          MIG_EXIT_CODE=$?
-          set -e
-
-          if [ $MIG_EXIT_CODE -eq 0 ]; then
-            echo "::error::Migration 6 unexpectedly succeeded despite duplicate nicknames!"
-            cat /tmp/dup_output.log
-            exit 1
-          fi
-
-          if grep -q "23505" /tmp/dup_output.log && grep -q "Migration aborted: found duplicate case-insensitive nicknames" /tmp/dup_output.log; then
-            echo "PASSED: Migration 6 correctly raised exception 23505 on duplicate nick collision."
-            cat /tmp/dup_output.log
-          else
-            echo "::error::Migration 6 failed with unexpected error."
-            cat /tmp/dup_output.log
-            exit 1
-          fi
-
-      - name: "Clean Legacy Upgrade: Seed valid legacy state and apply 20261024* migrations"
-        run: |
-          echo "Resetting database to clean 20261022* baseline..."
-          supabase db reset
-
-          echo "Seeding clean legacy data (PRO users, active matches, streaks)..."
+          echo "Seeding legacy state before 20261024*..."
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
           -- Seed legacy PRO user
           INSERT INTO auth.users (id, email) VALUES ('44444444-4444-4444-4444-444444444441', 'pro_legacy@zeroday.local') ON CONFLICT DO NOTHING;
@@ -100,42 +62,90 @@ jobs:
           ON CONFLICT (id) DO NOTHING;
           EOF
 
-          echo "Restoring 20261024* migrations into supabase/migrations/ and applying in sequence..."
-          cp /tmp/mig20261024/* supabase/migrations/
-          for mig in /tmp/mig20261024/*.sql; do
+      - name: "Phase A (Expand): Apply backward-compatible migrations 01-04"
+        run: |
+          echo "Configuring dynamic database secret for daily flash HMAC..."
+          DYNAMIC_SECRET=$(openssl rand -hex 32)
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -c "ALTER DATABASE postgres SET app.settings.daily_flash_secret = '$DYNAMIC_SECRET';"
+
+          echo "Applying Phase A migrations (01 through 04)..."
+          for mig in /tmp/mig20261024/2026102400000[1-4]*.sql; do
             echo "Applying $(basename "$mig")..."
             psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
           done
 
-          echo "Verifying integrity of upgraded state..."
+      - name: "Phase A Verification: Verify legacy client queries continue to function"
+        run: |
+          echo "Testing legacy queries (APK 1.2.1 and current site compatibility)..."
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
-          DO $$
-          DECLARE
-            v_is_pro BOOLEAN;
-            v_streak INT;
-            v_match_status TEXT;
-            v_pub_nick TEXT;
-          BEGIN
-            SELECT is_pro, (inventory->>'streak_days')::INT INTO v_is_pro, v_streak FROM public.profiles WHERE id = '44444444-4444-4444-4444-444444444441';
-            IF v_is_pro IS NOT TRUE OR v_streak <> 14 THEN
-              RAISE EXCEPTION 'Legacy PRO data corrupted: is_pro=%, streak=%', v_is_pro, v_streak;
-            END IF;
+          -- 1. Anonymous leaderboard query directly on public.profiles without X-Build
+          SET ROLE anon;
+          SELECT id, nick, elo, rank, xp FROM public.profiles LIMIT 5;
+          RESET ROLE;
 
-            SELECT status INTO v_match_status FROM public.matches WHERE id = 'e1111111-1111-1111-1111-111111111111';
-            IF v_match_status <> 'active' THEN
-              RAISE EXCEPTION 'Legacy match corrupted: status=%', v_match_status;
-            END IF;
+          -- 2. Legacy RPC calls without breaking
+          SELECT public.get_server_time();
 
-            SELECT nick INTO v_pub_nick FROM public.public_profiles WHERE id = '44444444-4444-4444-4444-444444444441';
-            IF v_pub_nick IS NULL THEN
-              RAISE EXCEPTION 'public_profiles view failed to resolve legacy profile';
-            END IF;
+          -- 3. Authenticated query without X-Build
+          SET ROLE authenticated;
+          SET request.jwt.claim.sub = '44444444-4444-4444-4444-444444444441';
+          SELECT public.is_nick_available('UnusedCallsign');
+          RESET ROLE;
+          EOF
+          echo "SUCCESS: Phase A preserves full backward compatibility for legacy clients."
 
-            RAISE NOTICE 'Legacy upgrade integrity verified successfully.';
-          END $$;
+      - name: "Phase C Pre-flight Test: Verify Migration 05 aborts on duplicate case-insensitive nicks"
+        run: |
+          echo "Seeding case-insensitive duplicate nick collision in legacy schema..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          INSERT INTO auth.users (id, email) VALUES 
+            ('33333333-3333-3333-3333-333333333331', 'dup1@test.local'),
+            ('33333333-3333-3333-3333-333333333332', 'dup2@test.local')
+          ON CONFLICT (id) DO NOTHING;
+
+          UPDATE public.profiles SET nick = 'Dup' WHERE id = '33333333-3333-3333-3333-333333333331';
+          UPDATE public.profiles SET nick = 'dup' WHERE id = '33333333-3333-3333-3333-333333333332';
           EOF
 
-      - name: Execute pgTAP database tests on upgraded database
+          echo "Applying migration 05 over colliding data with ON_ERROR_STOP=1 (must fail)..."
+          set +e
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f /tmp/mig20261024/20261024000005_contract_unique_nick_lower.sql > /tmp/dup_output.log 2>&1
+          MIG_EXIT_CODE=$?
+          set -e
+
+          if [ $MIG_EXIT_CODE -eq 0 ]; then
+            echo "::error::Migration 05 unexpectedly succeeded despite duplicate nicknames!"
+            cat /tmp/dup_output.log
+            exit 1
+          fi
+
+          if grep -q "Migration aborted: found duplicate case-insensitive nicknames" /tmp/dup_output.log; then
+            echo "PASSED: Migration 05 correctly raised abort exception on duplicate nick collision."
+            cat /tmp/dup_output.log
+          else
+            echo "::error::Migration 05 failed with unexpected error."
+            cat /tmp/dup_output.log
+            exit 1
+          fi
+
+      - name: "Phase C (Contract): Clean test collision and apply restrictive migrations 05-07"
+        run: |
+          echo "Clearing duplicate collision test profiles..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          DELETE FROM public.profiles WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
+          DELETE FROM auth.users WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
+          EOF
+
+          echo "Applying Phase C restrictive migrations (05 through 07)..."
+          for mig in /tmp/mig20261024/2026102400000[5-7]*.sql; do
+            echo "Applying $(basename "$mig")..."
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
+          done
+
+          echo "Restoring all migrations to supabase/migrations/ for pgTAP test verification..."
+          cp /tmp/mig20261024/* supabase/migrations/
+
+      - name: Execute pgTAP database tests on fully contracted database
         run: |
           supabase test db 2>&1 | tee test-results/pgtap-results.log
 

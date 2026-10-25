@@ -48,10 +48,24 @@ BEGIN
     END IF;
 
     -- Server-side secret seed (never revealed or passed by client)
-    v_server_secret := pg_catalog.coalesce(
-        pg_catalog.current_setting('app.settings.daily_flash_secret', true),
-        '0x_zeroday_authoritative_daily_flash_secret_k992'
-    );
+    -- In production, retrieved from Supabase Vault or app.settings GUC; strictly fails if unconfigured
+    BEGIN
+        SELECT decrypted_secret INTO v_server_secret
+        FROM vault.decrypted_secrets
+        WHERE name = 'daily_flash_secret'
+        LIMIT 1;
+    EXCEPTION WHEN undefined_table OR invalid_schema_name OR OTHERS THEN
+        v_server_secret := NULL;
+    END;
+
+    IF v_server_secret IS NULL THEN
+        v_server_secret := pg_catalog.nullif(pg_catalog.current_setting('app.settings.daily_flash_secret', true), '');
+    END IF;
+
+    IF v_server_secret IS NULL OR pg_catalog.length(v_server_secret) < 16 THEN
+        RAISE EXCEPTION 'Daily flash secret configuration is missing or invalid'
+            USING ERRCODE = '55000';
+    END IF;
 
     v_seed_bytes := pg_catalog.convert_to(v_user_id::text || ':' || v_today::text, 'UTF8');
     BEGIN
