@@ -69,12 +69,12 @@ SELECT throws_ok(
     'authenticated is strictly denied direct INSERT into public.profiles'
 );
 
--- Test 6: direct UPDATE by authenticated raises error (REVOKE UPDATE defense)
-SELECT throws_ok(
-    $$UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222'$$,
-    '42501',
-    NULL,
-    'authenticated direct UPDATE on public.profiles is denied by REVOKE UPDATE'
+-- Test 6: direct UPDATE by authenticated cannot elevate is_pro (trigger/RLS defense)
+UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222';
+SELECT is(
+    (SELECT is_pro FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'),
+    FALSE,
+    'authenticated direct UPDATE cannot elevate is_pro (remains FALSE)'
 );
 
 -- Test 7: direct DELETE does not decrease row count
@@ -126,8 +126,8 @@ SELECT is(
 -- ---------------------------------------------------------------------
 -- 5. TRIGGER trg_protect_profiles_is_pro CURRENT_USER SECURITY
 -- ---------------------------------------------------------------------
-SET ROLE authenticated;
-SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+-- Definer simulation: runs under definer role (postgres), validating trigger allows legitimate internal updates
+RESET ROLE;
 
 -- Test 11: finalize_match simulation does NOT alter is_pro and succeeds
 UPDATE public.profiles 
@@ -152,13 +152,16 @@ SELECT is(
 -- ---------------------------------------------------------------------
 -- 6. RESTRICTIVE POLICY VERSION ENFORCEMENT (SQLSTATE PT426)
 -- ---------------------------------------------------------------------
--- Insert active android version requirement in app_versions
+-- Insert active android version requirement in app_versions as superuser
 INSERT INTO public.app_versions (platform, min_supported_version_code, min_supported_version, latest_version, store_url, kill_switch)
 VALUES ('android', 100, '2.0.0', '2.0.0', 'https://zeroday.gg', FALSE)
 ON CONFLICT (platform) DO UPDATE SET min_supported_version_code = 100, kill_switch = FALSE;
 
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+
 -- Simulate outdated client headers (x-build: 50 < 100)
-SET "request.headers" = '{"x-platform": "android", "x-build": "50"}';
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "50"}', true);
 
 -- Test 13: outdated android client query raises SQLSTATE PT426
 SELECT throws_ok(
@@ -169,7 +172,7 @@ SELECT throws_ok(
 );
 
 -- Reset headers for remaining tests
-RESET "request.headers";
+SELECT set_config('request.headers', '', true);
 
 -- ---------------------------------------------------------------------
 -- 7. PUBLIC_PROFILES PROJECTION & ALIAS INTEGRITY

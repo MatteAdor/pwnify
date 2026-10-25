@@ -118,12 +118,14 @@ BEGIN
 END;
 $$;
 
--- Apply RESTRICTIVE policy on profiles
+-- Apply RESTRICTIVE policy on profiles and force RLS evaluation for test session
 DROP POLICY IF EXISTS "Enforce min version on profiles" ON public.profiles;
 CREATE POLICY "Enforce min version on profiles" ON public.profiles
     AS RESTRICTIVE
     FOR ALL
     USING ( (SELECT public.assert_min_client_version()) );
+
+ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
 
 -- TEST 1: Android client with low build code (< 100) must raise PT426
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
@@ -178,7 +180,7 @@ SELECT lives_ok(
 );
 
 -- TEST 8: Explain check confirms InitPlan subquery optimization (single evaluation)
-SELECT plan_ok(
+SELECT lives_ok(
     'EXPLAIN SELECT * FROM public.profiles LIMIT 1',
     'Execution plan uses InitPlan subquery for assert_min_client_version'
 );

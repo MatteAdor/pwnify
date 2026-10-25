@@ -13,10 +13,11 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.profiles (id, nick, elo, rank, xp, inventory) VALUES
     ('55555555-5555-5555-5555-555555555555', 'OriginalNick', 100, 'Script Kiddie', 0, '{"streak_days": 3}'::jsonb)
-ON CONFLICT (id) DO UPDATE SET nick = 'OriginalNick';
+ON CONFLICT (id) DO UPDATE SET nick = 'OriginalNick', inventory = '{"streak_days": 3}'::jsonb;
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub = '55555555-5555-5555-5555-555555555555';
+SELECT set_config('request.jwt.claims', '{"sub": "55555555-5555-5555-5555-555555555555", "role": "authenticated"}', true);
 
 -- Test 1: update_my_profile_preferences rejects reserved prefix "Operatore-"
 SELECT throws_ok(
