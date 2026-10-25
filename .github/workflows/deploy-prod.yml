@@ -13,6 +13,26 @@ on:
         required: false
         type: string
         default: ''
+      allow_other_migrations:
+        description: 'Consenti migrazioni diverse da 20261024000001-04'
+        required: false
+        type: boolean
+        default: false
+      deploy_functions:
+        description: 'Esegui deploy delle Edge Functions (get_turn_credentials)'
+        required: false
+        type: boolean
+        default: false
+      seed_questions:
+        description: 'Esegui seed remoto delle domande cifrate'
+        required: false
+        type: boolean
+        default: false
+      trigger_frontend:
+        description: 'Esegui webhook di trigger deploy frontend'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -46,6 +66,7 @@ jobs:
           supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
       - name: Apply Database Migrations to Production (Dry Run)
         if: ${{ inputs.dry_run }}
@@ -53,6 +74,28 @@ jobs:
           supabase db push --dry-run
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+
+      - name: Verify Pending Migrations (Safety Guard)
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo "Inspecting pending migrations via dry-run simulation..."
+          DRY_RUN_OUTPUT=$(supabase db push --dry-run 2>&1 || true)
+          echo "$DRY_RUN_OUTPUT"
+
+          if [ "${{ inputs.allow_other_migrations }}" != "true" ]; then
+            UNAPPROVED=$(echo "$DRY_RUN_OUTPUT" | grep -Eo "[0-9]{14}_[a-zA-Z0-9_]+\.sql" | grep -vE "^2026102400000[1-4]_" || true)
+            if [ -n "$UNAPPROVED" ]; then
+              echo "::error title=unapproved_migrations::Found pending migrations outside Phase A (20261024000001-04): $UNAPPROVED. Aborting release."
+              exit 1
+            fi
+            echo "All pending migrations verified to be Phase A (20261024000001-04)."
+          else
+            echo "allow_other_migrations is true: skipping strict Phase A restriction."
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
       - name: Apply Database Migrations to Production
         if: ${{ !inputs.dry_run }}
@@ -60,16 +103,17 @@ jobs:
           supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
       - name: Deploy Edge Functions to Production
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && inputs.deploy_functions }}
         run: |
           supabase functions deploy get_turn_credentials --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Seed Questions to Production (In-Memory Decryption)
-        if: ${{ !inputs.dry_run && env.QUESTION_BANK_KEY != '' && env.QUESTION_BANK_REMOTE_URL != '' }}
+        if: ${{ !inputs.dry_run && inputs.seed_questions && env.QUESTION_BANK_KEY != '' && env.QUESTION_BANK_REMOTE_URL != '' }}
         run: |
           npm ci
           node scripts/seed_questions_remote.cjs
@@ -81,7 +125,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}
 
       - name: Trigger Frontend Deploy (Vercel / Cloudflare Hook)
-        if: ${{ !inputs.dry_run && env.DEPLOY_HOOK_URL != '' }}
+        if: ${{ !inputs.dry_run && inputs.trigger_frontend && env.DEPLOY_HOOK_URL != '' }}
         run: |
           curl -X POST -s -o /dev/null -w "%{http_code}" "$DEPLOY_HOOK_URL"
         env:

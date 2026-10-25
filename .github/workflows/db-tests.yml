@@ -196,6 +196,30 @@ jobs:
           fi
           echo "SUCCESS: Phase A preserves full backward compatibility for legacy clients."
 
+      - name: "Phase A Health Audit: Execute read-only health checks script"
+        run: |
+          echo "Executing read-only Phase A health checks script..."
+          if ! psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/health_checks_phase_a.sql > /tmp/health_checks_phase_a.log 2>&1; then
+            cat /tmp/health_checks_phase_a.log
+            ERR=$(tail -n 30 /tmp/health_checks_phase_a.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=health_checks_phase_a::$ERR"
+            {
+              echo "### Error in Phase A Health Audit"
+              echo '```'
+              tail -n 30 /tmp/health_checks_phase_a.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          cat /tmp/health_checks_phase_a.log
+          {
+            echo "### Phase A Health Audit (Read-Only Diagnostics)"
+            echo '```'
+            cat /tmp/health_checks_phase_a.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "SUCCESS: Phase A health checks verified."
+
       - name: "Phase C Pre-flight Test: Verify Migration 05 aborts on duplicate case-insensitive nicks"
         run: |
           echo "Seeding case-insensitive duplicate nick collision in legacy schema..."

@@ -5,7 +5,7 @@
 -- =====================================================================
 
 BEGIN;
-SELECT plan(22);
+SELECT plan(23);
 
 -- ---------------------------------------------------------------------
 -- 1. SETUP MOCK USERS & PROFILES
@@ -300,6 +300,56 @@ SELECT set_eq(
         ('get_server_time()')
     $$,
     'among core RPCs, authenticated has EXECUTE on all client RPCs except service_role set_profile_pro_status'
+);
+
+-- ---------------------------------------------------------------------
+-- 9. STREAK BACKFILL PRESERVATION AUDIT
+-- ---------------------------------------------------------------------
+-- Setup a mock user who has not played ranked (last_ranked_at is NULL)
+-- but has an existing streak of 15 days in inventory (from Daily Breaches)
+RESET ROLE;
+INSERT INTO auth.users (id, email) VALUES 
+    ('88888888-8888-8888-8888-888888888888', 'legacy_streaker@zeroday.local')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.profiles (id, nick, elo, rank, xp, inventory, last_ranked_at)
+VALUES (
+    '88888888-8888-8888-8888-888888888888',
+    'StreakKeeper',
+    100,
+    'Script Kiddie',
+    500,
+    '{"streakDays": 15}'::jsonb,
+    NULL
+)
+ON CONFLICT (id) DO UPDATE SET inventory = EXCLUDED.inventory, last_ranked_at = EXCLUDED.last_ranked_at;
+
+-- Re-execute the idempotent backfill query
+INSERT INTO public.user_streaks (
+    user_id, streak_days, last_active_date, last_active_timestamp, timezone
+)
+SELECT 
+    p.id AS user_id,
+    LEAST(365, GREATEST(0, COALESCE((p.inventory->>'streakDays')::int, 0))) AS streak_days,
+    CASE 
+        WHEN COALESCE((p.inventory->>'streakDays')::int, 0) > 0 
+        THEN COALESCE(p.last_ranked_at::DATE, p.updated_at::DATE, pg_catalog.current_date)
+        ELSE NULL 
+    END AS last_active_date,
+    COALESCE(p.last_ranked_at, p.updated_at, pg_catalog.now()) AS last_active_timestamp,
+    'UTC' AS timezone
+FROM public.profiles p
+WHERE p.id = '88888888-8888-8888-8888-888888888888'
+ON CONFLICT (user_id) DO UPDATE SET
+    streak_days = GREATEST(public.user_streaks.streak_days, EXCLUDED.streak_days),
+    last_active_date = COALESCE(public.user_streaks.last_active_date, EXCLUDED.last_active_date),
+    last_active_timestamp = COALESCE(public.user_streaks.last_active_timestamp, EXCLUDED.last_active_timestamp);
+
+-- Test 23: Verify that existing streak in inventory is preserved (15) and not zeroed
+SELECT is(
+    (SELECT streak_days FROM public.user_streaks WHERE user_id = '88888888-8888-8888-8888-888888888888'),
+    15,
+    'Existing streak in inventory is preserved (15) and NOT zeroed when last_ranked_at is NULL'
 );
 
 SELECT * FROM finish();

@@ -51,4 +51,32 @@ describe('StreakSync Orchestration & Fail-Open Suite', () => {
     assert.equal(res.source, 'local');
     assert.match(res.message, /Streak continuato/);
   });
+
+  it('preserves existing client/inventory streak without zeroing it even if no recent ranked matches were played', async () => {
+    // User has an existing streak of 15 from daily breach / PBQ triage in inventory,
+    // and hasn\'t played ranked PVP recently (lastRankedAt is null/undefined or old)
+    const existingLegacyState: StreakState = {
+      streakDays: 15,
+      lastActiveDate: '2026-10-24',
+      lastActiveTimestamp: Date.UTC(2026, 9, 24, 18, 0, 0),
+      streakShieldCount: 1,
+      streakShieldActive: false,
+      freezeUntilDate: null,
+      lastFreezeActivatedDate: null,
+      inGracePeriod: false,
+      graceExpiryTimestamp: null,
+      timezone: 'UTC',
+      lastShieldAwardedStreak: 15
+    };
+
+    // When syncing next activity (e.g. today 2026-10-25) without ranked activity
+    const todayTimestamp = Date.UTC(2026, 9, 25, 9, 0, 0);
+    const result = await syncAuthoritativeActivity(existingLegacyState, {
+      customClientTimestampMs: todayTimestamp
+    });
+
+    // Streak must increment to 16, never reset to 0 or 1
+    assert.equal(result.streakDays, 16, 'Streak from inventory must not be reset to 0');
+    assert.equal(result.source, 'local');
+  });
 });

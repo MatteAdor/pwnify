@@ -43,8 +43,9 @@ CREATE TABLE IF NOT EXISTS public.pbq_verified_completions (
 CREATE INDEX IF NOT EXISTS idx_pbq_verified_user ON public.pbq_verified_completions(user_id, shield_claimed);
 
 -- ---------------------------------------------------------------------
--- MIGRATION SEED: NO ZOMBIE STREAKS & VALUE CAPS
--- If last activity is older than yesterday, streak is dead (0).
+-- MIGRATION SEED: PRESERVE EXISTING STREAKS & VALUE CAPS
+-- Preserves existing streakDays from user inventory (e.g. from Daily 0xBreach / PBQ),
+-- even if user has not played ranked matches recently (last_ranked_at is NULL or old).
 -- Values extracted from inventory are strictly bounded between 0 and 365.
 -- ---------------------------------------------------------------------
 INSERT INTO public.user_streaks (
@@ -52,24 +53,19 @@ INSERT INTO public.user_streaks (
 )
 SELECT 
     p.id AS user_id,
+    LEAST(365, GREATEST(0, COALESCE((p.inventory->>'streakDays')::int, 0))) AS streak_days,
     CASE 
-        -- If user has no recorded activity, or last activity is older than yesterday, streak is 0
-        WHEN p.last_ranked_at IS NULL THEN 0
-        WHEN p.last_ranked_at < (pg_catalog.now() - INTERVAL '48 hours') THEN 0
-        ELSE LEAST(365, GREATEST(0, COALESCE((p.inventory->>'streakDays')::int, 0)))
-    END AS streak_days,
-    CASE 
-        WHEN p.last_ranked_at IS NOT NULL AND p.last_ranked_at >= (pg_catalog.now() - INTERVAL '48 hours') 
-        THEN p.last_ranked_at::DATE 
+        WHEN COALESCE((p.inventory->>'streakDays')::int, 0) > 0 
+        THEN COALESCE(p.last_ranked_at::DATE, p.updated_at::DATE, pg_catalog.current_date)
         ELSE NULL 
     END AS last_active_date,
-    p.last_ranked_at AS last_active_timestamp,
+    COALESCE(p.last_ranked_at, p.updated_at, pg_catalog.now()) AS last_active_timestamp,
     'UTC' AS timezone
 FROM public.profiles p
 ON CONFLICT (user_id) DO UPDATE SET
-    streak_days = EXCLUDED.streak_days,
-    last_active_date = EXCLUDED.last_active_date,
-    last_active_timestamp = EXCLUDED.last_active_timestamp;
+    streak_days = GREATEST(public.user_streaks.streak_days, EXCLUDED.streak_days),
+    last_active_date = COALESCE(public.user_streaks.last_active_date, EXCLUDED.last_active_date),
+    last_active_timestamp = COALESCE(public.user_streaks.last_active_timestamp, EXCLUDED.last_active_timestamp);
 
 -- ---------------------------------------------------------------------
 -- RPC: GET AUTHORITATIVE SERVER TIME

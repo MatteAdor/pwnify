@@ -17,6 +17,24 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client openssl
 
+      - name: Validate Production Connection String
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error title=db_url_missing::SUPABASE_PROD_DB_URL secret is not configured or empty."
+            exit 1
+          fi
+          if ! echo "$SUPABASE_DB_URL" | grep -q "pooler\.supabase\.com"; then
+            echo "::error title=invalid_host::SUPABASE_PROD_DB_URL must target the Supabase connection pooler ('pooler.supabase.com')."
+            exit 1
+          fi
+          if ! echo "$SUPABASE_DB_URL" | grep -Eq "(:5432/|:5432\?)"; then
+            echo "::error title=invalid_port::SUPABASE_PROD_DB_URL must specify port 5432 (session pooler)."
+            exit 1
+          fi
+          echo "Connection string format validated (pooler.supabase.com:5432)."
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+
       - name: Perform pg_dump and Encrypt Backup
         run: |
           TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")

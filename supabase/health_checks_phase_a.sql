@@ -44,12 +44,12 @@ BEGIN
     -- 4. Verify Phase C contract is NOT yet applied (Expand phase check)
     SELECT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE schemaname = 'public' AND tablename = 'profiles' AND indexname = 'idx_profiles_nick_lower_unique'
+        WHERE schemaname = 'public' AND tablename = 'profiles' AND indexname = 'idx_profiles_nick_lower'
     ) INTO v_unique_lower_nick_exists;
     IF v_unique_lower_nick_exists THEN
-        RAISE NOTICE 'NOTICE: Phase C unique index idx_profiles_nick_lower_unique is present';
+        RAISE NOTICE 'NOTICE: Phase C unique index idx_profiles_nick_lower is present';
     ELSE
-        RAISE NOTICE 'CONFIRMED: Phase C index idx_profiles_nick_lower_unique is absent (Safe Expand Phase)';
+        RAISE NOTICE 'CONFIRMED: Phase C index idx_profiles_nick_lower is absent (Safe Expand Phase)';
     END IF;
 
     -- 5. Verify Backfill Completeness
