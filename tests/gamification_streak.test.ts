@@ -13,6 +13,7 @@ import {
 import { OFFICIAL_PBQ_LABS } from '../src/data/bountiesAndPbq';
 import { applyLearningActivity } from '../src/utils/streakSync';
 import { getStreakThresholdTitle, activateStreakFreeze } from '../src/utils/streakEngine';
+import { computeCohortPercentile } from '../src/utils/cohort';
 
 describe('Gamification & Ethical Retention Engine (Unified Server-Authoritative B0)', () => {
 
@@ -214,6 +215,23 @@ describe('Gamification & Ethical Retention Engine (Unified Server-Authoritative 
     assert.ok(incidentIds.includes('breach_shellshock'));
     assert.ok(incidentIds.includes('breach_solarwinds'));
     assert.ok(incidentIds.includes('breach_citrix_bleed'));
+  });
+
+  it('Peer Cohort League: Percentile displays only when active cohort has at least 50 operators; below threshold displays nothing (null)', () => {
+    // Under threshold (< 50 operators): must return null (renders nothing)
+    assert.strictEqual(computeCohortPercentile(1, 0), null, '0 operators yields null');
+    assert.strictEqual(computeCohortPercentile(1, 1), null, '1 operator yields null');
+    assert.strictEqual(computeCohortPercentile(5, 49), null, '49 operators (< 50) yields null');
+    assert.strictEqual(computeCohortPercentile(-1, 50), null, 'Negative position yields null');
+    assert.strictEqual(computeCohortPercentile(0, 50), null, 'Zero position yields null');
+
+    // Exactly at threshold (50 operators): active percentile calculation
+    assert.strictEqual(computeCohortPercentile(1, 50), 2, 'Rank 1 in 50 operators yields Top 2%');
+    assert.strictEqual(computeCohortPercentile(25, 50), 50, 'Rank 25 in 50 operators yields Top 50%');
+
+    // Above threshold (> 50 operators): active percentile calculation
+    assert.strictEqual(computeCohortPercentile(5, 100), 5, 'Rank 5 of 100 operators yields Top 5%');
+    assert.strictEqual(computeCohortPercentile(1, 500), 1, 'Rank 1 of 500 operators yields Top 1%');
   });
 
 });

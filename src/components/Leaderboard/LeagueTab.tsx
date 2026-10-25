@@ -1,3 +1,6 @@
+import { computeCohortPercentile } from '../../utils/cohort';
+export { computeCohortPercentile };
+
 import React, { useState, useEffect } from 'react';
 import { UserState, LeagueHacker } from '../../types';
 import { getRankFromElo } from '../../data/ranks';
@@ -160,19 +163,17 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
           </div>
         </div>
 
-        {/* Peer Cohort Percentile Mirror (Percentile among real verified accounts) */}
-        <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs font-mono">
-          <span className="text-zinc-400">
-            {isEn ? 'Cohort Standing (Real Accounts):' : 'Specchio Coorte (Account Reali):'}
-          </span>
-          <span className="text-emerald-400 font-bold">
-            {hackers.length > 0 ? (
-              isEn ? `Top ${Math.max(1, Math.round((userPosition / hackers.length) * 100))}% in ${telemetry.region}` : `Top ${Math.max(1, Math.round((userPosition / hackers.length) * 100))}% in ${telemetry.region}`
-            ) : (
-              isEn ? 'Active Operator' : 'Operatore Attivo'
-            )}
-          </span>
-        </div>
+        {/* Peer Cohort Percentile Mirror (Percentile among real verified accounts - minimum 50 active operators) */}
+        {computeCohortPercentile(userPosition, hackers.length) !== null && (
+          <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-xs font-mono">
+            <span className="text-zinc-400">
+              {isEn ? 'Cohort Standing (Real Accounts):' : 'Specchio Coorte (Account Reali):'}
+            </span>
+            <span className="text-emerald-400 font-bold">
+              {`Top ${computeCohortPercentile(userPosition, hackers.length)}% in ${telemetry.region}`}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Permanent Status & Season Honors */}
