@@ -38,7 +38,7 @@ BEGIN
     WHERE user_id = v_user_id AND draw_date = v_today;
 
     IF FOUND THEN
-        RETURN pg_catalog.json_build_object(
+        RETURN pg_catalog.jsonb_build_object(
             'is_flash', v_existing.is_flash,
             'xp_bonus', v_existing.xp_bonus,
             'draw_date', v_existing.draw_date,
@@ -52,7 +52,11 @@ BEGIN
     );
 
     v_seed_bytes := pg_catalog.convert_to(v_user_id::text || ':' || v_today::text, 'UTF8');
-    v_hash_bytes := public.hmac(v_seed_bytes, pg_catalog.convert_to(v_server_secret, 'UTF8'), 'sha256');
+    BEGIN
+        v_hash_bytes := extensions.hmac(v_seed_bytes, pg_catalog.convert_to(v_server_secret, 'UTF8'), 'sha256');
+    EXCEPTION WHEN undefined_function THEN
+        v_hash_bytes := public.hmac(v_seed_bytes, pg_catalog.convert_to(v_server_secret, 'UTF8'), 'sha256');
+    END;
     v_hash_int := ('x' || pg_catalog.substr(pg_catalog.encode(v_hash_bytes, 'hex'), 1, 8))::bit(32)::bigint;
 
     IF (pg_catalog.abs(v_hash_int) % 100) < 10 THEN
@@ -75,7 +79,7 @@ BEGIN
         WHERE id = v_user_id;
     END IF;
 
-    RETURN pg_catalog.json_build_object(
+    RETURN pg_catalog.jsonb_build_object(
         'is_flash', v_is_flash,
         'xp_bonus', v_xp_bonus,
         'draw_date', v_today,
@@ -157,8 +161,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 -- 3. submit_answer
 CREATE OR REPLACE FUNCTION public.submit_answer(
     p_match_id UUID,
-    p_round_id UUID,
-    p_selected_option INT
+    p_question_id UUID,
+    p_answer_index INT
 )
 RETURNS JSONB AS $$
 DECLARE
@@ -188,8 +192,8 @@ BEGIN
     END IF;
 
     v_answers := v_answers || pg_catalog.jsonb_build_object(
-        'round_id', p_round_id,
-        'selected_option', p_selected_option,
+        'question_id', p_question_id,
+        'answer_index', p_answer_index,
         'submitted_at', v_now
     );
 
@@ -199,7 +203,7 @@ BEGIN
         UPDATE public.matches SET p2_answers = v_answers, updated_at = v_now WHERE id = p_match_id;
     END IF;
 
-    RETURN pg_catalog.jsonb_build_object('success', TRUE, 'round_id', p_round_id);
+    RETURN pg_catalog.jsonb_build_object('success', TRUE, 'question_id', p_question_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 

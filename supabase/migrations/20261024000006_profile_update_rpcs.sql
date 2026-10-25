@@ -21,7 +21,7 @@ ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS nick_updated_at TIMESTAMPTZ DEFAULT NULL;
 
 -- 2. Unique index on lower(nick) with pre-flight duplicate check
-DO 
+DO $$
 DECLARE
     v_dup_count INT;
     v_dup_sample TEXT;
@@ -42,7 +42,7 @@ BEGIN
             v_dup_sample, v_dup_count
             USING ERRCODE = '23505';
     END IF;
-END ;
+END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_nick_lower ON public.profiles(lower(nick));
 
