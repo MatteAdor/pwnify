@@ -64,7 +64,7 @@ BEGIN
     END IF;
 
     -- Server-side secret seed (never revealed or passed by client)
-    -- In production, retrieved from Supabase Vault or app.settings GUC; strictly fails if unconfigured
+    -- In production, retrieved strictly from Supabase Vault (vault.decrypted_secrets)
     BEGIN
         SELECT decrypted_secret INTO v_server_secret
         FROM vault.decrypted_secrets
@@ -74,18 +74,18 @@ BEGIN
         v_server_secret := NULL;
     END;
 
-    IF v_server_secret IS NULL THEN
-        v_server_secret := pg_catalog.nullif(pg_catalog.current_setting('app.settings.daily_flash_secret', true), '');
-    END IF;
-
     IF v_server_secret IS NULL OR pg_catalog.length(v_server_secret) < 16 THEN
-        RAISE EXCEPTION 'Daily flash secret configuration is missing or invalid'
+        RAISE EXCEPTION 'Daily flash secret configuration is missing or invalid in Supabase Vault'
             USING ERRCODE = '55000';
     END IF;
 
     -- Compute deterministic HMAC-SHA256 of (user_id || draw_date)
-    v_seed_bytes := convert_to(v_user_id::text || ':' || v_today::text, 'UTF8');
-    v_hash_bytes := hmac(v_seed_bytes, convert_to(v_server_secret, 'UTF8'), 'sha256');
+    v_seed_bytes := pg_catalog.convert_to(v_user_id::text || ':' || v_today::text, 'UTF8');
+    BEGIN
+        v_hash_bytes := extensions.hmac(v_seed_bytes, pg_catalog.convert_to(v_server_secret, 'UTF8'), 'sha256');
+    EXCEPTION WHEN undefined_function THEN
+        v_hash_bytes := public.hmac(v_seed_bytes, pg_catalog.convert_to(v_server_secret, 'UTF8'), 'sha256');
+    END;
 
     -- Take first 4 bytes as integer for mod 100
     v_hash_int := ('x' || substr(encode(v_hash_bytes, 'hex'), 1, 8))::bit(32)::bigint;

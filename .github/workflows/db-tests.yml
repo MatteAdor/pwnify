@@ -26,13 +26,13 @@ jobs:
         with:
           version: 2.122.0
 
-      - name: Stage 20261024* migrations to temporary directory
+      - name: Stage Phase A migrations to temporary directory
         run: |
-          mkdir -p /tmp/mig20261024
+          mkdir -p /tmp/mig_phase_a
           mkdir -p test-results
           touch test-results/pgtap-results.log
-          mv supabase/migrations/20261024*.sql /tmp/mig20261024/
-          echo "Isolated $(ls /tmp/mig20261024 | wc -l) migrations for 20261024*."
+          mv supabase/migrations/20261024*.sql /tmp/mig_phase_a/
+          echo "Isolated $(ls /tmp/mig_phase_a | wc -l) Phase A migrations."
 
       - name: Start local Supabase container stack (baseline up to 20261022*)
         run: supabase start
@@ -62,14 +62,31 @@ jobs:
           ON CONFLICT (id) DO NOTHING;
           EOF
 
-      - name: "Phase A (Expand): Apply backward-compatible migrations 01-04"
+      - name: "Phase A (Expand): Configure Supabase Vault & Apply migrations 01-04"
         run: |
-          echo "Configuring dynamic database secret for daily flash HMAC..."
+          echo "Configuring Supabase Vault secret for daily flash HMAC..."
           DYNAMIC_SECRET=$(openssl rand -hex 32)
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -c "ALTER DATABASE postgres SET app.settings.daily_flash_secret = '$DYNAMIC_SECRET';"
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << EOF
+          CREATE EXTENSION IF NOT EXISTS supabase_vault CASCADE;
+          SELECT vault.create_secret('$DYNAMIC_SECRET', 'daily_flash_secret', 'HMAC key for daily flash draws');
+          EOF
+
+          echo "Verifying Supabase Vault extension and secret in vault.decrypted_secrets..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          DO $$
+          DECLARE
+            v_sec TEXT;
+          BEGIN
+            SELECT decrypted_secret INTO v_sec FROM vault.decrypted_secrets WHERE name = 'daily_flash_secret' LIMIT 1;
+            IF v_sec IS NULL OR length(v_sec) < 16 THEN
+              RAISE EXCEPTION 'Vault secret verification failed: secret missing or invalid in vault.decrypted_secrets'
+                USING ERRCODE = '55000';
+            END IF;
+          END $$;
+          EOF
 
           echo "Applying Phase A migrations (01 through 04)..."
-          for mig in /tmp/mig20261024/2026102400000[1-4]*.sql; do
+          for mig in /tmp/mig_phase_a/2026102400000[1-4]*.sql; do
             echo "Applying $(basename "$mig")..."
             psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
           done
@@ -107,9 +124,9 @@ jobs:
           UPDATE public.profiles SET nick = 'dup' WHERE id = '33333333-3333-3333-3333-333333333332';
           EOF
 
-          echo "Applying migration 05 over colliding data with ON_ERROR_STOP=1 (must fail)..."
+          echo "Applying contract migration 05 over colliding data with ON_ERROR_STOP=1 (must fail)..."
           set +e
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f /tmp/mig20261024/20261024000005_contract_unique_nick_lower.sql > /tmp/dup_output.log 2>&1
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/contract/20261024000005_contract_unique_nick_lower.sql > /tmp/dup_output.log 2>&1
           MIG_EXIT_CODE=$?
           set -e
 
@@ -128,7 +145,7 @@ jobs:
             exit 1
           fi
 
-      - name: "Phase C (Contract): Clean test collision and apply restrictive migrations 05-07"
+      - name: "Phase C (Contract): Clean test collision and apply contract migrations from supabase/contract/"
         run: |
           echo "Clearing duplicate collision test profiles..."
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
@@ -136,14 +153,14 @@ jobs:
           DELETE FROM auth.users WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
           EOF
 
-          echo "Applying Phase C restrictive migrations (05 through 07)..."
-          for mig in /tmp/mig20261024/2026102400000[5-7]*.sql; do
+          echo "Applying Phase C contract migrations from supabase/contract/..."
+          for mig in supabase/contract/*.sql; do
             echo "Applying $(basename "$mig")..."
             psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
           done
 
-          echo "Restoring all migrations to supabase/migrations/ for pgTAP test verification..."
-          cp /tmp/mig20261024/* supabase/migrations/
+          echo "Restoring Phase A migrations back to supabase/migrations/..."
+          cp /tmp/mig_phase_a/* supabase/migrations/
 
       - name: Execute pgTAP database tests on fully contracted database
         run: |

@@ -48,7 +48,7 @@ BEGIN
     END IF;
 
     -- Server-side secret seed (never revealed or passed by client)
-    -- In production, retrieved from Supabase Vault or app.settings GUC; strictly fails if unconfigured
+    -- In production, retrieved strictly from Supabase Vault (vault.decrypted_secrets)
     BEGIN
         SELECT decrypted_secret INTO v_server_secret
         FROM vault.decrypted_secrets
@@ -58,12 +58,8 @@ BEGIN
         v_server_secret := NULL;
     END;
 
-    IF v_server_secret IS NULL THEN
-        v_server_secret := pg_catalog.nullif(pg_catalog.current_setting('app.settings.daily_flash_secret', true), '');
-    END IF;
-
     IF v_server_secret IS NULL OR pg_catalog.length(v_server_secret) < 16 THEN
-        RAISE EXCEPTION 'Daily flash secret configuration is missing or invalid'
+        RAISE EXCEPTION 'Daily flash secret configuration is missing or invalid in Supabase Vault'
             USING ERRCODE = '55000';
     END IF;
 
