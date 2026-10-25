@@ -125,6 +125,13 @@ CREATE POLICY "Enforce min version on profiles" ON public.profiles
     FOR ALL
     USING ( (SELECT public.assert_min_client_version()) );
 
+ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
+
+-- Switch to authenticated role so that PostgreSQL enforces Row Level Security
+-- (the superuser/postgres role bypasses RLS by default)
+SET LOCAL ROLE authenticated;
+SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
+
 -- TEST 1: Android client with low build code (< 100) must raise PT426
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
 SELECT throws_ok(
@@ -170,7 +177,10 @@ SELECT lives_ok(
 );
 
 -- TEST 7: Emergency kill_switch bypasses force update even for build 0
+RESET ROLE;
 UPDATE public.app_versions SET kill_switch = TRUE WHERE platform = 'android';
+SET LOCAL ROLE authenticated;
+SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "0"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
@@ -182,6 +192,8 @@ SELECT lives_ok(
     'EXPLAIN SELECT * FROM public.profiles LIMIT 1',
     'Execution plan uses InitPlan subquery for assert_min_client_version'
 );
+
+RESET ROLE;
 
 SELECT * FROM finish();
 
