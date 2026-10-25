@@ -45,6 +45,15 @@ INSERT INTO public.app_versions (
     min_supported_version_code = 100,
     kill_switch = FALSE;
 
+-- Ensure mock user and profile exist so that table scans evaluate RLS row policies
+INSERT INTO auth.users (id, email, raw_user_meta_data)
+VALUES ('11111111-1111-1111-1111-111111111111', 'version_test@zeroday.gg', '{"callsign": "version_tester"}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.profiles (id, nick, elo)
+VALUES ('11111111-1111-1111-1111-111111111111', 'version_tester', 100)
+ON CONFLICT (id) DO NOTHING;
+
 -- Ensure assert_min_client_version is created
 CREATE OR REPLACE FUNCTION public.assert_min_client_version()
 RETURNS BOOLEAN
