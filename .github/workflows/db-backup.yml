@@ -49,12 +49,33 @@ jobs:
 
       - name: Perform pg_dump (v17 Custom Compressed), Verify & Encrypt with age
         run: |
+          PG_DUMP_BIN="/usr/lib/postgresql/17/bin/pg_dump"
+          PG_RESTORE_BIN="/usr/lib/postgresql/17/bin/pg_restore"
+          PSQL_BIN="/usr/lib/postgresql/17/bin/psql"
+
+          CLIENT_VER_STR=$("${PG_DUMP_BIN}" --version)
+          CLIENT_MAJOR=$(echo "${CLIENT_VER_STR}" | grep -oE '[0-9]+' | head -n1)
+
+          echo "Checking PostgreSQL server version..."
+          SERVER_VER_STR=$("${PSQL_BIN}" "${SUPABASE_DB_URL}" -tAc "SHOW server_version;" 2>/dev/null || true)
+          SERVER_MAJOR=$(echo "${SERVER_VER_STR}" | grep -oE '^[0-9]+' || true)
+
+          if [ -z "${SERVER_MAJOR}" ]; then
+            echo "::error title=version_check_failed::Could not retrieve PostgreSQL server version from database connection."
+            exit 1
+          fi
+
+          if [ "${CLIENT_MAJOR}" -lt "${SERVER_MAJOR}" ]; then
+            echo "::error title=version_mismatch::pg_dump major version (${CLIENT_MAJOR}) is lower than server major version (${SERVER_MAJOR}). Aborting backup."
+            exit 1
+          fi
+
           TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
           DUMP_FILE="zeroday_prod_${TIMESTAMP}.dump"
           AGE_FILE="${DUMP_FILE}.age"
 
           echo "Initiating authoritative database dump (pg_dump v17, custom format -Fc, compression level 9)..."
-          pg_dump "${SUPABASE_DB_URL}" \
+          "${PG_DUMP_BIN}" "${SUPABASE_DB_URL}" \
             --format=custom \
             --compress=9 \
             --no-owner \
@@ -69,7 +90,7 @@ jobs:
           DUMP_SIZE=$(stat -c%s "${DUMP_FILE}")
 
           echo "Verifying archive integrity with pg_restore --list..."
-          pg_restore --list "${DUMP_FILE}" > /tmp/pg_restore_list.txt
+          "${PG_RESTORE_BIN}" --list "${DUMP_FILE}" > /tmp/pg_restore_list.txt
 
           TABLE_COUNT=$(grep -c " TABLE " /tmp/pg_restore_list.txt || true)
           rm -f /tmp/pg_restore_list.txt
@@ -79,6 +100,7 @@ jobs:
           {
             echo "### Production Database Backup Summary"
             echo "- **Status:** Verified Valid"
+            echo "- **Client Version:** ${CLIENT_VER_STR}"
             echo "- **Postgres Major Version:** 17"
             echo "- **Format:** Custom (-Fc) with Level 9 Compression"
             echo "- **Tables in Archive Catalog:** ${TABLE_COUNT}"
