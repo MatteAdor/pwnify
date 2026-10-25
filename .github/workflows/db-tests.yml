@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pgtap-tests:
-    name: Supabase pgTAP Isolated Suite
+  migration-upgrade-and-pgtap:
+    name: Supabase Migration Upgrade & pgTAP Suite
     runs-on: ubuntu-latest
 
     steps:
@@ -26,13 +26,114 @@ jobs:
         with:
           version: 2.122.0
 
-      - name: Start local Supabase container stack
+      - name: Stage 20261024* migrations to temporary directory
+        run: |
+          mkdir -p /tmp/mig20261024
+          mv supabase/migrations/20261024*.sql /tmp/mig20261024/
+          echo "Isolated $(ls /tmp/mig20261024 | wc -l) migrations for 20261024*."
+
+      - name: Start local Supabase container stack (baseline up to 20261022*)
         run: supabase start
 
-      - name: Reset database and apply all migrations
+      - name: Reset database to 20261022* schema baseline
         run: supabase db reset
 
-      - name: Execute pgTAP database tests
+      - name: "Edge Case Test: Verify Migration 6 aborts on case-insensitive duplicate nick (ERRCODE 23505)"
+        run: |
+          echo "Seeding case-insensitive duplicate nick collision in legacy schema..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          INSERT INTO auth.users (id, email) VALUES 
+            ('33333333-3333-3333-3333-333333333331', 'dup1@test.local'),
+            ('33333333-3333-3333-3333-333333333332', 'dup2@test.local')
+          ON CONFLICT (id) DO NOTHING;
+
+          INSERT INTO public.profiles (id, nick, elo, rank, xp, inventory) VALUES
+            ('33333333-3333-3333-3333-333333333331', 'ZeroHunter', 1200, 'Specialist', 500, '{"streak_days": 5}'::jsonb),
+            ('33333333-3333-3333-3333-333333333332', 'zerohunter', 1150, 'Specialist', 450, '{"streak_days": 2}'::jsonb)
+          ON CONFLICT (id) DO NOTHING;
+          EOF
+
+          echo "Applying migration 6 over colliding data (must fail)..."
+          set +e
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f /tmp/mig20261024/20261024000006_profile_update_rpcs.sql > /tmp/dup_output.log 2>&1
+          MIG_EXIT_CODE=$?
+          set -e
+
+          if [ $MIG_EXIT_CODE -eq 0 ]; then
+            echo "::error::Migration 6 succeeded despite duplicate nicknames! Expected failure."
+            cat /tmp/dup_output.log
+            exit 1
+          fi
+
+          if grep -q "23505" /tmp/dup_output.log && grep -q "Migration aborted: found duplicate case-insensitive nicknames" /tmp/dup_output.log; then
+            echo "PASSED: Migration 6 correctly raised exception 23505 on duplicate nick collision."
+          else
+            echo "::error::Migration 6 failed with unexpected error."
+            cat /tmp/dup_output.log
+            exit 1
+          fi
+
+      - name: "Clean Legacy Upgrade: Seed valid legacy state and apply 20261024* migrations"
+        run: |
+          echo "Clearing collision test users..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          DELETE FROM public.profiles WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
+          DELETE FROM auth.users WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
+
+          -- Seed legacy PRO user
+          INSERT INTO auth.users (id, email) VALUES ('44444444-4444-4444-4444-444444444441', 'pro_legacy@zeroday.local') ON CONFLICT DO NOTHING;
+          INSERT INTO public.profiles (id, nick, elo, rank, xp, is_pro, inventory) VALUES
+            ('44444444-4444-4444-4444-444444444441', 'ProMaster', 1500, 'Specialist', 1200, TRUE, '{"streak_days": 14, "hacker_card_frame": "gold"}'::jsonb)
+          ON CONFLICT (id) DO UPDATE SET is_pro = TRUE, inventory = '{"streak_days": 14, "hacker_card_frame": "gold"}'::jsonb;
+
+          -- Seed legacy free user
+          INSERT INTO auth.users (id, email) VALUES ('44444444-4444-4444-4444-444444444442', 'free_legacy@zeroday.local') ON CONFLICT DO NOTHING;
+          INSERT INTO public.profiles (id, nick, elo, rank, xp, is_pro, inventory) VALUES
+            ('44444444-4444-4444-4444-444444444442', 'FreeRecruit', 1050, 'Bronze Recruit', 150, FALSE, '{"streak_days": 4}'::jsonb)
+          ON CONFLICT (id) DO UPDATE SET is_pro = FALSE, inventory = '{"streak_days": 4}'::jsonb;
+
+          -- Seed active match
+          INSERT INTO public.matches (id, p1_id, p2_id, status, question_ids, current_question_index) VALUES
+            ('e1111111-1111-1111-1111-111111111111', '44444444-4444-4444-4444-444444444441', '44444444-4444-4444-4444-444444444442', 'active', '["a0000000-0000-0000-0000-000000000001"]'::jsonb, 0)
+          ON CONFLICT (id) DO NOTHING;
+          EOF
+
+          echo "Restoring 20261024* migrations into supabase/migrations/ and applying in sequence..."
+          cp /tmp/mig20261024/* supabase/migrations/
+          for mig in /tmp/mig20261024/*.sql; do
+            echo "Applying $(basename "$mig")..."
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
+          done
+
+          echo "Verifying integrity of upgraded state..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          DO $$
+          DECLARE
+            v_is_pro BOOLEAN;
+            v_streak INT;
+            v_match_status TEXT;
+            v_pub_nick TEXT;
+          BEGIN
+            SELECT is_pro, (inventory->>'streak_days')::INT INTO v_is_pro, v_streak FROM public.profiles WHERE id = '44444444-4444-4444-4444-444444444441';
+            IF v_is_pro IS NOT TRUE OR v_streak <> 14 THEN
+              RAISE EXCEPTION 'Legacy PRO data corrupted: is_pro=%, streak=%', v_is_pro, v_streak;
+            END IF;
+
+            SELECT status INTO v_match_status FROM public.matches WHERE id = 'e1111111-1111-1111-1111-111111111111';
+            IF v_match_status <> 'active' THEN
+              RAISE EXCEPTION 'Legacy match corrupted: status=%', v_match_status;
+            END IF;
+
+            SELECT nick INTO v_pub_nick FROM public.public_profiles WHERE id = '44444444-4444-4444-4444-444444444441';
+            IF v_pub_nick IS NULL THEN
+              RAISE EXCEPTION 'public_profiles view failed to resolve legacy profile';
+            END IF;
+
+            RAISE NOTICE 'Legacy upgrade integrity verified successfully.';
+          END $$;
+          EOF
+
+      - name: Execute pgTAP database tests on upgraded database
         run: |
           mkdir -p test-results
           supabase test db 2>&1 | tee test-results/pgtap-results.log
