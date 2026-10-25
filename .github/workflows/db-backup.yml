@@ -40,7 +40,7 @@ jobs:
 
           rm -f "${DUMP_FILE}"
           echo "Encrypted backup created: ${ENC_FILE}"
-          echo "BACKUP_PATH=${ENC_FILE}" >> $GITHUB_ENV
+          echo "BACKUP_PATH=${ENC_FILE}" >> "$GITHUB_ENV"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
           BACKUP_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}

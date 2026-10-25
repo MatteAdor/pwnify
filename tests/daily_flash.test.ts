@@ -57,4 +57,23 @@ describe('Daily Flash Pure Logic Suite (Retention B0)', () => {
     assert.equal(res.source, 'standard_fallback');
     assert.match(res.message, /Daily standard attivo/);
   });
+
+  it('handles Supabase Vault secret missing error (55000) by falling back safely to standard daily', () => {
+    // When Vault secret is absent, Postgres throws SQLSTATE 55000.
+    // Supabase RPC client returns { data: null, error: { message: 'Daily flash server secret is not configured in Vault', code: '55000' } }
+    const supabaseRpcResult = {
+      data: null,
+      error: {
+        message: 'Daily flash server secret is not configured in Vault',
+        code: '55000'
+      }
+    };
+
+    const res = evaluateDailyFlashDraw(supabaseRpcResult.data, '2026-10-25');
+    assert.equal(res.isFlash, false);
+    assert.equal(res.xpBonus, 0);
+    assert.equal(res.source, 'standard_fallback');
+    assert.equal(res.drawDate, '2026-10-25');
+    assert.match(res.message, /Daily standard attivo/);
+  });
 });
