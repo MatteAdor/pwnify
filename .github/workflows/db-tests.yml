@@ -1,0 +1,49 @@
+name: Database Regression Tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgtap-tests:
+    name: Supabase pgTAP Isolated Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI (pinned)
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.187.0
+
+      - name: Start local Supabase container stack
+        run: supabase start
+
+      - name: Reset database and apply all migrations
+        run: supabase db reset
+
+      - name: Execute pgTAP database tests
+        run: |
+          mkdir -p test-results
+          supabase test db 2>&1 | tee test-results/pgtap-results.log
+
+      - name: Upload test execution log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgtap-test-results
+          path: test-results/pgtap-results.log
+
+      - name: Teardown Supabase containers
+        if: always()
+        run: supabase stop --no-backup
