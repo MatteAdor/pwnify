@@ -7,7 +7,7 @@
 
 BEGIN;
 
-SELECT plan(8);
+SELECT plan(9);
 
 -- 1. Setup Migration 5 schema in temporary transaction space
 CREATE TABLE IF NOT EXISTS public.app_versions (
@@ -182,6 +182,25 @@ SELECT lives_ok(
     'EXPLAIN SELECT * FROM public.profiles LIMIT 1',
     'Execution plan uses InitPlan subquery for assert_min_client_version'
 );
+
+-- TEST 9: Authenticated SELECT on public.profiles via real RLS path with low build code throws PT426
+UPDATE public.app_versions SET kill_switch = FALSE WHERE platform = 'android';
+
+INSERT INTO auth.users (id, email) VALUES ('77777777-7777-7777-7777-777777777777', 'version_test@zeroday.local') ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles (id, nick, elo, rank, xp) VALUES ('77777777-7777-7777-7777-777777777777', 'VersionTester', 1000, 'Script Kiddie', 0) ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '77777777-7777-7777-7777-777777777777';
+SELECT set_config('request.jwt.claims', '{"sub": "77777777-7777-7777-7777-777777777777", "role": "authenticated"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
+
+SELECT throws_ok(
+    'SELECT count(*) FROM public.profiles',
+    'PT426',
+    'Upgrade Required',
+    'SELECT on public.profiles as authenticated with low build code throws SQLSTATE PT426 via real RLS'
+);
+RESET ROLE;
 
 SELECT * FROM finish();
 

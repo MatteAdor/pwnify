@@ -49,10 +49,9 @@ jobs:
             ('33333333-3333-3333-3333-333333333332', 'dup2@test.local')
           ON CONFLICT (id) DO NOTHING;
 
-          INSERT INTO public.profiles (id, nick, elo, rank, xp, inventory) VALUES
-            ('33333333-3333-3333-3333-333333333331', 'ZeroHunter', 1200, 'Specialist', 500, '{"streak_days": 5}'::jsonb),
-            ('33333333-3333-3333-3333-333333333332', 'zerohunter', 1150, 'Specialist', 450, '{"streak_days": 2}'::jsonb)
-          ON CONFLICT (id) DO NOTHING;
+          -- Force case-insensitive duplicate nicknames "Dup" and "dup" directly on profiles
+          UPDATE public.profiles SET nick = 'Dup' WHERE id = '33333333-3333-3333-3333-333333333331';
+          UPDATE public.profiles SET nick = 'dup' WHERE id = '33333333-3333-3333-3333-333333333332';
           EOF
 
           echo "Applying migration 6 over colliding data with ON_ERROR_STOP=1 (must fail)..."
