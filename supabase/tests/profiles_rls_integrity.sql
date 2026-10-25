@@ -5,7 +5,7 @@
 -- =====================================================================
 
 BEGIN;
-SELECT plan(18);
+SELECT plan(22);
 
 -- ---------------------------------------------------------------------
 -- 1. SETUP MOCK USERS & PROFILES
@@ -69,8 +69,14 @@ SELECT throws_ok(
     'authenticated is strictly denied direct INSERT into public.profiles'
 );
 
--- Test 6: direct UPDATE by authenticated cannot elevate is_pro (trigger/RLS defense)
-UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222';
+-- Test 6a: direct UPDATE by authenticated cannot elevate is_pro (strictly denied by table revoke 42501)
+SELECT throws_ok(
+    $$UPDATE public.profiles SET elo = 9999, is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222'$$,
+    '42501',
+    NULL,
+    'authenticated direct UPDATE on public.profiles is strictly denied'
+);
+-- Test 6b: verify is_pro remains FALSE
 SELECT is(
     (SELECT is_pro FROM public.profiles WHERE id = '22222222-2222-2222-2222-222222222222'),
     FALSE,
@@ -149,6 +155,25 @@ SELECT is(
     'trg_protect_profiles_is_pro does NOT block claim_daily_flash_draw xp update'
 );
 
+-- Test 13: trigger blocks is_pro elevation when authenticated has temporary UPDATE privilege
+RESET ROLE;
+GRANT UPDATE ON public.profiles TO authenticated;
+CREATE POLICY "p_test_trg_update" ON public.profiles FOR UPDATE TO authenticated USING (true);
+
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
+
+SELECT throws_ok(
+    $$UPDATE public.profiles SET is_pro = TRUE WHERE id = '22222222-2222-2222-2222-222222222222'$$,
+    '42501',
+    'Access denied: profiles.is_pro is server-authoritative and can only be modified by the service_role.',
+    'trg_protect_profiles_is_pro explicitly blocks is_pro update when UPDATE privilege is granted'
+);
+
+RESET ROLE;
+DROP POLICY IF EXISTS "p_test_trg_update" ON public.profiles;
+REVOKE UPDATE ON public.profiles FROM authenticated;
+
 -- ---------------------------------------------------------------------
 -- 6. RESTRICTIVE POLICY VERSION ENFORCEMENT (SQLSTATE PT426)
 -- ---------------------------------------------------------------------
@@ -213,6 +238,68 @@ SELECT is(
     public.is_nick_available('ZeroVictim'),
     FALSE,
     'authenticated user can query is_nick_available (returns FALSE for taken nick)'
+);
+
+-- ---------------------------------------------------------------------
+-- 8. FUNCTION PRIVILEGE PERIMETER AUDIT (has_function_privilege)
+-- ---------------------------------------------------------------------
+-- Test 21: anon core RPC execution permissions
+SELECT set_eq(
+    $$
+    SELECT proname
+    FROM (
+        VALUES 
+            ('claim_daily_flash_draw(text)'),
+            ('find_or_create_match()'),
+            ('submit_answer(uuid,uuid,integer)'),
+            ('forfeit_match(uuid)'),
+            ('migrate_my_legacy_progress(integer,jsonb,text)'),
+            ('record_user_streak_activity(text,uuid)'),
+            ('update_my_profile_preferences(text,text,boolean,boolean)'),
+            ('update_my_inventory_cosmetics(jsonb)'),
+            ('is_nick_available(text)'),
+            ('set_profile_pro_status(uuid,boolean,text,text,text,text,text,timestamptz)'),
+            ('get_server_time()')
+    ) AS rpcs(proname)
+    WHERE has_function_privilege('anon', 'public.' || proname, 'EXECUTE')
+    $$,
+    $$ VALUES ('get_server_time()') $$,
+    'among core RPCs, anon has EXECUTE strictly on get_server_time'
+);
+
+-- Test 22: authenticated core RPC execution permissions
+SELECT set_eq(
+    $$
+    SELECT proname
+    FROM (
+        VALUES 
+            ('claim_daily_flash_draw(text)'),
+            ('find_or_create_match()'),
+            ('submit_answer(uuid,uuid,integer)'),
+            ('forfeit_match(uuid)'),
+            ('migrate_my_legacy_progress(integer,jsonb,text)'),
+            ('record_user_streak_activity(text,uuid)'),
+            ('update_my_profile_preferences(text,text,boolean,boolean)'),
+            ('update_my_inventory_cosmetics(jsonb)'),
+            ('is_nick_available(text)'),
+            ('set_profile_pro_status(uuid,boolean,text,text,text,text,text,timestamptz)'),
+            ('get_server_time()')
+    ) AS rpcs(proname)
+    WHERE has_function_privilege('authenticated', 'public.' || proname, 'EXECUTE')
+    $$,
+    $$ VALUES 
+        ('claim_daily_flash_draw(text)'),
+        ('find_or_create_match()'),
+        ('submit_answer(uuid,uuid,integer)'),
+        ('forfeit_match(uuid)'),
+        ('migrate_my_legacy_progress(integer,jsonb,text)'),
+        ('record_user_streak_activity(text,uuid)'),
+        ('update_my_profile_preferences(text,text,boolean,boolean)'),
+        ('update_my_inventory_cosmetics(jsonb)'),
+        ('is_nick_available(text)'),
+        ('get_server_time()')
+    $$,
+    'among core RPCs, authenticated has EXECUTE on all client RPCs except service_role set_profile_pro_status'
 );
 
 SELECT * FROM finish();

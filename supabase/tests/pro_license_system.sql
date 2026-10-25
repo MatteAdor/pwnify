@@ -3,7 +3,7 @@
 -- File: supabase/tests/pro_license_system.sql
 -- =====================================================================
 BEGIN;
-SELECT plan(10);
+SELECT plan(11);
 
 -- Setup mock users in auth.users
 INSERT INTO auth.users (id, email, raw_user_meta_data)
@@ -33,7 +33,12 @@ SELECT is(
 SET LOCAL ROLE authenticated;
 SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 
-UPDATE public.profiles SET is_pro = TRUE WHERE id = '11111111-1111-1111-1111-111111111111';
+SELECT throws_ok(
+    $$ UPDATE public.profiles SET is_pro = TRUE WHERE id = '11111111-1111-1111-1111-111111111111' $$,
+    '42501',
+    NULL,
+    'Authenticated user update blocked on profiles (permission denied)'
+);
 
 SELECT is(
     (SELECT is_pro FROM public.profiles WHERE id = '11111111-1111-1111-1111-111111111111'),
@@ -43,6 +48,7 @@ SELECT is(
 
 -- Test 4: Trigger protect_profiles_is_pro explicitly rejects is_pro update even if an UPDATE policy exists
 RESET ROLE;
+GRANT UPDATE ON public.profiles TO authenticated;
 CREATE POLICY "test_profiles_update_own" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 
 SET LOCAL ROLE authenticated;
@@ -51,12 +57,13 @@ SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111"
 SELECT throws_ok(
     $$ UPDATE public.profiles SET is_pro = TRUE WHERE id = '11111111-1111-1111-1111-111111111111' $$,
     '42501',
-    NULL,
+    'Access denied: profiles.is_pro is server-authoritative and can only be modified by the service_role.',
     'Trigger protect_profiles_is_pro explicitly blocks authenticated user from modifying is_pro'
 );
 
 RESET ROLE;
 DROP POLICY IF EXISTS "test_profiles_update_own" ON public.profiles;
+REVOKE UPDATE ON public.profiles FROM authenticated;
 
 -- Test 5: Authenticated user CANNOT execute set_profile_pro_status RPC
 SET LOCAL ROLE authenticated;
