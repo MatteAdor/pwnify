@@ -35,15 +35,44 @@ jobs:
           echo "Isolated $(ls /tmp/mig_phase_a | wc -l) Phase A migrations."
 
       - name: Start local Supabase container stack (baseline up to 20261022*)
-        run: supabase start
+        run: |
+          supabase start > /tmp/supabase_start.log 2>&1 || {
+            cat /tmp/supabase_start.log
+            ERR=$(tail -n 30 /tmp/supabase_start.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=supabase_start::$ERR"
+            echo "### ❌ Error in supabase start" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/supabase_start.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Reset database to 20261022* schema baseline
-        run: supabase db reset
+        run: |
+          supabase db reset > /tmp/supabase_reset.log 2>&1 || {
+            cat /tmp/supabase_reset.log
+            ERR=$(tail -n 30 /tmp/supabase_reset.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=supabase_db_reset::$ERR"
+            echo "### ❌ Error in supabase db reset" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/supabase_reset.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Seed legacy test fixture (users, PRO profile, active match)
         run: |
           echo "Seeding legacy state before 20261024*..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/seed_legacy.log 2>&1 << 'EOF' || {
+            cat /tmp/seed_legacy.log
+            ERR=$(tail -n 30 /tmp/seed_legacy.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=seed_legacy::$ERR"
+            echo "### ❌ Error seeding legacy fixture" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/seed_legacy.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
           -- Seed legacy PRO user
           INSERT INTO auth.users (id, email) VALUES ('44444444-4444-4444-4444-444444444441', 'pro_legacy@zeroday.local') ON CONFLICT DO NOTHING;
           INSERT INTO public.profiles (id, nick, elo, rank, xp, is_pro, inventory) VALUES
@@ -66,13 +95,31 @@ jobs:
         run: |
           echo "Configuring Supabase Vault secret for daily flash HMAC..."
           DYNAMIC_SECRET=$(openssl rand -hex 32)
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << EOF
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/vault_config.log 2>&1 << EOF || {
+            cat /tmp/vault_config.log
+            ERR=$(tail -n 30 /tmp/vault_config.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=vault_configuration::$ERR"
+            echo "### ❌ Error in Supabase Vault Configuration" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/vault_config.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
           CREATE EXTENSION IF NOT EXISTS supabase_vault CASCADE;
           SELECT vault.create_secret('$DYNAMIC_SECRET', 'daily_flash_secret', 'HMAC key for daily flash draws');
           EOF
 
           echo "Verifying Supabase Vault extension and secret in vault.decrypted_secrets..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/vault_verify.log 2>&1 << 'EOF' || {
+            cat /tmp/vault_verify.log
+            ERR=$(tail -n 30 /tmp/vault_verify.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=vault_verification::$ERR"
+            echo "### ❌ Error in Vault Verification" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/vault_verify.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
           DO $$
           DECLARE
             v_sec TEXT;
@@ -88,13 +135,31 @@ jobs:
           echo "Applying Phase A migrations (01 through 04)..."
           for mig in /tmp/mig_phase_a/2026102400000[1-4]*.sql; do
             echo "Applying $(basename "$mig")..."
-            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig" > /tmp/phase_a_mig.log 2>&1 || {
+              cat /tmp/phase_a_mig.log
+              ERR=$(tail -n 30 /tmp/phase_a_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+              echo "::error title=phase_a_$(basename "$mig")::$ERR"
+              echo "### ❌ Error applying Phase A migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              tail -n 30 /tmp/phase_a_mig.log >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              exit 1
+            }
           done
 
       - name: "Phase A Verification: Verify legacy client queries continue to function"
         run: |
           echo "Testing legacy queries (APK 1.2.1 and current site compatibility)..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/phase_a_verify.log 2>&1 << 'EOF' || {
+            cat /tmp/phase_a_verify.log
+            ERR=$(tail -n 30 /tmp/phase_a_verify.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=phase_a_verification::$ERR"
+            echo "### ❌ Error in Phase A legacy verification" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/phase_a_verify.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
           -- 1. Anonymous leaderboard query directly on public.profiles without X-Build
           SET ROLE anon;
           SELECT id, nick, elo, rank, xp FROM public.profiles LIMIT 5;
@@ -114,7 +179,12 @@ jobs:
       - name: "Phase C Pre-flight Test: Verify Migration 05 aborts on duplicate case-insensitive nicks"
         run: |
           echo "Seeding case-insensitive duplicate nick collision in legacy schema..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/seed_collision.log 2>&1 << 'EOF' || {
+            cat /tmp/seed_collision.log
+            ERR=$(tail -n 30 /tmp/seed_collision.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=seed_collision::$ERR"
+            exit 1
+          }
           INSERT INTO auth.users (id, email) VALUES 
             ('33333333-3333-3333-3333-333333333331', 'dup1@test.local'),
             ('33333333-3333-3333-3333-333333333332', 'dup2@test.local')
@@ -131,7 +201,8 @@ jobs:
           set -e
 
           if [ $MIG_EXIT_CODE -eq 0 ]; then
-            echo "::error::Migration 05 unexpectedly succeeded despite duplicate nicknames!"
+            echo "::error title=migration_05_collision::Migration 05 unexpectedly succeeded despite duplicate nicknames!"
+            echo "### ❌ Migration 05 unexpectedly succeeded despite duplicate nicknames!" >> $GITHUB_STEP_SUMMARY
             cat /tmp/dup_output.log
             exit 1
           fi
@@ -140,15 +211,24 @@ jobs:
             echo "PASSED: Migration 05 correctly raised abort exception on duplicate nick collision."
             cat /tmp/dup_output.log
           else
-            echo "::error::Migration 05 failed with unexpected error."
-            cat /tmp/dup_output.log
+            ERR=$(tail -n 30 /tmp/dup_output.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=migration_05_unexpected_error::$ERR"
+            echo "### ❌ Migration 05 failed with unexpected error" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 /tmp/dup_output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
       - name: "Phase C (Contract): Clean test collision and apply contract migrations from supabase/contract/"
         run: |
           echo "Clearing duplicate collision test profiles..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/clean_collision.log 2>&1 << 'EOF' || {
+            cat /tmp/clean_collision.log
+            ERR=$(tail -n 30 /tmp/clean_collision.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=clean_collision::$ERR"
+            exit 1
+          }
           DELETE FROM public.profiles WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
           DELETE FROM auth.users WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
           EOF
@@ -156,7 +236,16 @@ jobs:
           echo "Applying Phase C contract migrations from supabase/contract/..."
           for mig in supabase/contract/*.sql; do
             echo "Applying $(basename "$mig")..."
-            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig"
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig" > /tmp/phase_c_mig.log 2>&1 || {
+              cat /tmp/phase_c_mig.log
+              ERR=$(tail -n 30 /tmp/phase_c_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+              echo "::error title=phase_c_$(basename "$mig")::$ERR"
+              echo "### ❌ Error applying Phase C contract migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              tail -n 30 /tmp/phase_c_mig.log >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              exit 1
+            }
           done
 
           echo "Restoring Phase A migrations back to supabase/migrations/..."
@@ -164,7 +253,17 @@ jobs:
 
       - name: Execute pgTAP database tests on fully contracted database
         run: |
-          supabase test db 2>&1 | tee test-results/pgtap-results.log
+          supabase test db > test-results/pgtap-results.log 2>&1 || {
+            cat test-results/pgtap-results.log
+            ERR=$(tail -n 30 test-results/pgtap-results.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=pgtap_suite::$ERR"
+            echo "### ❌ Error in pgTAP Suite" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 30 test-results/pgtap-results.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
+          cat test-results/pgtap-results.log
 
       - name: Upload test execution log artifact
         if: always()

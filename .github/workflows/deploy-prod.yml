@@ -1,10 +1,12 @@
 name: Deploy Production
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      confirm_prod_deploy:
+        description: 'Digitare "DEPLOY-PRODUCTION" per confermare il rilascio'
+        required: true
+        type: string
 
 concurrency:
   group: deploy-production
@@ -20,10 +22,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify explicit production release confirmation
+        run: |
+          if [ "${{ inputs.confirm_prod_deploy }}" != "DEPLOY-PRODUCTION" ]; then
+            echo "::error::Deploy aborted: confirmation phrase does not match 'DEPLOY-PRODUCTION'."
+            exit 1
+          fi
+
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Link Production Project
         run: |
