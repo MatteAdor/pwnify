@@ -32,7 +32,7 @@ import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { recordLearningActivity, StreakState } from './utils/streakEngine';
-import { syncAuthoritativeActivity } from './utils/streakSync';
+import { syncAuthoritativeActivity, applyLearningActivity } from './utils/streakSync';
 import { 
   createDefaultGuestState, 
   getCachedGuestState,
@@ -43,6 +43,7 @@ import {
   sanitizeUserState,
   syncDatabaseWithBackend,
   updateOperatorUsername,
+  recordCertPassed,
   UserAccount 
 } from './utils/userDatabase';
 import { isContributor } from './utils/licenseEngine';
@@ -497,51 +498,32 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   };
 
 
-// Helper to bridge user state with server-authoritative streak engine
-function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boolean }): UserState {
-  const streakState: StreakState = {
-    streakDays: prev.streakDays || prev.dailyBreachStreak || 0,
-    lastActiveDate: prev.lastActiveDate || prev.lastDailyBreachDate || null,
-    lastActiveTimestamp: prev.lastActiveTimestamp || 0,
-    streakShieldCount: prev.streakShieldCount || 0,
-    streakShieldActive: Boolean(prev.streakShieldActive),
-    freezeUntilDate: prev.freezeUntilDate || null,
-    lastFreezeActivatedDate: prev.lastFreezeActivatedDate || null,
-    inGracePeriod: Boolean(prev.inGracePeriod),
-    graceExpiryTimestamp: prev.graceExpiryTimestamp || null,
-    timezone: prev.userTimezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'),
-    lastShieldAwardedStreak: prev.lastShieldAwardedStreak || null
-  };
-
-  const { updatedState: nextStreak } = recordLearningActivity(streakState, Date.now(), {
-    isPbqPerfect: options?.isPbqPerfect,
-    isPro: prev.isPro
-  });
-
-  return {
-    ...prev,
-    streakDays: nextStreak.streakDays,
-    dailyBreachStreak: nextStreak.streakDays,
-    lastActiveDate: nextStreak.lastActiveDate,
-    lastActiveTimestamp: nextStreak.lastActiveTimestamp,
-    lastDailyBreachDate: nextStreak.lastActiveDate || undefined,
-    streakShieldCount: nextStreak.streakShieldCount,
-    streakShieldActive: nextStreak.streakShieldActive,
-    lastShieldAwardedStreak: nextStreak.lastShieldAwardedStreak
-  };
-}
 
   // Daily 0xBreach Completion Handler
   const handleDailyBreachSuccess = (xpGained: number, eloGained: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
       const updated = applyLearningActivity(prev);
-      return {
+      const currentBreachStreak = prev.dailyBreachStreak || 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+      const nextState: UserState = {
         ...updated,
         xp: prev.xp + xpGained * xpMultiplier,
         elo: prev.elo + eloGained,
+        dailyBreachStreak: currentBreachStreak + 1,
+        lastDailyBreachDate: todayStr,
         readinessScore: Math.min(100, prev.readinessScore + 5)
       };
+      persistActiveAccountState(nextState);
+      return nextState;
+    });
+  };
+
+  const handlePassCert = (certId: string, scorePercent: number) => {
+    setUserState(prev => {
+      const nextState = recordCertPassed(prev, certId, scorePercent);
+      persistActiveAccountState(nextState);
+      return nextState;
     });
 
     // Authoritative Server Validation with Fail-Open UX
@@ -705,7 +687,7 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
         return b;
       });
 
-      return {
+      const nextState: UserState = {
         ...updated,
         xp: prev.xp + gainedXp * xpMultiplier,
         elo: prev.elo + gainedElo,
@@ -715,6 +697,8 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
           : [...prev.completedNodeIds, nodeId],
         dailyBounties: updatedBounties
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
 
     // In web browser: remind the user periodically to download the native APK!
@@ -756,14 +740,18 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
         return b;
       });
 
-      return {
-        ...prev,
-        elo: prev.elo + eloGain,
-        winStreak: prev.winStreak + 1,
-        xp: prev.xp + 80 * xpMultiplier,
-        readinessScore: Math.min(100, prev.readinessScore + 3),
+      const updatedState = applyLearningActivity(prev);
+
+      const nextState: UserState = {
+        ...updatedState,
+        elo: updatedState.elo + eloGain,
+        winStreak: updatedState.winStreak + 1,
+        xp: updatedState.xp + 80 * xpMultiplier,
+        readinessScore: Math.min(100, updatedState.readinessScore + 3),
         dailyBounties: updatedBounties
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
   };
 
@@ -827,17 +815,19 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
   // PBQ Lab Completion Handler
   const handleCompletePbq = (pbqId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
-      const alreadyDone = prev.completedPbqIds?.includes(pbqId);
       const updated = applyLearningActivity(prev, { isPbqPerfect: true });
-      return {
+      const alreadyDone = updated.completedPbqIds?.includes(pbqId);
+      const nextState: UserState = {
         ...updated,
-        xp: prev.xp + (prev.isPro ? gainedXp * 2 : gainedXp),
-        elo: prev.elo + gainedElo,
-        readinessScore: Math.min(100, prev.readinessScore + 8),
+        xp: updated.xp + (updated.isPro ? gainedXp * 2 : gainedXp),
+        elo: updated.elo + gainedElo,
+        readinessScore: Math.min(100, updated.readinessScore + 8),
         completedPbqIds: alreadyDone
-          ? prev.completedPbqIds
-          : [...(prev.completedPbqIds || []), pbqId]
+          ? updated.completedPbqIds
+          : [...(updated.completedPbqIds || []), pbqId]
       };
+      persistActiveAccountState(nextState);
+      return nextState;
     });
 
     if (isBrowserEnvironment()) {
@@ -1073,6 +1063,7 @@ function applyLearningActivity(prev: UserState, options?: { isPbqPerfect?: boole
                 userState={userState}
                 onOpenPaywallContext={triggerPaywall}
                 onCompletePbq={handleCompletePbq}
+                onPassCert={handlePassCert}
               />
             )}
           </main>

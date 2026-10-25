@@ -288,10 +288,10 @@ export function activateStreakFreeze(
 
 /**
  * Resolves permanent earned titles based on verified streak thresholds:
- * 7d -> "Apprentice Defender"
- * 21d -> "Threat Analyst"
- * 42d -> "Incident Responder"
- * 100d -> "ZeroDay Centurion"
+ * 7d -> "7-Day Persistent Operative"
+ * 30d -> "Monthly Defcon Sentinel"
+ * 60d -> "ZeroDay Red Team Veteran"
+ * 100d -> "Centurion Elite Vanguard"
  */
 export function getStreakThresholdTitle(streakDays: number): {
   title: string;
@@ -301,16 +301,16 @@ export function getStreakThresholdTitle(streakDays: number): {
   color: string;
 } | null {
   if (streakDays >= 100) {
-    return { title: 'ZeroDay Centurion', badgeId: 'badge_streak_100', daysRequired: 100, badge: '100D', color: '#10b981' };
+    return { title: 'Centurion Elite Vanguard', badgeId: 'badge_streak_100', daysRequired: 100, badge: '100D', color: '#10b981' };
   }
-  if (streakDays >= 42) {
-    return { title: 'Incident Responder', badgeId: 'badge_streak_42', daysRequired: 42, badge: '42D', color: '#8b5cf6' };
+  if (streakDays >= 60) {
+    return { title: 'ZeroDay Red Team Veteran', badgeId: 'badge_streak_60', daysRequired: 60, badge: '60D', color: '#8b5cf6' };
   }
-  if (streakDays >= 21) {
-    return { title: 'Threat Analyst', badgeId: 'badge_streak_21', daysRequired: 21, badge: '21D', color: '#3b82f6' };
+  if (streakDays >= 30) {
+    return { title: 'Monthly Defcon Sentinel', badgeId: 'badge_streak_30', daysRequired: 30, badge: '30D', color: '#3b82f6' };
   }
   if (streakDays >= 7) {
-    return { title: 'Apprentice Defender', badgeId: 'badge_streak_7', daysRequired: 7, badge: '7D', color: '#f59e0b' };
+    return { title: '7-Day Persistent Operative', badgeId: 'badge_streak_7', daysRequired: 7, badge: '7D', color: '#f59e0b' };
   }
   return null;
 }

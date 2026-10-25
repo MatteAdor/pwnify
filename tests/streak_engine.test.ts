@@ -273,15 +273,15 @@ describe('ZeroDay Unified Streak Engine (B0 Audit Suite)', () => {
       assert.equal(getStreakThresholdTitle(6), null);
     });
 
-    it('awards titles at 7, 21, 42, and 100 days thresholds', () => {
-      assert.equal(getStreakThresholdTitle(7)?.title, 'Apprentice Defender');
-      assert.equal(getStreakThresholdTitle(20)?.title, 'Apprentice Defender');
-      assert.equal(getStreakThresholdTitle(21)?.title, 'Threat Analyst');
-      assert.equal(getStreakThresholdTitle(41)?.title, 'Threat Analyst');
-      assert.equal(getStreakThresholdTitle(42)?.title, 'Incident Responder');
-      assert.equal(getStreakThresholdTitle(99)?.title, 'Incident Responder');
-      assert.equal(getStreakThresholdTitle(100)?.title, 'ZeroDay Centurion');
-      assert.equal(getStreakThresholdTitle(250)?.title, 'ZeroDay Centurion');
+    it('awards titles at 7, 30, 60, and 100 days thresholds', () => {
+      assert.equal(getStreakThresholdTitle(7)?.title, '7-Day Persistent Operative');
+      assert.equal(getStreakThresholdTitle(29)?.title, '7-Day Persistent Operative');
+      assert.equal(getStreakThresholdTitle(30)?.title, 'Monthly Defcon Sentinel');
+      assert.equal(getStreakThresholdTitle(59)?.title, 'Monthly Defcon Sentinel');
+      assert.equal(getStreakThresholdTitle(60)?.title, 'ZeroDay Red Team Veteran');
+      assert.equal(getStreakThresholdTitle(99)?.title, 'ZeroDay Red Team Veteran');
+      assert.equal(getStreakThresholdTitle(100)?.title, 'Centurion Elite Vanguard');
+      assert.equal(getStreakThresholdTitle(250)?.title, 'Centurion Elite Vanguard');
     });
   });
 });

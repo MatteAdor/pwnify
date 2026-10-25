@@ -152,7 +152,7 @@ export interface UserState {
   profession?: string;
   lastUsernameChangeTimestamp?: number;
   language?: 'en' | 'it';
-  // Server-authoritative unified streak engine state
+  // Server-authoritative unified streak engine state (B0)
   streakShieldCount?: number;
   freezeUntilDate?: string | null;
   lastFreezeActivatedDate?: string | null;
@@ -163,6 +163,17 @@ export interface UserState {
   userTimezone?: string;
   lastShieldAwardedStreak?: number | null;
   lastStreakSource?: 'server' | 'local';
+
+  // Gamification & Ethical Retention State (Main)
+  streakShieldsEarned?: number;
+  streakFreezeActive?: boolean;
+  streakFreezeExpiresDate?: string;
+  streakMilestonesUnlocked?: number[];
+  earnedTitles?: string[];
+  leagueHistory?: Array<{ seasonId: string; rankPosition: number; tier: EloRankTier; xp: number; date: string }>;
+  passedCerts?: Array<{ certId: string; passDate: string; scorePercent: number }>;
+  cpeMaintenanceActive?: boolean;
+  leaderboardOptIn?: boolean;
 }
 
 export type PaywallContext = 
@@ -209,6 +220,7 @@ export interface LeagueHacker {
   avatar: string;
   tier: EloRankTier;
   xp: number;
+  elo?: number;
   isUser?: boolean;
   winStreak: number;
   status: 'promoted' | 'safe' | 'demoted';

@@ -6,7 +6,8 @@ import { useLanguage } from '../../utils/language';
 import { 
   Terminal, Globe, Key, Shield, Server, Network, Cpu, Lock, 
   ArrowLeft, Check, AlertTriangle, Zap, 
-  BookOpen, ChevronRight, Copy, ChevronDown
+  BookOpen, ChevronRight, Copy, ChevronDown,
+  Flame, ShieldCheck, Activity, Snowflake
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {
@@ -280,38 +281,128 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
         /* VIEW B: MAIN MISSIONS OVERVIEW (8 CORE MISSIONS)                          */
         /* ========================================================================= */
         <>
-          {/* 1. Header: Lead with core utility, eliminate template card */}
-          <div className="flex items-baseline justify-between gap-2 border-b border-zinc-800 pb-3">
+          {/* ========================================================================= */}
+          {/* CENTRAL READINESS PROGRESS HERO CARD (SINGLE SOURCE OF TRUTH)            */}
+          {/* ========================================================================= */}
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 space-y-4 shadow-md">
+            {/* Top row: Readiness score + pass standard benchmark */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5" />
+                    {isEn ? 'OPERATOR READINESS INDEX' : 'INDICE PRONTEZZA OPERATORE'}
+                  </span>
+                  {userState.cpeMaintenanceActive && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
+                      CPE ACTIVE
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-2 pt-1">
+                  <span className="text-4xl sm:text-5xl font-black font-mono text-white tracking-tight">
+                    {userState.readinessScore}%
+                  </span>
+                  <span className="text-xs font-mono text-zinc-400">
+                    / 100% {isEn ? 'Preparedness' : 'Preparazione'}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  {userState.readinessScore >= 75
+                    ? (isEn ? '✓ Above 75% Security+ / CCNA pass threshold' : '✓ Superata soglia 75% per esame Security+ / CCNA')
+                    : (isEn ? `Target 75% exam pass threshold (${75 - userState.readinessScore}% to reach standard)` : `Soglia esame 75% (mancano ${75 - userState.readinessScore}% per raggiungere lo standard)`)}
+                </p>
+              </div>
+
+              {/* Right: Streak & Safeguard Status */}
+              <div className="text-right font-mono space-y-1 shrink-0">
+                <div 
+                  onClick={() => sound.playTap()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-amber-300 font-bold text-xs"
+                >
+                  <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span>{userState.streakDays || 0}d {isEn ? 'Streak' : 'Giorni'}</span>
+                </div>
+
+                <div className="text-[11px] text-zinc-400 flex items-center justify-end gap-1">
+                  {userState.streakFreezeActive ? (
+                    <span className="text-cyan-400 flex items-center gap-1">
+                      <Snowflake className="w-3 h-3" />
+                      {isEn ? 'Freeze Active' : 'Pausa Attiva'}
+                    </span>
+                  ) : (userState.streakShieldsEarned && userState.streakShieldsEarned > 0) ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      {userState.streakShieldsEarned} {isEn ? 'Shields' : 'Scudi'}
+                    </span>
+                  ) : userState.isPro ? (
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      PRO Shield
+                    </span>
+                  ) : (
+                    <span className="text-zinc-500">
+                      {5 - ((userState.streakDays || 0) % 5)}d {isEn ? 'to free shield' : 'a scudo free'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Benchmark Progress Bar with 75% marker */}
+            <div className="space-y-1">
+              <div className="relative w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(3, userState.readinessScore))}%` }}
+                />
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-amber-400 z-10" 
+                  style={{ left: '75%' }} 
+                  title="75% Official Exam Pass Standard" 
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-mono text-zinc-500">
+                <span>0%</span>
+                <span className="text-amber-400/80 font-bold">▲ 75% {isEn ? 'Exam Pass Line' : 'Soglia Minima Esame'}</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            {/* 6 Domain Readiness Breakdown Chips */}
+            <div className="space-y-1.5 pt-1 border-t border-zinc-800/80">
+              <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                <span>{isEn ? 'DOMAIN MASTERY (6 COMPONENT VECTORS)' : 'PADRONANZA PER DOMINIO (6 VETTORI)'}</span>
+                <span>{completedMissionsCount} / {totalMissions} {t.completed}</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(userState.radarScores).map(([domain, score]) => (
+                  <div 
+                    key={domain}
+                    className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-between text-xs font-mono"
+                  >
+                    <span className="text-zinc-300 truncate text-[11px]">{domain}</span>
+                    <span className={`font-bold ml-2 text-[11px] ${score >= 75 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-zinc-500'}`}>
+                      {score}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 1. Subtitle & Missions Header */}
+          <div className="flex items-baseline justify-between gap-2 border-b border-zinc-800 pb-2 pt-1">
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h2 className="text-lg font-black text-white tracking-tight">
                 {t.missionsTitle}
-              </h1>
+              </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
                 {isEn 
                   ? '8 Operational Field Missions · Hands-on labs & final validation'
                   : '8 Missioni Tattiche · Laboratori guidati e verifica finale'}
               </p>
             </div>
-            <div className="text-right font-mono shrink-0">
-              <span className="text-[10px] text-zinc-400 block uppercase">READINESS</span>
-              <span className="text-emerald-400 font-bold text-base">{userState.readinessScore}%</span>
-            </div>
-          </div>
-
-          {/* Overall Progress Counter */}
-          <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-            <span>{t.missionProgress}</span>
-            <span className="text-zinc-200 font-bold">
-              {completedMissionsCount} / {totalMissions} {t.completed}
-            </span>
-          </div>
-          <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden -mt-2">
-            <div 
-              className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${Math.max((completedMissionsCount / totalMissions) * 100, 3)}%` 
-              }}
-            />
           </div>
 
           {/* 2. Daily CVE Incident Triage: Clean Actionable Card */}

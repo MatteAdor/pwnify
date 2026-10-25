@@ -10,7 +10,7 @@
     "android:sync": "npx cap sync android",
     "android:open": "npx cap open android",
     "lint": "oxlint",
-    "test": "tsx --test tests/ranked_system.test.ts tests/cloudSync.test.ts tests/ranked_controller.test.ts tests/license_system.test.ts tests/version_engine.test.ts tests/streak_engine.test.ts tests/daily_flash.test.ts tests/streak_sync.test.ts",
+    "test": "tsx --test tests/ranked_system.test.ts tests/cloudSync.test.ts tests/ranked_controller.test.ts tests/license_system.test.ts tests/version_engine.test.ts tests/streak_engine.test.ts tests/daily_flash.test.ts tests/streak_sync.test.ts tests/gamification_streak.test.ts",
     "test:pgtap": "supabase test db",
     "test:pgtap:wsl": "wsl -d kali-linux bash -c \"cd /mnt/c/Users/lenovo/Documents/zeroDay_app && npx supabase test db\"",
     "peer:server": "node server/peerServer.cjs",

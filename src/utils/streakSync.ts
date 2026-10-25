@@ -110,3 +110,46 @@ export async function syncAuthoritativeActivity(
     message: localRes.result.message
   };
 }
+
+/**
+ * Bridges user state with the server-authoritative streak engine.
+ */
+export function applyLearningActivity(
+  prev: any,
+  options?: { isPbqPerfect?: boolean; nowMs?: number }
+): any {
+  const streakState: StreakState = {
+    streakDays: prev.streakDays || prev.dailyBreachStreak || 0,
+    lastActiveDate: prev.lastActiveDate || prev.lastDailyBreachDate || null,
+    lastActiveTimestamp: prev.lastActiveTimestamp || 0,
+    streakShieldCount: prev.streakShieldCount || 0,
+    streakShieldActive: Boolean(prev.streakShieldActive),
+    freezeUntilDate: prev.freezeUntilDate || null,
+    lastFreezeActivatedDate: prev.lastFreezeActivatedDate || null,
+    inGracePeriod: Boolean(prev.inGracePeriod),
+    graceExpiryTimestamp: prev.graceExpiryTimestamp || null,
+    timezone: prev.userTimezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC'),
+    lastShieldAwardedStreak: prev.lastShieldAwardedStreak || null
+  };
+
+  const { updatedState: nextStreak } = recordLearningActivity(
+    streakState,
+    options?.nowMs || Date.now(),
+    {
+      isPbqPerfect: options?.isPbqPerfect,
+      isPro: prev.isPro
+    }
+  );
+
+  return {
+    ...prev,
+    streakDays: nextStreak.streakDays,
+    dailyBreachStreak: nextStreak.streakDays,
+    lastActiveDate: nextStreak.lastActiveDate,
+    lastActiveTimestamp: nextStreak.lastActiveTimestamp,
+    lastDailyBreachDate: nextStreak.lastActiveDate || undefined,
+    streakShieldCount: nextStreak.streakShieldCount,
+    streakShieldActive: nextStreak.streakShieldActive,
+    lastShieldAwardedStreak: nextStreak.lastShieldAwardedStreak
+  };
+}
