@@ -5,7 +5,7 @@
 -- =====================================================================
 -- 1. Adds `is_public_profile BOOLEAN NOT NULL DEFAULT FALSE` to public.profiles.
 -- 2. Primary Perimeter Defense:
---    - REVOKE UPDATE ON public.profiles FROM anon, authenticated;
+--    - REVOKE DELETE ON public.profiles FROM anon, authenticated;
 --    - Hardens trigger `trg_protect_profiles_is_pro` using `current_user` instead of `auth.role()`.
 -- 3. Modifies `public.public_profiles` view:
 --    - Uses a stable pseudonymous alias calculated via salted hash for non-opted-in users:
@@ -26,8 +26,8 @@
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS is_public_profile BOOLEAN NOT NULL DEFAULT FALSE;
 
--- 2. Primary Perimeter Defense: Revoke direct client update on profiles table
-REVOKE UPDATE ON public.profiles FROM anon, authenticated;
+-- 2. Primary Perimeter Defense: Revoke direct client delete on profiles table
+REVOKE DELETE ON public.profiles FROM anon, authenticated;
 
 -- Hardened Trigger checking current_user (database session role)
 CREATE OR REPLACE FUNCTION public.protect_profiles_is_pro()

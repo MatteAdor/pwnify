@@ -126,7 +126,7 @@ CREATE POLICY "Enforce min version on profiles" ON public.profiles
     USING ( (SELECT public.assert_min_client_version()) );
 
 -- TEST 1: Android client with low build code (< 100) must raise PT426
-PERFORM set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
 SELECT throws_ok(
     'SELECT count(*) FROM public.profiles',
     'PT426',
@@ -135,35 +135,35 @@ SELECT throws_ok(
 );
 
 -- TEST 2: Android client with equal or higher build code (>= 100) must succeed
-PERFORM set_config('request.headers', '{"x-platform": "android", "x-build": "100"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "100"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Android build 100 equal to min 100 executes without error'
 );
 
 -- TEST 3: Android client with build 105 (> 100) must succeed
-PERFORM set_config('request.headers', '{"x-platform": "android", "x-build": "105"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "105"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Android build 105 above min 100 executes without error'
 );
 
 -- TEST 4: Missing headers (e.g. web or direct connection) must succeed (fail-open)
-PERFORM set_config('request.headers', '', true);
+SELECT set_config('request.headers', '', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Empty or absent headers passes through without error'
 );
 
 -- TEST 5: Web client (x-platform = "web") without build code must succeed
-PERFORM set_config('request.headers', '{"x-platform": "web"}', true);
+SELECT set_config('request.headers', '{"x-platform": "web"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Web platform passes through without version restriction'
 );
 
 -- TEST 6: Legacy Android client without x-build header must succeed
-PERFORM set_config('request.headers', '{"x-platform": "android"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Legacy Android without x-build passes through without error'
@@ -171,7 +171,7 @@ SELECT lives_ok(
 
 -- TEST 7: Emergency kill_switch bypasses force update even for build 0
 UPDATE public.app_versions SET kill_switch = TRUE WHERE platform = 'android';
-PERFORM set_config('request.headers', '{"x-platform": "android", "x-build": "0"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "0"}', true);
 SELECT lives_ok(
     'SELECT count(*) FROM public.profiles',
     'Kill switch enables emergency bypass for all clients'

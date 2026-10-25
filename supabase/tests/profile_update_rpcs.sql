@@ -71,6 +71,7 @@ SELECT lives_ok(
 );
 
 -- Test 8: verify inventory merge preserves server-managed streak_days
+RESET ROLE;
 SELECT is(
     (SELECT (inventory->>'streak_days')::INT FROM public.profiles WHERE id = '55555555-5555-5555-5555-555555555555'),
     3,
