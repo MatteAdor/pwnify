@@ -12,8 +12,8 @@
 -- ---------------------------------------------------------------------
 -- 1. UTILITY & CONFIGURATION (ANON & AUTHENTICATED)
 -- ---------------------------------------------------------------------
-REVOKE ALL ON FUNCTION public.get_remote_app_config() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_remote_app_config() TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_remote_app_config(TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_remote_app_config(TEXT) TO anon, authenticated;
 
 REVOKE ALL ON FUNCTION public.get_server_time() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_server_time() TO anon, authenticated;
@@ -45,20 +45,17 @@ GRANT EXECUTE ON FUNCTION public.finalize_match(UUID) TO authenticated;
 REVOKE ALL ON FUNCTION public.forfeit_match(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.forfeit_match(UUID) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.migrate_my_legacy_progress(JSONB, TEXT, INT) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.migrate_my_legacy_progress(JSONB, TEXT, INT) TO authenticated;
+REVOKE ALL ON FUNCTION public.migrate_my_legacy_progress(INT, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.migrate_my_legacy_progress(INT, JSONB, TEXT) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.record_user_streak_activity(TEXT, TEXT) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.record_user_streak_activity(TEXT, TEXT) TO authenticated;
+REVOKE ALL ON FUNCTION public.record_user_streak_activity(TEXT, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_user_streak_activity(TEXT, UUID) TO authenticated;
 
 REVOKE ALL ON FUNCTION public.claim_daily_flash_draw(TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.claim_daily_flash_draw(TEXT) TO authenticated;
 
-REVOKE ALL ON FUNCTION public.activate_license_key(TEXT) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.activate_license_key(TEXT) TO authenticated;
-
 -- ---------------------------------------------------------------------
 -- 3. PRO LICENSE & BILLING FULFILLMENT (SERVICE_ROLE ONLY)
 -- ---------------------------------------------------------------------
-REVOKE ALL ON FUNCTION public.set_profile_pro_status FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.set_profile_pro_status TO service_role;
+REVOKE ALL ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ) TO service_role;
