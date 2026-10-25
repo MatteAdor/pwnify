@@ -20,12 +20,50 @@ Questo documento definisce la sequenza operativa per il rilascio sicuro in produ
 
 ## Dettaglio dei Passi
 
-### Passo 1: Audit Stato Backup Database
-- **Azione**: Verificare tramite API pubblica GitHub l'esito dell'ultimo workflow `Database Automated Backup` (`.github/workflows/db-backup.yml`).
-- **Cosa contiene il backup**:
-  Dump PostgreSQL completo in formato custom (`pg_dump --format=custom --no-owner --no-privileges`), cifrato con AES-256-CBC (PBKDF2 iter 600.000) e archiviato su storage remoto S3/Cloudflare R2.
-- **Verifica**: L'ultimo run schedulato (`40175984635`) è fallito per assenza/misconfigurazione del secret `SUPABASE_PROD_DB_URL`.
-- **Bloccante**: Prima di procedere alla Fase A in produzione, l'operatore deve accertarsi di disporre di un backup fresco (tramite pulsante manuale "Backup" nella dashboard di Supabase o inserendo il secret corretto e rilanciando il workflow).
+### Passo 1: Audit & Backup Database "Una Tantum" (Pre-Release)
+- **Azione**: L'operatore avvia il workflow `Database Automated Backup` via `workflow_dispatch` (oppure verifica l'ultimo run notturno valido).
+- **Cosa produce il backup**:
+  1. Dump PostgreSQL 17 in formato custom compresso (`pg_dump -Fc -Z 9 --no-owner --no-privileges`).
+  2. Verifica integrità catalogo tabelle con `pg_restore --list` (riportata nel job summary senza dati).
+  3. Cifratura immediata con `age` tramite chiave pubblica recipient `age1ds43e5x7r6xvu6fd0ma67cnj3eu3rnharsrxw6z3rcp7u2nl538suvc02y`.
+  4. Cancellazione immediata del file in chiaro dal runner.
+  5. Caricamento dell'artifact cifrato `production-db-backup` (`*.age`) con retention di 3 giorni.
+  6. Se configurati i secret S3/R2, upload dell'archivio `.age` su cold storage remoto (altrimenti saltato con messaggio).
+
+#### Procedura Operativa: Download, Decifratura, Eliminazione e Ripristino
+
+1. **Download dell'Artifact Cifrato:**
+   - **Da UI GitHub:** Navigare su Actions -> `Database Automated Backup` -> selezionare l'ultimo run -> sezione **Artifacts** -> scaricare `production-db-backup` (file ZIP contenente `zeroday_prod_<TIMESTAMP>.dump.age`).
+   - **Da CLI:**
+     ```bash
+     gh run download <RUN_ID> -n production-db-backup
+     ```
+
+2. **Decifratura Locale:**
+   - Decifrare il file con la chiave privata `age`:
+     ```bash
+     age -d -i <file_chiave_privata> -o backup.dump zeroday_prod_<TIMESTAMP>.dump.age
+     ```
+
+3. **Cancellazione dell'Artifact da GitHub (Zero Data Retention):**
+   - Una volta scaricato e verificato in locale, rimuovere immediatamente l'artifact dai server GitHub:
+     - **Da UI:** Cliccare sull'icona cestino / menu tre puntini accanto all'artifact `production-db-backup` nella pagina del run e selezionare **Delete artifact**.
+     - **Da CLI:**
+       ```bash
+       gh api -X DELETE /repos/:owner/:repo/actions/artifacts/<ARTIFACT_ID>
+       ```
+
+4. **Procedura di Ripristino (Disaster Recovery):**
+   - In caso di anomalia critica o corruzione dati post-rilascio, ripristinare il database collegandosi alla connection string di produzione:
+     ```bash
+     pg_restore --clean --if-exists --no-owner --no-privileges \
+       -d "$SUPABASE_PROD_DB_URL" \
+       backup.dump
+     ```
+   - Al termine, eliminare in modo sicuro il dump in chiaro dalla workstation:
+     ```bash
+     shred -u backup.dump || rm -f backup.dump
+     ```
 
 ### Passo 2: Simulazione Rilascio (Dry-Run)
 - **Azione**: L'operatore accede a GitHub Actions -> `Deploy Production` e seleziona "Run workflow":
