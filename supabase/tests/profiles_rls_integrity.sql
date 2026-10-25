@@ -333,7 +333,7 @@ SELECT
     LEAST(365, GREATEST(0, COALESCE((p.inventory->>'streakDays')::int, 0))) AS streak_days,
     CASE 
         WHEN COALESCE((p.inventory->>'streakDays')::int, 0) > 0 
-        THEN COALESCE(p.last_ranked_at::DATE, p.updated_at::DATE, pg_catalog.current_date)
+        THEN COALESCE(p.last_ranked_at::DATE, p.updated_at::DATE, CURRENT_DATE)
         ELSE NULL 
     END AS last_active_date,
     COALESCE(p.last_ranked_at, p.updated_at, pg_catalog.now()) AS last_active_timestamp,
