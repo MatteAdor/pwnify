@@ -36,7 +36,7 @@ REVOKE EXECUTE ON FUNCTION public.record_user_streak_activity(TEXT, UUID) FROM P
 REVOKE EXECUTE ON FUNCTION public.update_my_profile_preferences(TEXT, TEXT, BOOLEAN, BOOLEAN) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.update_my_inventory_cosmetics(JSONB) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.is_nick_available(TEXT) FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ) FROM PUBLIC, anon, authenticated;
 
 -- 4. Explicit least-privilege grants
 GRANT EXECUTE ON FUNCTION public.claim_daily_flash_draw(TEXT) TO authenticated;
@@ -49,4 +49,4 @@ GRANT EXECUTE ON FUNCTION public.update_my_profile_preferences(TEXT, TEXT, BOOLE
 GRANT EXECUTE ON FUNCTION public.update_my_inventory_cosmetics(JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_nick_available(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_server_time() TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ) TO service_role;
