@@ -20,7 +20,30 @@
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS nick_updated_at TIMESTAMPTZ DEFAULT NULL;
 
--- 2. Unique index on lower(nick)
+-- 2. Unique index on lower(nick) with pre-flight duplicate check
+DO 
+DECLARE
+    v_dup_count INT;
+    v_dup_sample TEXT;
+BEGIN
+    SELECT count(*), string_agg(lower_nick, ', ')
+    INTO v_dup_count, v_dup_sample
+    FROM (
+        SELECT lower(nick) AS lower_nick
+        FROM public.profiles
+        WHERE nick IS NOT NULL
+        GROUP BY lower(nick)
+        HAVING count(*) > 1
+        LIMIT 5
+    ) sub;
+
+    IF v_dup_count > 0 THEN
+        RAISE EXCEPTION 'Migration aborted: found duplicate case-insensitive nicknames in public.profiles: % (colliding groups: %). Please resolve duplicates manually before creating idx_profiles_nick_lower.',
+            v_dup_sample, v_dup_count
+            USING ERRCODE = '23505';
+    END IF;
+END ;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_nick_lower ON public.profiles(lower(nick));
 
 -- 3. RPC: UPDATE MY PROFILE PREFERENCES
@@ -66,7 +89,7 @@ BEGIN
     END IF;
 
     -- Disallow reserved system handles
-    IF lower(v_clean_nick) IN ('admin', 'root', 'support', 'zeroday', 'staff', 'moderator', 'system', 'official') THEN
+    IF lower(v_clean_nick) IN ('admin', 'root', 'support', 'staff', 'mod', 'moderator', 'zeroday', 'official') THEN
         RAISE EXCEPTION 'Nickname is reserved by platform administration'
             USING ERRCODE = '22023';
     END IF;

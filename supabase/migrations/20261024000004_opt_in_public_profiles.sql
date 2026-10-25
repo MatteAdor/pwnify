@@ -41,7 +41,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = '';
 
 -- 3. Replace view with pseudonymized projection
 CREATE OR REPLACE VIEW public.public_profiles AS
@@ -91,7 +91,9 @@ BEGIN
     IF v_clean_nick IS NULL 
        OR length(v_clean_nick) < 3 
        OR length(v_clean_nick) > 24 
-       OR v_clean_nick !~ '^[a-z0-9_\-]+$' THEN
+       OR v_clean_nick !~ '^[a-z0-9_\-]+$'
+       OR v_clean_nick LIKE 'operatore-%'
+       OR v_clean_nick IN ('admin', 'root', 'support', 'staff', 'mod', 'moderator', 'zeroday', 'official') THEN
         RETURN FALSE;
     END IF;
 
