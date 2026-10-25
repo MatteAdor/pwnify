@@ -29,6 +29,8 @@ jobs:
       - name: Stage 20261024* migrations to temporary directory
         run: |
           mkdir -p /tmp/mig20261024
+          mkdir -p test-results
+          touch test-results/pgtap-results.log
           mv supabase/migrations/20261024*.sql /tmp/mig20261024/
           echo "Isolated $(ls /tmp/mig20261024 | wc -l) migrations for 20261024*."
 
@@ -53,20 +55,21 @@ jobs:
           ON CONFLICT (id) DO NOTHING;
           EOF
 
-          echo "Applying migration 6 over colliding data (must fail)..."
+          echo "Applying migration 6 over colliding data with ON_ERROR_STOP=1 (must fail)..."
           set +e
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f /tmp/mig20261024/20261024000006_profile_update_rpcs.sql > /tmp/dup_output.log 2>&1
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f /tmp/mig20261024/20261024000006_profile_update_rpcs.sql > /tmp/dup_output.log 2>&1
           MIG_EXIT_CODE=$?
           set -e
 
           if [ $MIG_EXIT_CODE -eq 0 ]; then
-            echo "::error::Migration 6 succeeded despite duplicate nicknames! Expected failure."
+            echo "::error::Migration 6 unexpectedly succeeded despite duplicate nicknames!"
             cat /tmp/dup_output.log
             exit 1
           fi
 
           if grep -q "23505" /tmp/dup_output.log && grep -q "Migration aborted: found duplicate case-insensitive nicknames" /tmp/dup_output.log; then
             echo "PASSED: Migration 6 correctly raised exception 23505 on duplicate nick collision."
+            cat /tmp/dup_output.log
           else
             echo "::error::Migration 6 failed with unexpected error."
             cat /tmp/dup_output.log
@@ -75,11 +78,11 @@ jobs:
 
       - name: "Clean Legacy Upgrade: Seed valid legacy state and apply 20261024* migrations"
         run: |
-          echo "Clearing collision test users..."
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
-          DELETE FROM public.profiles WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
-          DELETE FROM auth.users WHERE id IN ('33333333-3333-3333-3333-333333333331', '33333333-3333-3333-3333-333333333332');
+          echo "Resetting database to clean 20261022* baseline..."
+          supabase db reset
 
+          echo "Seeding clean legacy data (PRO users, active matches, streaks)..."
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 << 'EOF'
           -- Seed legacy PRO user
           INSERT INTO auth.users (id, email) VALUES ('44444444-4444-4444-4444-444444444441', 'pro_legacy@zeroday.local') ON CONFLICT DO NOTHING;
           INSERT INTO public.profiles (id, nick, elo, rank, xp, is_pro, inventory) VALUES
@@ -135,7 +138,6 @@ jobs:
 
       - name: Execute pgTAP database tests on upgraded database
         run: |
-          mkdir -p test-results
           supabase test db 2>&1 | tee test-results/pgtap-results.log
 
       - name: Upload test execution log artifact
