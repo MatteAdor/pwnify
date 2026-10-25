@@ -63,9 +63,9 @@ SELECT
     'UTC' AS timezone
 FROM public.profiles p
 ON CONFLICT (user_id) DO UPDATE SET
-    streak_days = GREATEST(public.user_streaks.streak_days, EXCLUDED.streak_days),
-    last_active_date = COALESCE(public.user_streaks.last_active_date, EXCLUDED.last_active_date),
-    last_active_timestamp = COALESCE(public.user_streaks.last_active_timestamp, EXCLUDED.last_active_timestamp);
+    streak_days = GREATEST(user_streaks.streak_days, EXCLUDED.streak_days),
+    last_active_date = COALESCE(user_streaks.last_active_date, EXCLUDED.last_active_date),
+    last_active_timestamp = COALESCE(user_streaks.last_active_timestamp, EXCLUDED.last_active_timestamp);
 
 -- ---------------------------------------------------------------------
 -- RPC: GET AUTHORITATIVE SERVER TIME
