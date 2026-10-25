@@ -38,7 +38,7 @@ jobs:
       - name: Execute unit test suite
         run: npm test
 
-      - name: Leak Detection  Audit dist bundle for sensitive strings
+      - name: Leak Detection - Audit dist bundle for sensitive strings
         run: |
           echo "Scanning dist/ for illegal internal secrets..."
           if grep -ri "service_role" dist/; then
@@ -51,7 +51,7 @@ jobs:
           fi
           echo "dist/ bundle is clean of server-side keys."
 
-      - name: Secret Detection  Audit tracked repo files for GitHub token patterns
+      - name: Secret Detection - Audit tracked repo files for GitHub token patterns
         run: |
           echo "Scanning repository for token leaks (GitHub token prefixes)..."
           LEAKS=$(git grep -EI "gh[opsu]_[0-9a-zA-Z]{36}" || true)
@@ -77,14 +77,17 @@ jobs:
 
       - name: Start local Supabase container stack
         run: |
+          sudo fuser -k 54321/tcp 54322/tcp 54323/tcp 54324/tcp 54325/tcp 54326/tcp 2>/dev/null || true
           if ! supabase start > /tmp/ci_supabase_start.log 2>&1; then
             cat /tmp/ci_supabase_start.log
             ERR=$(tail -n 30 /tmp/ci_supabase_start.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_supabase_start::$ERR"
-            echo "###  Error in CI supabase start" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/ci_supabase_start.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in CI supabase start"
+              echo '```'
+              tail -n 30 /tmp/ci_supabase_start.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -99,10 +102,12 @@ jobs:
             cat /tmp/ci_vault_config.log
             ERR=$(tail -n 30 /tmp/ci_vault_config.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_vault_config::$ERR"
-            echo "###  Error in CI Vault Config" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/ci_vault_config.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in CI Vault Config"
+              echo '```'
+              tail -n 30 /tmp/ci_vault_config.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -114,10 +119,12 @@ jobs:
               cat /tmp/ci_contract_mig.log
               ERR=$(tail -n 30 /tmp/ci_contract_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
               echo "::error title=ci_contract_$(basename "$mig")::$ERR"
-              echo "###  Error applying contract migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
-              tail -n 30 /tmp/ci_contract_mig.log >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
+              {
+                echo "### Error applying contract migration $(basename "$mig")"
+                echo '```'
+                tail -n 30 /tmp/ci_contract_mig.log
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
           done
@@ -128,10 +135,12 @@ jobs:
             cat /tmp/ci_pgtap.log
             ERR=$(tail -n 30 /tmp/ci_pgtap.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_pgtap_suite::$ERR"
-            echo "###  Error in CI pgTAP suite" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/ci_pgtap.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in CI pgTAP suite"
+              echo '```'
+              tail -n 30 /tmp/ci_pgtap.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           cat /tmp/ci_pgtap.log
@@ -143,10 +152,12 @@ jobs:
             cat /tmp/ci_concurrency.log
             ERR=$(tail -n 30 /tmp/ci_concurrency.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_concurrency_harness::$ERR"
-            echo "###  Error in CI concurrency harness" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/ci_concurrency.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in CI concurrency harness"
+              echo '```'
+              tail -n 30 /tmp/ci_concurrency.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           cat /tmp/ci_concurrency.log
@@ -154,4 +165,3 @@ jobs:
       - name: Teardown Supabase containers
         if: always()
         run: supabase stop --no-backup
-

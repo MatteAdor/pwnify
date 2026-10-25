@@ -32,18 +32,22 @@ jobs:
           mkdir -p test-results
           touch test-results/pgtap-results.log
           mv supabase/migrations/20261024*.sql /tmp/mig_phase_a/
-          echo "Isolated $(ls /tmp/mig_phase_a | wc -l) Phase A migrations."
+          COUNT=$(find /tmp/mig_phase_a -maxdepth 1 -name "*.sql" | wc -l)
+          echo "Isolated $COUNT Phase A migrations."
 
       - name: Start local Supabase container stack (baseline up to 20261022*)
         run: |
+          sudo fuser -k 54321/tcp 54322/tcp 54323/tcp 54324/tcp 54325/tcp 54326/tcp 2>/dev/null || true
           if ! supabase start > /tmp/supabase_start.log 2>&1; then
             cat /tmp/supabase_start.log
             ERR=$(tail -n 30 /tmp/supabase_start.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=supabase_start::$ERR"
-            echo "###  Error in supabase start" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/supabase_start.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in supabase start"
+              echo '```'
+              tail -n 30 /tmp/supabase_start.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -53,10 +57,12 @@ jobs:
             cat /tmp/supabase_reset.log
             ERR=$(tail -n 30 /tmp/supabase_reset.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=supabase_db_reset::$ERR"
-            echo "###  Error in supabase db reset" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/supabase_reset.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in supabase db reset"
+              echo '```'
+              tail -n 30 /tmp/supabase_reset.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -85,10 +91,12 @@ jobs:
             cat /tmp/seed_legacy.log
             ERR=$(tail -n 30 /tmp/seed_legacy.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=seed_legacy::$ERR"
-            echo "###  Error seeding legacy fixture" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/seed_legacy.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error seeding legacy fixture"
+              echo '```'
+              tail -n 30 /tmp/seed_legacy.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -104,10 +112,12 @@ jobs:
             cat /tmp/vault_config.log
             ERR=$(tail -n 30 /tmp/vault_config.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=vault_configuration::$ERR"
-            echo "###  Error in Supabase Vault Configuration" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/vault_config.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in Supabase Vault Configuration"
+              echo '```'
+              tail -n 30 /tmp/vault_config.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -128,10 +138,12 @@ jobs:
             cat /tmp/vault_verify.log
             ERR=$(tail -n 30 /tmp/vault_verify.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=vault_verification::$ERR"
-            echo "###  Error in Vault Verification" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/vault_verify.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in Vault Verification"
+              echo '```'
+              tail -n 30 /tmp/vault_verify.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -142,10 +154,12 @@ jobs:
               cat /tmp/phase_a_mig.log
               ERR=$(tail -n 30 /tmp/phase_a_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
               echo "::error title=phase_a_$(basename "$mig")::$ERR"
-              echo "###  Error applying Phase A migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
-              tail -n 30 /tmp/phase_a_mig.log >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
+              {
+                echo "### Error applying Phase A migration $(basename "$mig")"
+                echo '```'
+                tail -n 30 /tmp/phase_a_mig.log
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
           done
@@ -172,10 +186,12 @@ jobs:
             cat /tmp/phase_a_verify.log
             ERR=$(tail -n 30 /tmp/phase_a_verify.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=phase_a_verification::$ERR"
-            echo "###  Error in Phase A legacy verification" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/phase_a_verify.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in Phase A legacy verification"
+              echo '```'
+              tail -n 30 /tmp/phase_a_verify.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           echo "SUCCESS: Phase A preserves full backward compatibility for legacy clients."
@@ -205,9 +221,9 @@ jobs:
           MIG_EXIT_CODE=$?
           set -e
 
-          if [ $MIG_EXIT_CODE -eq 0 ]; then
+          if [ "$MIG_EXIT_CODE" -eq 0 ]; then
             echo "::error title=migration_05_collision::Migration 05 unexpectedly succeeded despite duplicate nicknames!"
-            echo "###  Migration 05 unexpectedly succeeded despite duplicate nicknames!" >> $GITHUB_STEP_SUMMARY
+            echo "### Migration 05 unexpectedly succeeded despite duplicate nicknames!" >> "$GITHUB_STEP_SUMMARY"
             cat /tmp/dup_output.log
             exit 1
           fi
@@ -218,10 +234,12 @@ jobs:
           else
             ERR=$(tail -n 30 /tmp/dup_output.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=migration_05_unexpected_error::$ERR"
-            echo "###  Migration 05 failed with unexpected error" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 /tmp/dup_output.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Migration 05 failed with unexpected error"
+              echo '```'
+              tail -n 30 /tmp/dup_output.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
 
@@ -246,10 +264,12 @@ jobs:
               cat /tmp/phase_c_mig.log
               ERR=$(tail -n 30 /tmp/phase_c_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
               echo "::error title=phase_c_$(basename "$mig")::$ERR"
-              echo "###  Error applying Phase C contract migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
-              tail -n 30 /tmp/phase_c_mig.log >> $GITHUB_STEP_SUMMARY
-              echo '```' >> $GITHUB_STEP_SUMMARY
+              {
+                echo "### Error applying Phase C contract migration $(basename "$mig")"
+                echo '```'
+                tail -n 30 /tmp/phase_c_mig.log
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 1
             fi
           done
@@ -263,10 +283,12 @@ jobs:
             cat test-results/pgtap-results.log
             ERR=$(tail -n 30 test-results/pgtap-results.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=pgtap_suite::$ERR"
-            echo "###  Error in pgTAP Suite" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 30 test-results/pgtap-results.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            {
+              echo "### Error in pgTAP Suite"
+              echo '```'
+              tail -n 30 test-results/pgtap-results.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           cat test-results/pgtap-results.log
@@ -281,4 +303,3 @@ jobs:
       - name: Teardown Supabase containers
         if: always()
         run: supabase stop --no-backup
-

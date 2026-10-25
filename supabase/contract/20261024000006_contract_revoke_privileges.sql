@@ -29,7 +29,7 @@ REVOKE DELETE, UPDATE ON public.profiles FROM anon, authenticated;
 -- 3. Revoke execute on sensitive RPCs from PUBLIC and anon
 REVOKE EXECUTE ON FUNCTION public.claim_daily_flash_draw(TEXT) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.find_or_create_match() FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.submit_answer(UUID, INT, INT, INT) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.submit_answer(UUID, UUID, INT) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.forfeit_match(UUID) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.migrate_my_legacy_progress(INT, JSONB, TEXT) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.record_user_streak_activity(TEXT, UUID) FROM PUBLIC, anon;
@@ -41,7 +41,7 @@ REVOKE EXECUTE ON FUNCTION public.set_profile_pro_status(UUID, BOOLEAN, TEXT, TE
 -- 4. Explicit least-privilege grants
 GRANT EXECUTE ON FUNCTION public.claim_daily_flash_draw(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.find_or_create_match() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_answer(UUID, INT, INT, INT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_answer(UUID, UUID, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.forfeit_match(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.migrate_my_legacy_progress(INT, JSONB, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_user_streak_activity(TEXT, UUID) TO authenticated;
