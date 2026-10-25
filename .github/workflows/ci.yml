@@ -38,7 +38,7 @@ jobs:
       - name: Execute unit test suite
         run: npm test
 
-      - name: Leak Detection — Audit dist bundle for sensitive strings
+      - name: Leak Detection  Audit dist bundle for sensitive strings
         run: |
           echo "Scanning dist/ for illegal internal secrets..."
           if grep -ri "service_role" dist/; then
@@ -51,7 +51,7 @@ jobs:
           fi
           echo "dist/ bundle is clean of server-side keys."
 
-      - name: Secret Detection — Audit tracked repo files for GitHub token patterns
+      - name: Secret Detection  Audit tracked repo files for GitHub token patterns
         run: |
           echo "Scanning repository for token leaks (GitHub token prefixes)..."
           LEAKS=$(git grep -EI "gh[opsu]_[0-9a-zA-Z]{36}" || true)
@@ -77,79 +77,81 @@ jobs:
 
       - name: Start local Supabase container stack
         run: |
-          supabase start > /tmp/ci_supabase_start.log 2>&1 || {
+          if ! supabase start > /tmp/ci_supabase_start.log 2>&1; then
             cat /tmp/ci_supabase_start.log
             ERR=$(tail -n 30 /tmp/ci_supabase_start.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_supabase_start::$ERR"
-            echo "### ❌ Error in CI supabase start" >> $GITHUB_STEP_SUMMARY
+            echo "###  Error in CI supabase start" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 30 /tmp/ci_supabase_start.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
-          }
+          fi
 
       - name: Configure Supabase Vault HMAC Secret
         run: |
           DYNAMIC_SECRET=$(openssl rand -hex 32)
-          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/ci_vault_config.log 2>&1 << EOF || {
+          if ! psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 > /tmp/ci_vault_config.log 2>&1 << EOF
+          CREATE EXTENSION IF NOT EXISTS supabase_vault CASCADE;
+          SELECT vault.create_secret('$DYNAMIC_SECRET', 'daily_flash_secret', 'HMAC key for daily flash draws');
+          EOF
+          then
             cat /tmp/ci_vault_config.log
             ERR=$(tail -n 30 /tmp/ci_vault_config.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_vault_config::$ERR"
-            echo "### ❌ Error in CI Vault Config" >> $GITHUB_STEP_SUMMARY
+            echo "###  Error in CI Vault Config" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 30 /tmp/ci_vault_config.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
-          }
-          CREATE EXTENSION IF NOT EXISTS supabase_vault CASCADE;
-          SELECT vault.create_secret('$DYNAMIC_SECRET', 'daily_flash_secret', 'HMAC key for daily flash draws');
-          EOF
+          fi
 
       - name: Apply Phase C Contract Migrations (05-07)
         run: |
           for mig in supabase/contract/*.sql; do
             echo "Applying $(basename "$mig")..."
-            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig" > /tmp/ci_contract_mig.log 2>&1 || {
+            if ! psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f "$mig" > /tmp/ci_contract_mig.log 2>&1; then
               cat /tmp/ci_contract_mig.log
               ERR=$(tail -n 30 /tmp/ci_contract_mig.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
               echo "::error title=ci_contract_$(basename "$mig")::$ERR"
-              echo "### ❌ Error applying contract migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
+              echo "###  Error applying contract migration $(basename "$mig")" >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
               tail -n 30 /tmp/ci_contract_mig.log >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
               exit 1
-            }
+            fi
           done
 
       - name: Run pgTAP test suite
         run: |
-          supabase test db > /tmp/ci_pgtap.log 2>&1 || {
+          if ! supabase test db > /tmp/ci_pgtap.log 2>&1; then
             cat /tmp/ci_pgtap.log
             ERR=$(tail -n 30 /tmp/ci_pgtap.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_pgtap_suite::$ERR"
-            echo "### ❌ Error in CI pgTAP suite" >> $GITHUB_STEP_SUMMARY
+            echo "###  Error in CI pgTAP suite" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 30 /tmp/ci_pgtap.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
-          }
+          fi
           cat /tmp/ci_pgtap.log
 
       - name: Run parallel matchmaking concurrency harness
         run: |
           chmod +x supabase/tests/concurrency.sh
-          ./supabase/tests/concurrency.sh > /tmp/ci_concurrency.log 2>&1 || {
+          if ! ./supabase/tests/concurrency.sh > /tmp/ci_concurrency.log 2>&1; then
             cat /tmp/ci_concurrency.log
             ERR=$(tail -n 30 /tmp/ci_concurrency.log | tr '\r\n' ' ' | sed 's/"/\\"/g')
             echo "::error title=ci_concurrency_harness::$ERR"
-            echo "### ❌ Error in CI concurrency harness" >> $GITHUB_STEP_SUMMARY
+            echo "###  Error in CI concurrency harness" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             tail -n 30 /tmp/ci_concurrency.log >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
-          }
+          fi
           cat /tmp/ci_concurrency.log
 
       - name: Teardown Supabase containers
         if: always()
         run: supabase stop --no-backup
+
