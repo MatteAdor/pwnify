@@ -18,7 +18,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.profiles (id, nick, elo, rank, xp, is_pro, flagged, is_profession_public, profession) VALUES
     ('11111111-1111-1111-1111-111111111111', 'ZeroVictim', 1200, 'Operative', 450, TRUE, FALSE, FALSE, 'SecOps Analyst'),
     ('22222222-2222-2222-2222-222222222222', 'ZeroAttacker', 100, 'Script Kiddie', 0, FALSE, FALSE, FALSE, NULL)
-ON CONFLICT (id) DO UPDATE SET nick = EXCLUDED.nick, elo = EXCLUDED.elo;
+ON CONFLICT (id) DO UPDATE SET nick = EXCLUDED.nick, elo = EXCLUDED.elo, xp = EXCLUDED.xp;
 
 -- ---------------------------------------------------------------------
 -- 2. VERIFY ANON PERMISSIONS (Default Deny & RLS Lockdown)
