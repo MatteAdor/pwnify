@@ -324,7 +324,11 @@ BEGIN
     END IF;
 
     -- 5. Cap days to 30 (minimum 0, maximum 30)
-    v_imported_days := pg_catalog.least(30, pg_catalog.greatest(0, COALESCE(p_days, 0)));
+    v_imported_days := CASE
+        WHEN COALESCE(p_days, 0) < 0 THEN 0
+        WHEN COALESCE(p_days, 0) > 30 THEN 30
+        ELSE COALESCE(p_days, 0)
+    END;
 
     -- 6. Insert or Update user_streaks
     IF v_streak IS NULL THEN

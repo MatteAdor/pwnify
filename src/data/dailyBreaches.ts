@@ -6,7 +6,7 @@ export interface DailyBreachIncident {
   threatActor: string;
   targetArchitecture: string;
   severity: 'CRITICAL' | 'HIGH' | 'MAXIMUM DEFCON';
-  cvssScore: number;
+  cvssScore?: number | null;
   cvssDisplay?: string;
   scenario: string;
   vulnerableCodeSnippet: string;
@@ -262,7 +262,8 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'Channel File 291 Rapid Response Content Update',
     targetArchitecture: 'CSAgent.sys Kernel Driver on Windows 10/11 & Server',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 9.9,
+    cvssScore: null,
+    cvssDisplay: 'N/A (incidente operativo, nessun CVE)',
     scenario: 'The Falcon kernel sensor received `Channel File 291` containing 21 uninitialized logic fields. The `CSAgent.sys` driver dereferenced a null pointer into unmapped memory, triggering a PAGE_FAULT_IN_NONPAGED_AREA bugcheck (global BSOD).',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
