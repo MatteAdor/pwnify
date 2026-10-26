@@ -291,6 +291,7 @@ DECLARE
     v_user_id UUID := auth.uid();
     v_user_created_at TIMESTAMPTZ;
     v_streak RECORD;
+    v_row_found BOOLEAN;
     v_imported_days INT;
     c_release_cutoff CONSTANT TIMESTAMPTZ := '2026-10-26 00:00:00+00'::TIMESTAMPTZ;
     v_server_now TIMESTAMPTZ := pg_catalog.now();
@@ -315,9 +316,10 @@ BEGIN
     FROM public.user_streaks
     WHERE user_id = v_user_id
     FOR UPDATE;
+    v_row_found := FOUND;
 
     -- 4. Check one-shot flag & streak_days must be 0
-    IF v_streak IS NOT NULL THEN
+    IF v_row_found THEN
         IF v_streak.legacy_streak_imported IS TRUE OR v_streak.streak_days <> 0 THEN
             RAISE EXCEPTION 'Legacy streak import not allowed' USING ERRCODE = 'P0001';
         END IF;
@@ -331,7 +333,7 @@ BEGIN
     END;
 
     -- 6. Insert or Update user_streaks
-    IF v_streak IS NULL THEN
+    IF NOT v_row_found THEN
         INSERT INTO public.user_streaks (
             user_id,
             streak_days,
