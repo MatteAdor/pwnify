@@ -7,6 +7,7 @@ export interface DailyBreachIncident {
   targetArchitecture: string;
   severity: 'CRITICAL' | 'HIGH' | 'MAXIMUM DEFCON';
   cvssScore: number;
+  cvssDisplay?: string;
   scenario: string;
   vulnerableCodeSnippet: string;
   codeLanguage: string;
@@ -753,6 +754,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     targetArchitecture: 'Citrix ADC and Citrix Gateway Appliances',
     severity: 'MAXIMUM DEFCON',
     cvssScore: 7.5,
+    cvssDisplay: 'NVD 7.5 · Vendor 9.4',
     scenario: 'Citrix ADC and Gateway contain an unauthenticated memory buffer over-read in the OpenID Connect endpoint. An attacker supplying a crafted Host header receives uninitialized memory containing valid 32-byte session tokens, bypassing MFA completely.',
     codeLanguage: 'c',
     vulnerableLineNumber: 3,

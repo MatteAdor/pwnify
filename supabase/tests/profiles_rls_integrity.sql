@@ -5,7 +5,7 @@
 -- =====================================================================
 
 BEGIN;
-SELECT plan(23);
+SELECT plan(28);
 
 -- ---------------------------------------------------------------------
 -- 1. SETUP MOCK USERS & PROFILES
@@ -351,6 +351,74 @@ SELECT is(
     15,
     'Existing streak in inventory is preserved (15) and NOT zeroed when last_ranked_at is NULL'
 );
+
+-- ---------------------------------------------------------------------
+-- 10. LEGACY STREAK IMPORT AUDIT (ONE-SHOT, CAPPED AT 30, PRE-RELEASE ONLY)
+-- ---------------------------------------------------------------------
+RESET ROLE;
+
+-- Setup test users
+INSERT INTO auth.users (id, email, created_at) VALUES 
+    ('99999999-9999-9999-9999-999999999999', 'legacy_valid@zeroday.local', '2026-10-01 00:00:00+00'),
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'recent_account@zeroday.local', '2026-11-01 00:00:00+00'),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'active_server_streak@zeroday.local', '2026-10-01 00:00:00+00')
+ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at;
+
+INSERT INTO public.profiles (id, nick) VALUES
+    ('99999999-9999-9999-9999-999999999999', 'LegacyValid'),
+    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'RecentAccount'),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'ActiveServerStreak')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.user_streaks (user_id, streak_days, legacy_streak_imported) VALUES
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 5, FALSE)
+ON CONFLICT (user_id) DO UPDATE SET streak_days = 5, legacy_streak_imported = FALSE;
+
+-- Test 24: Tetto - passing 50 is strictly capped at 30
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '99999999-9999-9999-9999-999999999999';
+SELECT is(
+    (public.import_my_legacy_streak(50)->>'imported_days')::int,
+    30,
+    'import_my_legacy_streak strictly caps legacy streak at 30 days'
+);
+
+-- Test 25: Doppia chiamata - subsequent call on same account throws P0001
+SELECT throws_ok(
+    'SELECT public.import_my_legacy_streak(10)',
+    'P0001',
+    'Legacy streak import not allowed',
+    'import_my_legacy_streak second call on same account is rejected with P0001'
+);
+
+-- Test 26: Server diverso da zero - account with streak_days > 0 throws P0001
+SET request.jwt.claim.sub = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+SELECT throws_ok(
+    'SELECT public.import_my_legacy_streak(10)',
+    'P0001',
+    'Legacy streak import not allowed',
+    'import_my_legacy_streak rejects import when server streak_days is not 0'
+);
+
+-- Test 27: Utente anonimo - anon role is denied execution (42501)
+SET ROLE anon;
+SELECT throws_ok(
+    'SELECT public.import_my_legacy_streak(10)',
+    '42501',
+    NULL,
+    'anon role is strictly denied EXECUTE on import_my_legacy_streak'
+);
+
+-- Test 28: Account recente - account created on/after release cutoff throws P0001
+SET ROLE authenticated;
+SET request.jwt.claim.sub = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+SELECT throws_ok(
+    'SELECT public.import_my_legacy_streak(10)',
+    'P0001',
+    'Legacy streak import not allowed',
+    'import_my_legacy_streak rejects accounts created after release cutoff date'
+);
+RESET ROLE;
 
 SELECT * FROM finish();
 ROLLBACK;

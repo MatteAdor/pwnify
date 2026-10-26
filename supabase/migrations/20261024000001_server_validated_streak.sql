@@ -23,9 +23,12 @@ CREATE TABLE IF NOT EXISTS public.user_streaks (
     timezone TEXT NOT NULL DEFAULT 'UTC',
     timezone_updated_at TIMESTAMPTZ,
     last_shield_awarded_streak INT DEFAULT NULL,
+    legacy_streak_imported BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now()
 );
+
+ALTER TABLE public.user_streaks ADD COLUMN IF NOT EXISTS legacy_streak_imported BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_user_streaks_user ON public.user_streaks(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_streaks_days ON public.user_streaks(streak_days);
@@ -271,6 +274,97 @@ $$;
 -- Revoke execute from public and anon, grant strictly to authenticated
 REVOKE ALL ON FUNCTION public.record_user_streak_activity FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_user_streak_activity TO authenticated;
+
+-- ---------------------------------------------------------------------
+-- LEGACY STREAK IMPORT (ONE-SHOT, CAPPED AT 30 DAYS)
+-- Bound to auth.uid(), executes strictly for authenticated role.
+-- Requires streak_days = 0, account created before cutoff date.
+-- Uniform error reporting across all invalid attempt paths.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.import_my_legacy_streak(p_days INT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_user_created_at TIMESTAMPTZ;
+    v_streak RECORD;
+    v_imported_days INT;
+    c_release_cutoff CONSTANT TIMESTAMPTZ := '2026-10-26 00:00:00+00'::TIMESTAMPTZ;
+    v_server_now TIMESTAMPTZ := pg_catalog.now();
+    v_today DATE := (v_server_now AT TIME ZONE 'UTC')::DATE;
+BEGIN
+    -- 1. Authentication check
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Legacy streak import not allowed' USING ERRCODE = 'P0001';
+    END IF;
+
+    -- 2. Verify account creation cutoff date
+    SELECT created_at INTO v_user_created_at
+    FROM auth.users
+    WHERE id = v_user_id;
+
+    IF v_user_created_at IS NULL OR v_user_created_at >= c_release_cutoff THEN
+        RAISE EXCEPTION 'Legacy streak import not allowed' USING ERRCODE = 'P0001';
+    END IF;
+
+    -- 3. Lock or fetch user_streaks row
+    SELECT * INTO v_streak
+    FROM public.user_streaks
+    WHERE user_id = v_user_id
+    FOR UPDATE;
+
+    -- 4. Check one-shot flag & streak_days must be 0
+    IF v_streak IS NOT NULL THEN
+        IF v_streak.legacy_streak_imported IS TRUE OR v_streak.streak_days <> 0 THEN
+            RAISE EXCEPTION 'Legacy streak import not allowed' USING ERRCODE = 'P0001';
+        END IF;
+    END IF;
+
+    -- 5. Cap days to 30 (minimum 0, maximum 30)
+    v_imported_days := pg_catalog.least(30, pg_catalog.greatest(0, COALESCE(p_days, 0)));
+
+    -- 6. Insert or Update user_streaks
+    IF v_streak IS NULL THEN
+        INSERT INTO public.user_streaks (
+            user_id,
+            streak_days,
+            last_active_date,
+            last_active_timestamp,
+            timezone,
+            legacy_streak_imported,
+            updated_at
+        ) VALUES (
+            v_user_id,
+            v_imported_days,
+            v_today,
+            v_server_now,
+            'UTC',
+            TRUE,
+            v_server_now
+        );
+    ELSE
+        UPDATE public.user_streaks SET
+            streak_days = v_imported_days,
+            last_active_date = COALESCE(last_active_date, v_today),
+            last_active_timestamp = COALESCE(last_active_timestamp, v_server_now),
+            legacy_streak_imported = TRUE,
+            updated_at = v_server_now
+        WHERE user_id = v_user_id;
+    END IF;
+
+    RETURN pg_catalog.jsonb_build_object(
+        'success', TRUE,
+        'imported_days', v_imported_days
+    );
+END;
+$$;
+
+-- Revoke execute from public and anon, grant strictly to authenticated
+REVOKE ALL ON FUNCTION public.import_my_legacy_streak(INT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.import_my_legacy_streak(INT) TO authenticated;
 
 -- ---------------------------------------------------------------------
 -- RLS POLICIES FOR user_streaks

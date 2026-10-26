@@ -132,7 +132,7 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 font-mono text-xs">
           <div className="bg-[#090D16] p-2.5 rounded-xl border border-white/5">
             <span className="text-[10px] text-slate-500 block">CVSS SCORE</span>
-            <span className="font-bold text-red-400 text-sm">{incident.cvssScore} / 10.0</span>
+            <span className="font-bold text-red-400 text-xs sm:text-sm">{incident.cvssDisplay || `${incident.cvssScore} / 10.0`}</span>
           </div>
           <div className="bg-[#090D16] p-2.5 rounded-xl border border-white/5">
             <span className="text-[10px] text-slate-500 block">THREAT ACTOR</span>

@@ -297,6 +297,9 @@ isOneToOne: false
 "migrate_my_legacy_progress":
 { Args: { "p_inventory": Json,"p_profession": string,"p_xp": number }; Returns: Json
                            },
+"import_my_legacy_streak":
+{ Args: { "p_days": number }; Returns: Json
+                           },
 "poll_matchmaking":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
