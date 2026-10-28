@@ -1,4 +1,4 @@
-# ZeroDay (`0xDAY`)
+# Pwnify
 
 **Gamified cybersecurity, web hacking, and IT certification training.**
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-ZeroDay (`0xDAY`) is an interactive, gamified learning platform that prepares security practitioners and engineers for leading industry certifications and real-world penetration-testing scenarios. It pairs the structured, bite-sized progression of modern learning apps with chess-style competitive matchmaking, and is built for Red and Blue Team professionals.
+Pwnify is an interactive, gamified learning platform that prepares security practitioners and engineers for leading industry certifications and real-world penetration-testing scenarios. It pairs the structured, bite-sized progression of modern learning apps with chess-style competitive matchmaking, and is built for Red and Blue Team professionals.
 
 **Supported certification tracks**
 
@@ -31,7 +31,7 @@ A structured curriculum that progresses from core fundamentals to advanced explo
 | Challenge | Description |
 |---|---|
 | **Spot the Zero-Day** | Tap or click the exact vulnerable line in raw source code. |
-| **Interactive Terminal Sandbox** | A simulated shell (`root@zeroday-lab:~#`) supporting both clickable command chips and free keyboard input. |
+| **Interactive Terminal Sandbox** | A simulated shell (`root@pwnify-lab:~#`) supporting both clickable command chips and free keyboard input. |
 | **Packet Analysis** | Header inspection and Wireshark display-filter exercises. |
 
 ### 2. 1v1 Blitz Arena
@@ -85,10 +85,10 @@ Built directly on the native Web Audio API, with synthesized dual-oscillator ton
 
 ```bash
 # Clone the repository
-git clone https://github.com/DarkMatteo/zeroday_app.git
+git clone https://github.com/DarkMatteo/pwnify.git
 
 # Navigate to the project directory
-cd zeroday_app
+cd pwnify
 
 # Install dependencies
 npm install
@@ -113,7 +113,7 @@ PRO access is activated through offline cryptographic license validation. Intern
 
 ## Disclaimer
 
-ZeroDay is an independent educational project and is not affiliated with, endorsed by, or sponsored by CompTIA, Cisco, or EC-Council. All trademarks are the property of their respective owners. The offensive techniques covered by this platform must only be applied in environments you own or are explicitly authorized to test.
+Pwnify is an independent educational project and is not affiliated with, endorsed by, or sponsored by CompTIA, Cisco, or EC-Council. All trademarks are the property of their respective owners. The offensive techniques covered by this platform must only be applied in environments you own or are explicitly authorized to test.
 
 ## Authors
 
