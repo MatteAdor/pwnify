@@ -985,7 +985,7 @@ export function generateDailyBreachShareCard(
   const dateStr = new Date().toISOString().slice(0, 10);
   const statusTag = isCorrect ? '[PASS]' : '[FAIL]';
 
-  return `[ZeroDay] // Daily 0xBreach #${incident.dayIndex}
+  return `[Pwnify] // Daily 0xBreach #${incident.dayIndex}
 Date: ${dateStr} · ${incident.cveId}
 ${statusTag} Triage: ${isCorrect ? 'SUCCESS' : 'BREACH DETECTED'} (${secondsTaken.toFixed(1)}s)
 Daily Incident Streak: ${currentStreak} days

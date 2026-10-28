@@ -39,7 +39,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
 
   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
   const challengeUrl = `${origin}/?seed=${customChallengeSeed}&elo=${userState.elo}&challenger=${encodeURIComponent(userState.username)}&score=4`;
-  const challengeText = `[ZERODAY PROTOCOL] Match Blitz Concluded · ELO: ${userState.elo} · Streak: x${userState.winStreak}. Can you beat my time on this exploit? >> ${challengeUrl}`;
+  const challengeText = `[PWNIFY PROTOCOL] Match Blitz Concluded · ELO: ${userState.elo} · Streak: x${userState.winStreak}. Can you beat my time on this exploit? >> ${challengeUrl}`;
 
   const handleCopyChallenge = () => {
     sound.playExploitSuccess();
@@ -90,7 +90,7 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
             <div className="flex items-center gap-2">
               <span className="font-mono text-xs font-bold text-emerald-400">0x</span>
               <span className="font-mono text-[11px] font-extrabold tracking-widest text-zinc-200">
-                ZERODAY // SECURITY ID
+                PWNIFY // SECURITY ID
               </span>
             </div>
             <span className="font-mono text-[9px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-bold">

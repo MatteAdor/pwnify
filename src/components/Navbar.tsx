@@ -176,12 +176,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <img 
               src="/zerox-rounded.png" 
-              alt="ZeroDay" 
+              alt="Pwnify" 
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain shadow-sm" 
             />
             <div className="flex items-center gap-1.5">
               <span className="font-mono font-black text-base sm:text-lg tracking-tight text-white">
-                Zero<span className="text-emerald-400">Day</span>
+                Pwn<span className="text-emerald-400">ify</span>
               </span>
               {/* PRO badge if user has PRO */}
               {userState.isPro && (
@@ -590,7 +590,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full min-h-[50px] py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
                 >
                   <Sparkles className="w-4 h-4 fill-zinc-950" />
-                  <span>Passa a ZeroDay PRO</span>
+                  <span>{lang === 'it' ? 'Passa a Pwnify PRO' : 'Upgrade to Pwnify PRO'}</span>
                 </button>
               )}
             </div>

@@ -40,7 +40,7 @@ export function executeVirtualCommand(commandString: string): TerminalExecutionR
 
     case 'pwd':
       return {
-        output: '/root/zeroday-lab',
+        output: '/root/pwnify-lab',
         isError: false,
         exitCode: 0
       };
@@ -62,7 +62,7 @@ export function executeVirtualCommand(commandString: string): TerminalExecutionR
     case 'uname':
       if (args.includes('-a') || args.includes('-r')) {
         return {
-          output: 'Linux zeroday-lab 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux',
+          output: 'Linux pwnify-lab 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC x86_64 GNU/Linux',
           isError: false,
           exitCode: 0
         };
@@ -96,7 +96,7 @@ drwxr-xr-x 3 root root 4096 Oct 17 20:20 ..
           output: `root:x:0:0:root:/root:/bin/bash
 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
 www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
-operator:x:1000:1000:ZeroDay Operator:/home/operator:/bin/bash
+operator:x:1000:1000:Pwnify Operator:/home/operator:/bin/bash
 mysql:x:114:120:MySQL Server,,,:/nonexistent:/bin/false`,
           isError: false,
           exitCode: 0
@@ -125,10 +125,10 @@ mysql:x:114:120:MySQL Server,,,:/nonexistent:/bin/false`,
     case 'sudo':
       if (args.includes('-l')) {
         return {
-          output: `Matching Defaults entries for root on zeroday-lab:
+          output: `Matching Defaults entries for root on pwnify-lab:
     env_reset, mail_badpass, secure_path=/usr/local/sbin\\:/usr/local/bin
 
-User operator may run the following commands on zeroday-lab:
+User operator may run the following commands on pwnify-lab:
     (root) NOPASSWD: /usr/bin/find, /usr/bin/python3, /usr/bin/tar`,
           isError: false,
           exitCode: 0
@@ -156,7 +156,7 @@ Content-Length: 4820`,
         };
       }
       return {
-        output: `HTTP/1.1 200 OK\n<!DOCTYPE html><html><head><title>ZeroDay Lab Target</title></head><body><h1>API Gateway Active</h1></body></html>`,
+        output: `HTTP/1.1 200 OK\n<!DOCTYPE html><html><head><title>Pwnify Lab Target</title></head><body><h1>API Gateway Active</h1></body></html>`,
         isError: false,
         exitCode: 0
       };
@@ -190,7 +190,7 @@ Service detection performed. 4 open ports found.`,
         };
       }
       return {
-        output: `/root/zeroday-lab/exploit.py\n/root/zeroday-lab/backup.sh`,
+        output: `/root/pwnify-lab/exploit.py\n/root/pwnify-lab/backup.sh`,
         isError: false,
         exitCode: 0
       };
@@ -214,7 +214,7 @@ Service detection performed. 4 open ports found.`,
         output: `SHELL=/bin/bash
 USER=root
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-PWD=/root/zeroday-lab
+PWD=/root/pwnify-lab
 HISTSIZE=1000
 LANG=en_US.UTF-8`,
         isError: false,

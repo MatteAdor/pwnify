@@ -1146,7 +1146,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                   const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
                   const room = hostedRoomCode || generateRoomCode();
                   const duelUrl = `${origin}/?duel=${room}`;
-                  navigator.clipboard.writeText(`[ZeroDay Arena] Ti sfido a duello 1v1 online su ZeroDay! Entra nella mia stanza: ${duelUrl}`);
+                  navigator.clipboard.writeText(`[Pwnify Arena] Ti sfido a duello 1v1 online su Pwnify! Entra nella mia stanza: ${duelUrl}`);
                   setCopiedDuelLink(true);
                   setTimeout(() => setCopiedDuelLink(false), 2500);
                 }}
@@ -1253,7 +1253,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
                     sound.playExploitSuccess();
                     const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://zeroday.gg';
                     const link = `${origin}/?duel=${hostedRoomCode}`;
-                    navigator.clipboard.writeText(`Entra nel duello 1v1 su ZeroDay! Codice: ${hostedRoomCode} | Link diretto: ${link}`);
+                    navigator.clipboard.writeText(`Entra nel duello 1v1 su Pwnify! Codice: ${hostedRoomCode} | Link diretto: ${link}`);
                     setCopiedRoomLink(true);
                     setTimeout(() => setCopiedRoomLink(false), 2500);
                   }}

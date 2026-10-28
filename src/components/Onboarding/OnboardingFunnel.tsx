@@ -514,7 +514,7 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
 
                   <div className="flex flex-wrap items-center gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
                     <span className="text-emerald-400 font-bold shrink-0 text-xs">
-                      {currentQuestion.terminalPrompt || 'operator@zeroday:~$'}
+                      {currentQuestion.terminalPrompt || 'operator@pwnify:~$'}
                     </span>
                     {currentQuestion.commandPrefix && (
                       <span className="text-white font-bold shrink-0 text-xs">

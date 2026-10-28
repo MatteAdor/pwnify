@@ -33,7 +33,7 @@ export const PRICING_CONFIG: PricingConfig = {
   plans: {
     monthly: {
       lookupKey: 'zeroday_pro_monthly',
-      name: 'ZeroDay PRO Monthly',
+      name: 'Pwnify PRO Monthly',
       type: 'recurring',
       interval: 'month',
       amount: 9.99,
@@ -50,7 +50,7 @@ export const PRICING_CONFIG: PricingConfig = {
     },
     annual: {
       lookupKey: 'zeroday_pro_annual',
-      name: 'ZeroDay PRO Annual',
+      name: 'Pwnify PRO Annual',
       type: 'recurring',
       interval: 'year',
       amount: 69.00,
@@ -67,7 +67,7 @@ export const PRICING_CONFIG: PricingConfig = {
     },
     starterPass: {
       lookupKey: 'zeroday_starter_90d',
-      name: 'ZeroDay Starter Pass (90 Days)',
+      name: 'Pwnify Starter Pass (90 Days)',
       type: 'one_time',
       amount: 19.99,
       amountCents: 1999,

@@ -41,8 +41,8 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ state }) => 
 
   const reason = state.forceMessage?.[lang] || (
     isEn 
-      ? 'A critical security and protocol update is required to access ZeroDay network.'
-      : 'Un aggiornamento critico di sicurezza e protocollo è necessario per accedere alla rete ZeroDay.'
+      ? 'A critical security and protocol update is required to access Pwnify network.'
+      : 'Un aggiornamento critico di sicurezza e protocollo è necessario per accedere alla rete Pwnify.'
   );
 
   const isDownloading = state.status === 'DOWNLOADING';
@@ -202,8 +202,8 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ state }) => 
             </div>
             <p className="leading-relaxed">
               {isEn 
-                ? 'Direct APKs and Google Play builds use distinct signing certificates. Switching channels requires uninstalling and reinstalling. All your account progress, licenses, and ELO remain permanently saved on ZeroDay cloud servers.'
-                : 'I canali APK diretto e Google Play possiedono certificati di firma differenti. Il passaggio da un canale all\'altro richiede disinstallazione e reinstallazione manuale. Progressi, licenze ed ELO sono sincronizzati al sicuro nel cloud ZeroDay.'}
+                ? 'Direct APKs and Google Play builds use distinct signing certificates. Switching channels requires uninstalling and reinstalling. All your account progress, licenses, and ELO remain permanently saved on Pwnify cloud servers.'
+                : 'I canali APK diretto e Google Play possiedono certificati di firma differenti. Il passaggio da un canale all\'altro richiede disinstallazione e reinstallazione manuale. Progressi, licenze ed ELO sono sincronizzati al sicuro nel cloud Pwnify.'}
             </p>
           </div>
         </div>

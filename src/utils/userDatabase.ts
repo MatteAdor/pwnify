@@ -735,7 +735,7 @@ export async function isUsernameAvailable(
         .ilike('nick', clean);
 
       if (!error && data && data.length > 0) {
-        return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+        return { available: false, error: 'Questo nome utente è già in uso sulla rete Pwnify.' };
       }
     }
   } catch (err) {
@@ -828,7 +828,7 @@ export interface StreakUpdateResult {
 export const STREAK_MILESTONES = [
   { days: 7, title: '7-Day Persistent Operative', xpBonus: 100 },
   { days: 30, title: 'Monthly Defcon Sentinel', xpBonus: 300 },
-  { days: 60, title: 'ZeroDay Red Team Veteran', xpBonus: 600 },
+  { days: 60, title: 'Pwnify Red Team Veteran', xpBonus: 600 },
   { days: 100, title: 'Centurion Elite Vanguard', xpBonus: 1000 }
 ];
 

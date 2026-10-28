@@ -69,7 +69,7 @@ class AnalyticsDispatcher {
     this.persist();
 
     if (typeof window !== 'undefined') {
-      console.log(`[ZeroDay Analytics] [${entry.timestamp}] ${event}`, properties || '');
+      console.log(`[Pwnify Analytics] [${entry.timestamp}] ${event}`, properties || '');
     }
 
     // Custom browser event for UI reactivity if needed

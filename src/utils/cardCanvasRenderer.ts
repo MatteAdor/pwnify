@@ -249,7 +249,7 @@ export function renderHackerCardToCanvas(
   ctx.textAlign = 'right';
   ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
-  ctx.fillText('zeroday.gg // 0xDAY', width - margin - 60, footerY + 20);
+  ctx.fillText('pwnify.app // PWNIFY', width - margin - 60, footerY + 20);
 
   ctx.font = '20px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#64748b';
@@ -285,7 +285,7 @@ export function downloadHackerCardImage(
     const safeName = sanitizeAlphanumeric(userState.username, 24, 'user');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zeroday_id_${safeName}.png`;
+    link.download = `pwnify_id_${safeName}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

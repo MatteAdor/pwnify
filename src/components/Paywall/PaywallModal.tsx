@@ -170,7 +170,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     // Do NOT simulate fake purchases. Open the authentic license key input instead.
     setIsRestoreView(true);
     setRestoreError(
-      'Lemon Squeezy gateway not configured in this local environment. Enter a cryptographic license key to activate ZeroDay PRO.'
+      'Lemon Squeezy gateway not configured in this local environment. Enter a cryptographic license key to activate Pwnify PRO.'
     );
   };
 
@@ -182,7 +182,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           badge: `ARENA TICKETS EXHAUSTED · CURRENT STREAK: ${winStreak}`,
           badgeColor: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
           title: 'Keep Training in the 1v1 Arena',
-          subtitle: 'Free daily Arena tickets have run out. Upgrade to ZeroDay PRO for unlimited live battles.'
+          subtitle: 'Free daily Arena tickets have run out. Upgrade to Pwnify PRO for unlimited live battles.'
         };
       case 'blurred_breakdown':
         return {
@@ -222,9 +222,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       case 'diagnostic_funnel':
       default:
         return {
-          badge: 'FULL ZERODAY PRO ACCESS',
+          badge: 'FULL PWNIFY PRO ACCESS',
           badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-          title: 'Level Up Your Preparation with ZeroDay PRO',
+          title: 'Level Up Your Preparation with Pwnify PRO',
           subtitle: 'Unlock all hands-on PBQ labs, official exam simulators, and unlimited Arena PvP access.'
         };
     }

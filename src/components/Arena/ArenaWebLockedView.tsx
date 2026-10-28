@@ -124,7 +124,7 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
             onClick={() => sound.playVictoryFanfare()}
             className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/10 cursor-pointer"
           >
-            <img src="/brand/zeroday_icon_192.png" alt="ZeroDay" className="w-5 h-5 rounded object-cover shadow-sm" />
+            <img src="/brand/zeroday_icon_192.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
             <span>{isEn ? 'DOWNLOAD APK TO PLAY 1V1 DUELS' : 'SCARICA L\'APK PER GIOCARE NELL\'ARENA'}</span>
             <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_SIZE}</span>
           </a>

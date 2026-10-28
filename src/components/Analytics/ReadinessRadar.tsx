@@ -303,8 +303,8 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
               </h4>
               <p className="text-xs text-zinc-400 max-w-xs mb-3 leading-relaxed">
                 {isEn 
-                  ? 'Upgrade to ZeroDay PRO to inspect granular domain accuracy and launch targeted drills.'
-                  : 'Sblocca ZeroDay PRO per esaminare l\'accuratezza dettagliata e avviare sessioni mirate.'}
+                  ? 'Upgrade to Pwnify PRO to inspect granular domain accuracy and launch targeted drills.'
+                  : 'Sblocca Pwnify PRO per esaminare l\'accuratezza dettagliata e avviare sessioni mirate.'}
               </p>
               <button
                 onClick={() => onOpenPaywall('weakness_drill')}

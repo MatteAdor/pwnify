@@ -169,7 +169,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               ? t.activeProfileSubtitle
               : mode === 'login'
               ? (isEn ? 'Enter your credentials to resume your streak, ELO, and labs.' : 'Inserisci le tue credenziali per riprendere streak, ELO e laboratori.')
-              : (isEn ? 'Create your cyber profile and join the ZeroDay community.' : 'Crea il tuo profilo cyber e unisciti alla community di ZeroDay.')}
+              : (isEn ? 'Create your cyber profile and join the Pwnify community.' : 'Crea il tuo profilo cyber e unisciti alla community di Pwnify.')}
           </p>
         </div>
 

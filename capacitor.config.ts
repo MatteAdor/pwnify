@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.zeroday.academy',
-  appName: 'ZeroDay Academy',
+  appName: 'Pwnify',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {

@@ -58,7 +58,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 {isEn ? 'Legal Notice & Privacy Compliance' : 'Informativa Legale & Conformità Normativa'}
               </h2>
               <span className="text-[11px] font-mono text-slate-400">
-                {isEn ? 'ZeroDay Academy · Legal, Privacy & Consumer Protection' : 'ZeroDay Academy · Note Legali, Privacy & Tutela Consumatori'}
+                {isEn ? 'Pwnify Academy · Legal, Privacy & Consumer Protection' : 'Pwnify Academy · Note Legali, Privacy & Tutela Consumatori'}
               </span>
             </div>
           </div>
@@ -138,8 +138,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn 
-                    ? 'The Data Controller is ZeroDay Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
-                    : 'Il Titolare del trattamento dei dati è ZeroDay Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
+                    ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
+                    : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
                   <a href="mailto:dpo@zeroday.academy" className="text-emerald-400 underline font-mono">dpo@zeroday.academy</a>.
                 </p>
               </section>
@@ -208,8 +208,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'ZeroDay is an educational platform dedicated to cybersecurity certification training (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+, and CEH). All PBQ labs, terminal challenges, and simulations operate inside virtualized sandboxes and defensive PoCs.'
-                    : 'ZeroDay è una piattaforma didattica per la preparazione agli esami di certificazione (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+ e CEH) e la simulazione etica. Tutti i laboratori PBQ e le sfide si svolgono in ambienti sandbox virtualizzati o tramite PoC difensivi.'}
+                    ? 'Pwnify is an educational platform dedicated to cybersecurity certification training (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+, and CEH). All PBQ labs, terminal challenges, and simulations operate inside virtualized sandboxes and defensive PoCs.'
+                    : 'Pwnify è una piattaforma didattica per la preparazione agli esami di certificazione (CompTIA Security+, Cisco CCNA, CompTIA Network+, A+ e CEH) e la simulazione etica. Tutti i laboratori PBQ e le sfide si svolgono in ambienti sandbox virtualizzati o tramite PoC difensivi.'}
                 </p>
               </section>
 
@@ -219,7 +219,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'It is strictly forbidden to use educational scripts or commands learned on ZeroDay to execute unauthorized attacks, hostile port scans, or denial-of-service operations against third-party systems without written authorization.'
+                    ? 'It is strictly forbidden to use educational scripts or commands learned on Pwnify to execute unauthorized attacks, hostile port scans, or denial-of-service operations against third-party systems without written authorization.'
                     : 'È severamente vietato utilizzare le nozioni e gli script didattici appresi sulla piattaforma per compiere intrusioni non autorizzate, scansioni ostili o attacchi contro infrastrutture terze sprovviste di espresso consenso scritto.'}
                 </p>
               </section>
@@ -230,8 +230,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'Each ZeroDay PRO license key (e.g. 0xPRO-...) is strictly personal and non-transferable without prior authorization.'
-                    : 'Ogni account e licenza crittografica ZeroDay PRO (formato 0xPRO-...) è strettamente personale e non trasferibile a terzi senza previa autorizzazione scritta.'}
+                    ? 'Each Pwnify PRO license key (e.g. 0xPRO-...) is strictly personal and non-transferable without prior authorization.'
+                    : 'Ogni account e licenza crittografica Pwnify PRO (formato 0xPRO-...) è strettamente personale e non trasferibile a terzi senza previa autorizzazione scritta.'}
                 </p>
               </section>
             </div>
@@ -272,8 +272,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'All prices displayed on ZeroDay are all-inclusive with applicable taxes. There are no hidden activation, onboarding, or administrative fees.'
-                    : 'Tutti i prezzi visualizzati su ZeroDay sono comprensivi delle imposte applicabili. Non vi sono commissioni nascoste di attivazione, disattivazione o gestione.'}
+                    ? 'All prices displayed on Pwnify are all-inclusive with applicable taxes. There are no hidden activation, onboarding, or administrative fees.'
+                    : 'Tutti i prezzi visualizzati su Pwnify sono comprensivi delle imposte applicabili. Non vi sono commissioni nascoste di attivazione, disattivazione o gestione.'}
                 </p>
               </section>
             </div>
@@ -288,8 +288,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'ZeroDay enforces a strict privacy policy with zero intrusive ad trackers. We utilize only:'
-                    : 'ZeroDay adotta una politica rigorosa priva di tracciatori invasivi. Utilizziamo esclusivamente:'}
+                    ? 'Pwnify enforces a strict privacy policy with zero intrusive ad trackers. We utilize only:'
+                    : 'Pwnify adotta una politica rigorosa priva di tracciatori invasivi. Utilizziamo esclusivamente:'}
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-slate-400">
                   <li>
@@ -331,7 +331,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-2">
             <Building className="w-3.5 h-3.5 text-slate-400" />
-            <span>ZeroDay Cyber Academy S.r.l. · P.IVA: IT01234567890</span>
+            <span>Pwnify Cyber Academy S.r.l. · P.IVA: IT01234567890</span>
           </div>
           <div className="flex items-center gap-2">
             <Mail className="w-3.5 h-3.5 text-slate-400" />

@@ -65,7 +65,7 @@ export const UpdateProgressModal: React.FC<UpdateProgressModalProps> = ({ state 
         <div className="space-y-1">
           <div className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/90 flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ZeroDay Security OS // OTA</span>
+            <span>Pwnify Security OS // OTA</span>
           </div>
 
           <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">

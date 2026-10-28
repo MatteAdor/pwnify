@@ -29,7 +29,7 @@ export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({ state }) => {
               {isEn ? "WHAT'S NEW" : "COSA C'È DI NUOVO"}
             </div>
             <h2 className="text-lg font-bold text-white tracking-tight">
-              ZeroDay v{state.clientVersionName}
+              Pwnify v{state.clientVersionName}
             </h2>
           </div>
         </div>
