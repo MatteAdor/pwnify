@@ -211,7 +211,7 @@ export const OnboardingFunnel: React.FC<OnboardingFunnelProps> = ({
         {/* Header Progress Stepper & Language Switcher */}
         <div>
           <div className="flex items-center justify-between text-xs font-mono text-zinc-400 mb-2.5">
-            <span className="font-bold text-zinc-300">0xDAY // ONBOARDING</span>
+            <span className="font-bold text-zinc-300">PWNIFY // ONBOARDING</span>
             <div className="flex items-center gap-3">
               <span className="text-[11px] text-zinc-500 font-mono">{step} / 5</span>
               <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">

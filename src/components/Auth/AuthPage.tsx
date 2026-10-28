@@ -753,7 +753,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* Header with Brand & Language Switcher */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
           <div className="flex items-center gap-2.5">
-            {onBackToPortal && (
+            {onBackToPortal && !isNativeApp() && (
               <button
                 type="button"
                 onClick={onBackToPortal}
@@ -764,7 +764,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </button>
             )}
             <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
-              0xDAY
+              Pwnify
             </span>
           </div>
 

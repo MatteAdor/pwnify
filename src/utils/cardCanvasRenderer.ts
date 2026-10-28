@@ -82,7 +82,7 @@ export function renderHackerCardToCanvas(
   // 5. Header Banner
   ctx.font = 'bold 36px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
-  ctx.fillText('0xDAY // CYBER WARFARE ACADEMY', margin + 60, margin + 110);
+  ctx.fillText('PWNIFY // CYBER WARFARE ACADEMY', margin + 60, margin + 110);
 
   ctx.font = '600 24px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
@@ -244,7 +244,7 @@ export function renderHackerCardToCanvas(
 
   ctx.font = '22px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('0x7F4A-B902-E81C-0xDAY-VERIFIED-MEMBER', margin + 60, footerY + 36);
+  ctx.fillText('0x7F4A-B902-E81C-PWNIFY-VERIFIED-MEMBER', margin + 60, footerY + 36);
 
   ctx.textAlign = 'right';
   ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
