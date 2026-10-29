@@ -653,7 +653,7 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
                         <div className="pt-1 flex items-center justify-between bg-slate-900/60 p-2 rounded-lg border border-white/5">
                           <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
                             <Lock className="w-3 h-3 text-amber-400" />
-                            <span>PoC Script avanzato per ZeroDay Pro</span>
+                            <span>PoC Script avanzato per Pwnify Pro</span>
                           </span>
                           <button
                             type="button"

@@ -735,7 +735,7 @@ export async function isUsernameAvailable(
 
       if (!error && typeof data === 'boolean') {
         if (!data) {
-          return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+          return { available: false, error: 'Questo nome utente è già in uso sulla rete Pwnify.' };
         }
       } else if (error) {
         // Fail-open fallback: check public_profiles view if RPC not yet deployed
@@ -745,7 +745,7 @@ export async function isUsernameAvailable(
           .ilike('nick', clean);
 
         if (!viewError && viewData && viewData.length > 0) {
-          return { available: false, error: 'Questo nome utente è già in uso sulla rete ZeroDay.' };
+          return { available: false, error: 'Questo nome utente è già in uso sulla rete Pwnify.' };
         }
       }
     }
@@ -839,7 +839,7 @@ export interface StreakUpdateResult {
 export const STREAK_MILESTONES = [
   { days: 7, title: '7-Day Persistent Operative', xpBonus: 100 },
   { days: 30, title: 'Monthly Defcon Sentinel', xpBonus: 300 },
-  { days: 60, title: 'ZeroDay Red Team Veteran', xpBonus: 600 },
+  { days: 60, title: 'Pwnify Red Team Veteran', xpBonus: 600 },
   { days: 100, title: 'Centurion Elite Vanguard', xpBonus: 1000 }
 ];
 

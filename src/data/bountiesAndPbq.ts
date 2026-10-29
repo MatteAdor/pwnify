@@ -16,7 +16,7 @@ export const INITIAL_DAILY_BOUNTIES: DailyBounty[] = [
   },
   {
     id: 'bounty_pvp',
-    title: 'ZeroDay Arena Gladiator',
+    title: 'Pwnify Arena Gladiator',
     description: 'Win 1 Blitz 1v1 match in the Cyber Arena against another operator or bot',
     progress: 0,
     target: 1,

@@ -101,7 +101,7 @@ export const TRANSLATIONS = {
     audioEffectsSub: 'Synthesized oscillators for tactile feedback',
     soundActive: 'ACTIVE',
     soundMuted: 'MUTED',
-    proLicenseTitle: 'ZeroDay License Status',
+    proLicenseTitle: 'Pwnify License Status',
     proLicenseDesc: 'Full access to official CompTIA, CCNA, and CEH exam simulators, PBQ labs, and unlimited arena.',
 
     // Onboarding
@@ -110,7 +110,7 @@ export const TRANSLATIONS = {
     stepOf: 'STEP',
     of: 'OF 5',
     onboardingStep1Title: 'What is your primary cybersecurity goal?',
-    onboardingStep1Desc: 'ZeroDay adapts attack vectors and terminal simulations to your career path.',
+    onboardingStep1Desc: 'Pwnify adapts attack vectors and terminal simulations to your career path.',
     onboardingStep2Title: 'What is your current experience level?',
     onboardingStep2Desc: 'We calibrate the initial diagnostic benchmark challenge to your baseline.',
     onboardingStep3Title: 'How much time can you commit daily?',
@@ -148,7 +148,7 @@ export const TRANSLATIONS = {
     commit15Label: '15 min / day',
     commit15Desc: 'Red Teamer Drill (Recommended for certifications)',
     commit30Label: '30 min / day',
-    commit30Desc: 'ZeroDay Grind (Intensive 21-day boot camp)',
+    commit30Desc: 'Pwnify Grind (Intensive 21-day boot camp)',
 
     // Navbar
     dailyStreak: 'Daily Streak',
@@ -216,7 +216,7 @@ export const TRANSLATIONS = {
     hackerCardBtn: 'HACKER ID CARD (9:16)',
 
     // Arena 1v1
-    blitzArenaTitle: 'ZeroDay Cyber Arena',
+    blitzArenaTitle: 'Pwnify Cyber Arena',
     blitzArenaSub: 'Challenge training bots or hackers in real-time 60-second Blitz battles.',
     findOpponentBlitz: 'FIND OPPONENT (BLITZ)',
     survivalGauntlet: 'SURVIVAL GAUNTLET',
@@ -237,14 +237,14 @@ export const TRANSLATIONS = {
 
     // OAuth & OTP Modals
     googleOAuthTitle: 'Sign in with Google',
-    googleOAuthSubtitle: '0xDAY Cyber Academy OAuth',
+    googleOAuthSubtitle: 'Pwnify Cyber Academy OAuth',
     googleOAuthDesc: 'Sign in with your Google account to synchronize your progress.',
     googleInstantAccess: 'Instant 1-Click Access',
     googleInstantBtn: 'Sign in with Google',
     orEnterGmail: 'Or enter your Gmail address:',
     confirmAndSignIn: 'Confirm & Sign In',
     githubOAuthTitle: 'Authorize with GitHub',
-    githubOAuthSubtitle: 'ZeroDay Developer OAuth',
+    githubOAuthSubtitle: 'Pwnify Developer OAuth',
     githubOAuthDesc: 'Connect your GitHub profile to sync your account and certifications.',
     githubInstantAccess: 'Quick Developer Access',
     githubInstantBtn: 'Authorize with GitHub',
@@ -373,7 +373,7 @@ export const TRANSLATIONS = {
     audioEffectsSub: 'Oscillatori sintetizzati per feedback tattile',
     soundActive: 'ATTIVO',
     soundMuted: 'MUTATO',
-    proLicenseTitle: 'Stato Licenza ZeroDay',
+    proLicenseTitle: 'Stato Licenza Pwnify',
     proLicenseDesc: 'Accesso completo ai simulatori d\'esame ufficiali CompTIA, CCNA e CEH, laboratori PBQ e arena illimitata.',
 
     // Onboarding
@@ -382,7 +382,7 @@ export const TRANSLATIONS = {
     stepOf: 'PASSO',
     of: 'DI 5',
     onboardingStep1Title: 'Qual è il tuo obiettivo primario in cybersecurity?',
-    onboardingStep1Desc: 'ZeroDay adatta vettori d\'attacco e simulazioni di terminale al tuo percorso professionale.',
+    onboardingStep1Desc: 'Pwnify adatta vettori d\'attacco e simulazioni di terminale al tuo percorso professionale.',
     onboardingStep2Title: 'Qual è il tuo livello di esperienza attuale?',
     onboardingStep2Desc: 'Calibriamo la sfida diagnostica iniziale in base al tuo punto di partenza.',
     onboardingStep3Title: 'Quanto tempo puoi dedicare ogni giorno?',
@@ -391,7 +391,7 @@ export const TRANSLATIONS = {
     onboardingStep4Desc: 'Risolvi questi scenari tecnici per misurare il tuo Punteggio di Readiness iniziale.',
     onboardingStep5Title: 'Calcolo Telemetria Tattica...',
     onboardingStep5Complete: 'Calibrazione Telemetria Completata!',
-    enterAcademyBtn: 'ENTRA NELL\'ACCADEMIA ZERO-DAY',
+    enterAcademyBtn: 'ENTRA NELL\'ACCADEMIA PWNIFY',
     continueBtn: 'CONTINUA',
     submitPayloadBtn: 'INVIA PAYLOAD',
     nextScenarioBtn: 'PROSSIMO SCENARIO',
@@ -420,7 +420,7 @@ export const TRANSLATIONS = {
     commit15Label: '15 min / giorno',
     commit15Desc: 'Allenamento Red Teamer (Consigliato per certificazioni)',
     commit30Label: '30 min / giorno',
-    commit30Desc: 'ZeroDay Grind (Preparazione intensiva in 21 giorni)',
+    commit30Desc: 'Pwnify Grind (Preparazione intensiva in 21 giorni)',
 
     // Navbar
     dailyStreak: 'Streak Giornaliera',
@@ -488,7 +488,7 @@ export const TRANSLATIONS = {
     hackerCardBtn: 'HACKER ID CARD (9:16)',
 
     // Arena 1v1
-    blitzArenaTitle: 'ZeroDay Arena Blitz',
+    blitzArenaTitle: 'Pwnify Arena Blitz',
     blitzArenaSub: 'Sfida bot di addestramento o hacker in battaglie Blitz di 60 secondi.',
     findOpponentBlitz: 'TROVA AVVERSARIO (BLITZ)',
     survivalGauntlet: 'SFIDA SURVIVAL',
@@ -509,14 +509,14 @@ export const TRANSLATIONS = {
 
     // OAuth & OTP Modals
     googleOAuthTitle: 'Accedi con Google',
-    googleOAuthSubtitle: '0xDAY Cyber Academy OAuth',
+    googleOAuthSubtitle: 'Pwnify Cyber Academy OAuth',
     googleOAuthDesc: 'Accedi con il tuo account Google per sincronizzare i progressi.',
     googleInstantAccess: 'Accesso Rapido Istantaneo',
     googleInstantBtn: 'Accedi con Google',
     orEnterGmail: 'Oppure inserisci la tua Gmail:',
     confirmAndSignIn: 'Conferma e Accedi',
     githubOAuthTitle: 'Autorizza con GitHub',
-    githubOAuthSubtitle: 'ZeroDay Developer OAuth',
+    githubOAuthSubtitle: 'Pwnify Developer OAuth',
     githubOAuthDesc: 'Collega il tuo account GitHub per sincronizzare il tuo account e le certificazioni.',
     githubInstantAccess: 'Accesso Rapido Sviluppatore',
     githubInstantBtn: 'Autorizza con GitHub',

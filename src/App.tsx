@@ -413,7 +413,7 @@ export const App: React.FC = () => {
   const handleDownloadLicenseCertificate = (key: string) => {
     sound.playTap();
     const fileContent = `=====================================================
-ZERODAY // 0xDAY CYBER WARFARE ACADEMY
+PWNIFY // CYBER WARFARE ACADEMY
 PRO LICENSE CERTIFICATE
 =====================================================
 Username / Callsign: ${userState.username}
@@ -434,7 +434,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     const safeUser = sanitizeAlphanumeric(userState.username, 24, 'user');
     const link = document.createElement('a');
     link.href = url;
-    link.download = `zeroday_pro_license_${safeUser}.txt`;
+    link.download = `pwnify_pro_license_${safeUser}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -1102,7 +1102,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             currentTitle={currentTitle}
           />
 
-          {/* ZeroDay PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
+          {/* Pwnify PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
           <PaywallModal
             isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}
@@ -1214,7 +1214,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold text-white">
-                    {isEn ? 'ZeroDay PRO Access Authorized' : 'Accesso ZeroDay PRO Autorizzato'}
+                    {isEn ? 'Pwnify PRO Access Authorized' : 'Accesso Pwnify PRO Autorizzato'}
                   </h2>
                   <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
                     {isEn ? (

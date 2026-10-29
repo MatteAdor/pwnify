@@ -129,12 +129,12 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           <div className="flex items-center gap-3">
             <img 
               src="/brand/zeroday_icon_192.png" 
-              alt="ZeroDay Icon" 
+              alt="Pwnify Icon" 
               className="w-9 h-9 rounded-md object-cover border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)]" 
             />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold tracking-tight text-white font-mono text-sm sm:text-base">ZERODAY</span>
+                <span className="font-bold tracking-tight text-white font-mono text-sm sm:text-base">PWNIFY</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   v{getCachedVersionInfo().versionName}
                 </span>
@@ -229,9 +229,9 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             {/* Concrete Mission Subhead */}
             <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl">
               {isEn ? (
-                'ZeroDay turns CompTIA Security+, Cisco CCNA, and CEH exam preparation into real offensive/defensive operations: 1v1 blitz duels, interactive Linux/network performance-based questions, and real CVE scenario forensics.'
+                'Pwnify turns CompTIA Security+, Cisco CCNA, and CEH exam preparation into real offensive/defensive operations: 1v1 blitz duels, interactive Linux/network performance-based questions, and real CVE scenario forensics.'
               ) : (
-                'ZeroDay trasforma lo studio di CompTIA Security+, Cisco CCNA e CEH in simulazioni di attacco e difesa sul campo: duelli 1v1 Blitz da 60s, laboratori PBQ su terminali Linux e analisi di brecce reali.'
+                'Pwnify trasforma lo studio di CompTIA Security+, Cisco CCNA e CEH in simulazioni di attacco e difesa sul campo: duelli 1v1 Blitz da 60s, laboratori PBQ su terminali Linux e analisi di brecce reali.'
               )}
             </p>
 
@@ -291,7 +291,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
-                  <span className="text-[11px] font-mono text-slate-400 ml-2">zeroday-arena-node-01</span>
+                  <span className="text-[11px] font-mono text-slate-400 ml-2">pwnify-arena-node-01</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">
@@ -391,7 +391,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               {isEn ? '// Direct Deployment & Download Hub' : '// Hub di Download e Distribuzione'}
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-              {isEn ? 'Deploy ZeroDay on your device' : 'Installa ZeroDay sul tuo dispositivo'}
+              {isEn ? 'Deploy Pwnify on your device' : 'Installa Pwnify sul tuo dispositivo'}
             </h2>
             <p className="text-slate-400 text-sm max-w-2xl">
               {isEn
@@ -408,11 +408,11 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <div className="flex items-center gap-3">
                   <img 
                     src="/brand/zeroday_icon_192.png" 
-                    alt="ZeroDay APK" 
+                    alt="Pwnify APK" 
                     className="w-11 h-11 rounded-lg object-cover border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.2)]" 
                   />
                   <div>
-                    <h3 className="font-bold text-white text-base">ZeroDay for Android (APK)</h3>
+                    <h3 className="font-bold text-white text-base">Pwnify for Android (APK)</h3>
                     <p className="text-xs font-mono text-slate-400">Build: v{getCachedVersionInfo().versionName} (build {getCachedVersionInfo().versionCode}) · Size: {APK_SIZE}</p>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                       <Globe className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-white text-base">ZeroDay Web Platform</h3>
+                      <h3 className="font-bold text-white text-base">Pwnify Web Platform</h3>
                       <p className="text-xs font-mono text-slate-400">Zero installation · Any Browser</p>
                     </div>
                   </div>
@@ -531,8 +531,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <div className="text-xs text-slate-300 space-y-2">
                   <p>
                     {isEn 
-                      ? 'Launch the complete ZeroDay Cyber Arena directly inside your desktop or mobile browser. Protected with strict Content Security Policy, HSTS, and edge rewrites.' 
-                      : 'Avvia l\'intera Cyber Arena di ZeroDay direttamente dal browser del tuo computer o smartphone. Connessione cifrata HSTS a latenza zero.'}
+                      ? 'Launch the complete Pwnify Cyber Arena directly inside your desktop or mobile browser. Protected with strict Content Security Policy, HSTS, and edge rewrites.' 
+                      : 'Avvia l\'intera Cyber Arena di Pwnify direttamente dal browser del tuo computer o smartphone. Connessione cifrata HSTS a latenza zero.'}
                   </p>
                   <div className="text-[11px] font-mono text-slate-400 space-y-1">
                     <div>• {isEn ? 'Supported: Chrome, Firefox, Safari, Edge, Brave' : 'Supportati: Chrome, Firefox, Safari, Edge, Brave'}</div>
@@ -583,8 +583,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           </h2>
           <p className="text-slate-400 text-sm max-w-2xl">
             {isEn 
-              ? 'Traditional certifications test rote memory. ZeroDay forces you to read logs, inspect packet streams, and exploit misconfigurations against a live clock.'
-              : 'I corsi tradizionali insegnano nozioni a memoria. ZeroDay ti mette di fronte a log reali, stream di pacchetti e vulnerabilità da sfruttare sotto pressione.'}
+              ? 'Traditional certifications test rote memory. Pwnify forces you to read logs, inspect packet streams, and exploit misconfigurations against a live clock.'
+              : 'I corsi tradizionali insegnano nozioni a memoria. Pwnify ti mette di fronte a log reali, stream di pacchetti e vulnerabilità da sfruttare sotto pressione.'}
           </p>
         </div>
 
@@ -742,7 +742,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </button>
             </div>
 
-            {/* Tier 2: ZeroDay PRO (Featured) */}
+            {/* Tier 2: Pwnify PRO (Featured) */}
             <div className="bg-[#0D1627] border-2 border-emerald-500/50 rounded-lg p-6 flex flex-col justify-between space-y-6 relative shadow-xl">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-950 px-3 py-0.5 rounded-full font-mono text-[10px] font-extrabold uppercase tracking-wider">
                 {isEn ? 'RECOMMENDED · 7-DAY FREE TRIAL' : 'CONSIGLIATO · 7 GIORNI GRATIS'}
@@ -752,7 +752,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-white text-lg flex items-center gap-1.5">
-                      <span>ZeroDay PRO</span>
+                      <span>Pwnify PRO</span>
                       <Flame className="w-4 h-4 text-emerald-400" />
                     </h3>
                     <p className="text-xs text-slate-400">{isEn ? 'Complete certification pass' : 'Pass certificazioni completo'}</p>
@@ -900,7 +900,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
 
           <div className="border border-white/10 rounded-lg p-4 bg-[#0A0F1B] space-y-2">
             <h3 className="font-bold text-white text-sm">
-              {isEn ? 'Can I use ZeroDay on desktop without installing anything?' : 'Posso usare ZeroDay su PC senza installare nulla?'}
+              {isEn ? 'Can I use Pwnify on desktop without installing anything?' : 'Posso usare Pwnify su PC senza installare nulla?'}
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed">
               {isEn
@@ -929,7 +929,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500 font-mono">
           
           <div className="space-y-1 text-center md:text-left">
-            <div className="text-slate-300 font-bold">ZeroDay Cyber Warfare Academy</div>
+            <div className="text-slate-300 font-bold">Pwnify Cyber Warfare Academy</div>
             <div>Official Application & Download Distribution Portal · v{getCachedVersionInfo().versionName}</div>
           </div>
 
@@ -969,7 +969,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           </div>
 
           <div className="text-[11px] text-slate-600">
-            © {new Date().getFullYear()} ZeroDay. All rights reserved.
+            © {new Date().getFullYear()} Pwnify. All rights reserved.
           </div>
 
         </div>

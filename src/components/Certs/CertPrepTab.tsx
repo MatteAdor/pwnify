@@ -686,8 +686,8 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
               </h3>
               <p className="text-xs text-zinc-300 leading-relaxed">
                 {isEn 
-                  ? 'Passing the official exam is the ultimate objective! ZeroDay celebrates your real-world achievement. We will never trap you in forced daily grinding.'
-                  : 'Superare l\'esame ufficiale è il vero successo! ZeroDay celebra il tuo traguardo reale senza trattenerti con pressioni o grinding forzato.'}
+                  ? 'Passing the official exam is the ultimate objective! Pwnify celebrates your real-world achievement. We will never trap you in forced daily grinding.'
+                  : 'Superare l\'esame ufficiale è il vero successo! Pwnify celebra il tuo traguardo reale senza trattenerti con pressioni o grinding forzato.'}
               </p>
             </div>
 

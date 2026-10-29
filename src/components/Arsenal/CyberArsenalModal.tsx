@@ -34,7 +34,7 @@ export const ARSENAL_THEMES: ArsenalTheme[] = [
     bgStyle: 'from-emerald-950/40 to-slate-900',
     isProOnly: false,
     minElo: 0,
-    description: 'The classic ZeroDay tactical theme: high dark contrast and emerald phosphor glow.'
+    description: 'The classic Pwnify tactical theme: high dark contrast and emerald phosphor glow.'
   },
   {
     id: 'matrix_phosphor',

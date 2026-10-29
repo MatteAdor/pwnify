@@ -593,7 +593,7 @@ class UpdateManager {
 
     this.updateState({
       status: 'FORCE_REQUIRED',
-      errorMessage: 'La versione in uso non è più supportata dal protocollo ZeroDay.',
+      errorMessage: 'La versione in uso non è più supportata dal protocollo Pwnify.',
     });
 
     // Run immediate check
