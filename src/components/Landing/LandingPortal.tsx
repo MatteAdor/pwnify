@@ -491,8 +491,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   <div className="space-y-1.5 text-[10px] leading-relaxed">
                     <p>
                       {isEn
-                        ? '1. Disinstallazione richiesta: Se hai installato una build precedente, devi disinstallarla prima di installare questa release. I tuoi dati (account, licenza PRO, ELO ranked) sono al sicuro sul cloud Supabase; i progressi locali non sincronizzati andranno persi.'
-                        : '1. Disinstallazione richiesta: Se hai installato una build precedente, devi prima disinstallarla manualmente. Il tuo account, la licenza PRO e il rating ELO sono sincronizzati al sicuro su cloud Supabase; solo i dati locali non importati andranno persi.'}
+                        ? '1. Install Pwnify then uninstall ZeroDay: Install the new Pwnify app from the download link above, then uninstall the old ZeroDay app. Your account, PRO license, and ranked ELO are safe on the Supabase cloud; only local unimported guest data will be lost.'
+                        : '1. Installa Pwnify e disinstalla ZeroDay: Installa la nuova app Pwnify dal link qui sopra, quindi disinstalla la vecchia app ZeroDay. Il tuo account, la licenza PRO e il rating ELO sono sincronizzati al sicuro su cloud Supabase; solo i dati locali non importati andranno persi.'}
                     </p>
                     <p>
                       {isEn

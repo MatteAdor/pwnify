@@ -194,7 +194,7 @@ export const App: React.FC = () => {
       const search = window.location.search;
       const isAuthCallback = hash.includes('access_token=') || search.includes('code=');
       if (isAuthCallback && /android/i.test(navigator.userAgent)) {
-        const deepLink = `com.zeroday.academy://auth/callback${search}${hash}`;
+        const deepLink = `com.pwnify.app://auth/callback${search}${hash}`;
         const timer = setTimeout(() => {
           try {
             window.location.href = deepLink;

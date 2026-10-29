@@ -18,7 +18,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.zeroday.academy"
+        applicationId "com.pwnify.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 7
