@@ -9,12 +9,7 @@ on:
         type: boolean
         default: true
       confirm_prod_deploy:
-        description: 'Digitare "DEPLOY-PRODUCTION" per confermare il rilascio effettivo (ignorato se dry_run=true)'
-        required: false
-        type: string
-        default: ''
-      allow_other_migrations:
-        description: 'Consenti migrazioni diverse dalla lista autorizzata (20261022000001 e 20261024000001-04)'
+        description: 'Conferma esplicita del rilascio effettivo in produzione'
         required: false
         type: boolean
         default: false
@@ -30,6 +25,11 @@ on:
         default: false
       trigger_frontend:
         description: 'Esegui webhook di trigger deploy frontend'
+        required: false
+        type: boolean
+        default: false
+      allow_other_migrations:
+        description: 'Consenti migrazioni diverse dalla lista autorizzata (20261022000001 e 20261024000001-04)'
         required: false
         type: boolean
         default: false
@@ -51,8 +51,8 @@ jobs:
       - name: Verify explicit production release confirmation
         if: ${{ !inputs.dry_run }}
         run: |
-          if [ "${{ inputs.confirm_prod_deploy }}" != "DEPLOY-PRODUCTION" ]; then
-            echo "::error::Deploy aborted: confirmation phrase does not match 'DEPLOY-PRODUCTION'."
+          if [ "${{ inputs.confirm_prod_deploy }}" != "true" ]; then
+            echo "::error::Deploy aborted: confirm_prod_deploy must be set to true for live production releases."
             exit 1
           fi
 
@@ -78,14 +78,12 @@ jobs:
           PENDING=$(echo "$DRY_RUN_OUTPUT" | grep -Eo "[0-9]{14}_[a-zA-Z0-9_]+\.sql" | sort -u || true)
 
           # Expected exact list of authorized pending migrations
-          EXPECTED=$(cat << 'EOF' | sort -u
-20261022000001_elo_5_tiers_100_start.sql
-20261024000001_server_validated_streak.sql
-20261024000002_public_profiles_view.sql
-20261024000003_daily_flash_draws.sql
-20261024000004_core_rpcs_security_definer.sql
-EOF
-)
+          EXPECTED=$(printf '%s\n' \
+            "20261022000001_elo_5_tiers_100_start.sql" \
+            "20261024000001_server_validated_streak.sql" \
+            "20261024000002_public_profiles_view.sql" \
+            "20261024000003_daily_flash_draws.sql" \
+            "20261024000004_core_rpcs_security_definer.sql" | sort -u)
 
           echo "=========================================="
           echo "EXPECTED MIGRATIONS:"
