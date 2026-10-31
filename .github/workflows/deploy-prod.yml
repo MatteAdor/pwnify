@@ -9,10 +9,10 @@ on:
         type: boolean
         default: true
       confirm_prod_deploy:
-        description: 'Conferma esplicita del rilascio effettivo in produzione'
+        description: 'Digitare "DEPLOY-PRODUCTION" per confermare il rilascio effettivo (lasciare vuoto se dry_run=true)'
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: ''
       deploy_functions:
         description: 'Esegui deploy delle Edge Functions (get_turn_credentials)'
         required: false
@@ -51,8 +51,8 @@ jobs:
       - name: Verify explicit production release confirmation
         if: ${{ !inputs.dry_run }}
         run: |
-          if [ "${{ inputs.confirm_prod_deploy }}" != "true" ]; then
-            echo "::error::Deploy aborted: confirm_prod_deploy must be set to true for live production releases."
+          if [ "${{ inputs.confirm_prod_deploy }}" != "DEPLOY-PRODUCTION" ]; then
+            echo "::error::Deploy aborted: confirmation phrase does not match 'DEPLOY-PRODUCTION'."
             exit 1
           fi
 
