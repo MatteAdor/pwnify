@@ -94,7 +94,7 @@ class UpdateManager {
       totalBytes: 0,
       errorMessage: null,
       forceMessage: null,
-      storeUrl: 'https://play.google.com/store/apps/details?id=com.zeroday.academy',
+      storeUrl: 'https://play.google.com/store/apps/details?id=com.pwnify.app',
       apkDownloadUrl: resolveApkDownloadUrl(),
       apkSha256: '',
       changelog: null,
@@ -455,7 +455,7 @@ class UpdateManager {
         flavor: 'play',
       });
       try {
-        await AppUpdate.openAppStore({ appId: 'com.zeroday.academy' });
+        await AppUpdate.openAppStore({ appId: 'com.pwnify.app' });
       } catch {
         window.open(this.state.storeUrl, '_blank');
       }

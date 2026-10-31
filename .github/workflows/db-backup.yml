@@ -5,6 +5,15 @@ on:
     # Run every day at 03:00 UTC
     - cron: '0 3 * * *'
   workflow_dispatch:
+    inputs:
+      upload_s3:
+        description: 'Upload also to S3 / Cloudflare R2 if secrets are configured'
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
 
 jobs:
   database-backup:
@@ -12,50 +21,136 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install PostgreSQL Client Tools
+      - name: Install PostgreSQL 17 Client & age Encryption Tool
         run: |
+          sudo install -d /etc/apt/keyrings
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor --yes -o /etc/apt/keyrings/postgresql.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main 17" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client openssl
+          sudo apt-get install -y postgresql-client-17 age
 
-      - name: Perform pg_dump and Encrypt Backup
+      - name: Validate Production Connection String
         run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error title=db_url_missing::SUPABASE_PROD_DB_URL secret is not configured or empty."
+            exit 1
+          fi
+          if ! echo "$SUPABASE_DB_URL" | grep -q "pooler\.supabase\.com"; then
+            echo "::error title=invalid_host::SUPABASE_PROD_DB_URL must target the Supabase connection pooler ('pooler.supabase.com')."
+            exit 1
+          fi
+          if ! echo "$SUPABASE_DB_URL" | grep -Eq "(:5432/|:5432\?)"; then
+            echo "::error title=invalid_port::SUPABASE_PROD_DB_URL must specify port 5432 (session pooler)."
+            exit 1
+          fi
+          echo "Connection string format validated (pooler.supabase.com:5432)."
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
+
+      - name: Perform pg_dump (v17 Custom Compressed), Verify & Encrypt with age
+        run: |
+          PG_DUMP_BIN="/usr/lib/postgresql/17/bin/pg_dump"
+          PG_RESTORE_BIN="/usr/lib/postgresql/17/bin/pg_restore"
+          PSQL_BIN="/usr/lib/postgresql/17/bin/psql"
+
+          CLIENT_VER_STR=$("${PG_DUMP_BIN}" --version)
+          CLIENT_MAJOR=$(echo "${CLIENT_VER_STR}" | grep -oE '[0-9]+' | head -n1)
+
+          echo "Checking PostgreSQL server version..."
+          SERVER_VER_STR=$("${PSQL_BIN}" "${SUPABASE_DB_URL}" -tAc "SHOW server_version;" 2>/dev/null || true)
+          SERVER_MAJOR=$(echo "${SERVER_VER_STR}" | grep -oE '^[0-9]+' || true)
+
+          if [ -z "${SERVER_MAJOR}" ]; then
+            echo "::error title=version_check_failed::Could not retrieve PostgreSQL server version from database connection."
+            exit 1
+          fi
+
+          if [ "${CLIENT_MAJOR}" -lt "${SERVER_MAJOR}" ]; then
+            echo "::error title=version_mismatch::pg_dump major version (${CLIENT_MAJOR}) is lower than server major version (${SERVER_MAJOR}). Aborting backup."
+            exit 1
+          fi
+
           TIMESTAMP=$(date -u +"%Y%m%d_%H%M%SZ")
           DUMP_FILE="zeroday_prod_${TIMESTAMP}.dump"
-          ENC_FILE="${DUMP_FILE}.enc"
+          AGE_FILE="${DUMP_FILE}.age"
 
-          echo "Initiating authoritative database dump from Supabase Production..."
-          pg_dump "${SUPABASE_DB_URL}" \
+          echo "Initiating authoritative database dump (pg_dump v17, custom format -Fc, compression level 9)..."
+          "${PG_DUMP_BIN}" "${SUPABASE_DB_URL}" \
             --format=custom \
+            --compress=9 \
             --no-owner \
             --no-privileges \
             --file="${DUMP_FILE}"
 
-          DUMP_SIZE=$(stat -c%s "${DUMP_FILE}")
-          echo "Dump completed (${DUMP_SIZE} bytes). Encrypting with AES-256-CBC (PBKDF2 iter 600,000)..."
+          if [ ! -f "${DUMP_FILE}" ] || [ ! -s "${DUMP_FILE}" ]; then
+            echo "::error title=dump_failed::pg_dump produced an empty or missing archive."
+            exit 1
+          fi
 
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 \
-            -in "${DUMP_FILE}" \
-            -out "${ENC_FILE}" \
-            -pass "pass:${BACKUP_KEY}"
+          DUMP_SIZE=$(stat -c%s "${DUMP_FILE}")
+
+          echo "Verifying archive integrity with pg_restore --list..."
+          "${PG_RESTORE_BIN}" --list "${DUMP_FILE}" > /tmp/pg_restore_list.txt
+
+          TABLE_COUNT=$(grep -c " TABLE " /tmp/pg_restore_list.txt || true)
+          rm -f /tmp/pg_restore_list.txt
+
+          echo "Integrity verified. Catalog contains ${TABLE_COUNT} tables."
+
+          {
+            echo "### Production Database Backup Summary"
+            echo "- **Status:** Verified Valid"
+            echo "- **Client Version:** ${CLIENT_VER_STR}"
+            echo "- **Postgres Major Version:** 17"
+            echo "- **Format:** Custom (-Fc) with Level 9 Compression"
+            echo "- **Tables in Archive Catalog:** ${TABLE_COUNT}"
+            echo "- **Plaintext Archive Size:** ${DUMP_SIZE} bytes"
+            echo "- **Encryption:** age (X25519 recipient)"
+            echo "- **Artifact Output:** \`${AGE_FILE}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Encrypting backup archive with age..."
+          age -r "age1ds43e5x7r6xvu6fd0ma67cnj3eu3rnharsrxw6z3rcp7u2nl538suvc02y" \
+            -o "${AGE_FILE}" \
+            "${DUMP_FILE}"
 
           rm -f "${DUMP_FILE}"
-          echo "Encrypted backup created: ${ENC_FILE}"
-          echo "BACKUP_PATH=${ENC_FILE}" >> $GITHUB_ENV
+
+          if [ ! -f "${AGE_FILE}" ] || [ ! -s "${AGE_FILE}" ]; then
+            echo "::error title=encryption_failed::age failed to generate encrypted backup."
+            exit 1
+          fi
+
+          ENC_SIZE=$(stat -c%s "${AGE_FILE}")
+          echo "Plaintext dump removed. Encrypted file ready (${AGE_FILE}, ${ENC_SIZE} bytes)."
+          echo "BACKUP_AGE_FILE=${AGE_FILE}" >> "$GITHUB_ENV"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_PROD_DB_URL }}
-          BACKUP_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+
+      - name: Upload Encrypted Backup Artifact (.age)
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-db-backup
+          path: "*.age"
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Upload Encrypted Backup to Offsite Object Storage (S3 / Cloudflare R2)
         run: |
-          echo "Transferring encrypted dump to offsite cold storage..."
-          aws s3 cp "${BACKUP_PATH}" "s3://${BACKUP_BUCKET_NAME}/backups/${BACKUP_PATH}" \
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$BACKUP_BUCKET_NAME" ] || [ -z "$BACKUP_S3_ENDPOINT" ]; then
+            echo "S3 / Cloudflare R2 offsite backup skipped: one or more required S3 secrets are missing."
+            exit 0
+          fi
+
+          echo "Transferring encrypted dump (${BACKUP_AGE_FILE}) to offsite cold storage..."
+          aws s3 cp "${BACKUP_AGE_FILE}" "s3://${BACKUP_BUCKET_NAME}/backups/${BACKUP_AGE_FILE}" \
             --endpoint-url "${BACKUP_S3_ENDPOINT}"
 
-          echo "Upload complete. Purging local encrypted dump from runner..."
-          rm -f "${BACKUP_PATH}"
+          echo "Offsite upload complete."
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
           BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
           BACKUP_BUCKET_NAME: ${{ secrets.BACKUP_BUCKET_NAME }}
+          BACKUP_AGE_FILE: ${{ env.BACKUP_AGE_FILE }}

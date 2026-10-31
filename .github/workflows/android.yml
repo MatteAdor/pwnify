@@ -47,7 +47,7 @@ jobs:
         if: env.KEYSTORE_B64 != ''
         run: |
           echo "$KEYSTORE_B64" | base64 -d > android/app/zeroday-release.jks
-          echo "ANDROID_KEYSTORE_PATH=zeroday-release.jks" >> $GITHUB_ENV
+          echo "ANDROID_KEYSTORE_PATH=zeroday-release.jks" >> "$GITHUB_ENV"
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 

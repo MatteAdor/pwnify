@@ -37,6 +37,10 @@ supabase/*.enc
 *.jks
 *.keystore
 keystore.properties
+*.dump
+*.dump.age
+*.age
+zeroday-backup-key.txt
 
 
 .agent

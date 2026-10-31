@@ -18,11 +18,11 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.zeroday.academy"
+        applicationId "com.pwnify.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.2.6"
+        versionCode 7
+        versionName "1.2.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -30,16 +30,58 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~:!*.apk:downloads'
         }
     }
+    // Security Guardrail: Reject signing credentials defined in project repository files
+    def forbiddenSigningKeys = [
+        "ZERODAY_KEYSTORE_PATH",
+        "ZERODAY_KEYSTORE_PASSWORD",
+        "ZERODAY_KEY_ALIAS",
+        "ZERODAY_KEY_PASSWORD"
+    ]
+    [rootProject.file("gradle.properties"), project.file("gradle.properties")].each { propFile ->
+        if (propFile.exists()) {
+            def props = new Properties()
+            propFile.withInputStream { is -> props.load(is) }
+            def leaks = forbiddenSigningKeys.findAll { k -> props.containsKey(k) }
+            if (!leaks.isEmpty()) {
+                throw new GradleException("SECURITY VIOLATION: Project file '${propFile.name}' defines forbidden signing parameters: ${leaks.join(', ')}.\n" +
+                    "Signing credentials must NEVER be placed in repository files.\n" +
+                    "Configure them ONLY in ~/.gradle/gradle.properties (%USERPROFILE%/.gradle/gradle.properties) or as environment variables.")
+            }
+        }
+    }
+
+    def getSecureSigningProperty = { String key ->
+        def envVal = System.getenv(key) ?: (key.startsWith("ZERODAY_") ? System.getenv(key.replace("ZERODAY_", "ANDROID_")) : null)
+        if (envVal) {
+            return envVal.trim()
+        }
+        def userHome = System.getProperty("user.home")
+        def userPropFile = new File(userHome, ".gradle/gradle.properties")
+        if (userPropFile.exists()) {
+            def userProps = new Properties()
+            userPropFile.withInputStream { is -> userProps.load(is) }
+            if (userProps.containsKey(key)) {
+                def val = userProps.getProperty(key)
+                if (val != null) return val.trim()
+            }
+        }
+        def propVal = project.findProperty(key)
+        if (propVal != null) {
+            return propVal.toString().trim()
+        }
+        return null
+    }
+
     signingConfigs {
         release {
-            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
+            def ksPath = getSecureSigningProperty("ZERODAY_KEYSTORE_PATH")
             if (ksPath) {
                 def ksFile = file(ksPath).isAbsolute() ? file(ksPath) : rootProject.file(ksPath)
                 if (ksFile.exists()) {
                     storeFile ksFile
-                    storePassword (project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD") ?: "")
-                    keyAlias (project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS") ?: "")
-                    keyPassword (project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD") ?: "")
+                    storePassword (getSecureSigningProperty("ZERODAY_KEYSTORE_PASSWORD") ?: "")
+                    keyAlias (getSecureSigningProperty("ZERODAY_KEY_ALIAS") ?: "")
+                    keyPassword (getSecureSigningProperty("ZERODAY_KEY_PASSWORD") ?: "")
                 }
             }
         }
@@ -53,15 +95,19 @@ android {
                    n.contains("bundleplayrelease") || n.contains("bundledirectrelease")
         }
         if (isReleaseTask) {
-            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
-            def ksPass = project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD")
-            def kAlias = project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS")
-            def kPass = project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD")
+            def ksPath = getSecureSigningProperty("ZERODAY_KEYSTORE_PATH")
+            def ksPass = getSecureSigningProperty("ZERODAY_KEYSTORE_PASSWORD")
+            def kAlias = getSecureSigningProperty("ZERODAY_KEY_ALIAS")
+            def kPass = getSecureSigningProperty("ZERODAY_KEY_PASSWORD")
 
-            if (!ksPath || !ksPass || !kAlias || !kPass) {
-                throw new GradleException("BUILD FAILED: Missing required release signing credentials.\n" +
-                    "Configure ZERODAY_KEYSTORE_PATH, ZERODAY_KEYSTORE_PASSWORD, ZERODAY_KEY_ALIAS, ZERODAY_KEY_PASSWORD\n" +
-                    "in %USERPROFILE%/.gradle/gradle.properties (or ~/.gradle/gradle.properties) or as environment variables.")
+            def missing = []
+            if (!ksPath) missing << "ZERODAY_KEYSTORE_PATH"
+            if (!ksPass) missing << "ZERODAY_KEYSTORE_PASSWORD"
+            if (!kAlias) missing << "ZERODAY_KEY_ALIAS"
+            if (!kPass) missing << "ZERODAY_KEY_PASSWORD"
+            if (!missing.isEmpty()) {
+                throw new GradleException("BUILD FAILED: Missing required release signing credentials: ${missing.join(', ')}\n" +
+                    "Configure them in %USERPROFILE%/.gradle/gradle.properties (or ~/.gradle/gradle.properties) or as environment variables.")
             }
             def ksFile = file(ksPath).isAbsolute() ? file(ksPath) : rootProject.file(ksPath)
             if (!ksFile.exists()) {

@@ -1,3 +1,42 @@
+/**
+ * Imports legacy localStorage streak to the server authoritative user_streaks table once.
+ * Strictly capped at 30 days, one-shot per account.
+ */
+export async function importMyLegacyStreakOnce(localStreak: number): Promise<number | null> {
+  if (!isSupabaseConfigured) return null;
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('zeroday_legacy_streak_imported')) {
+    return null;
+  }
+  try {
+    const rawDays = typeof localStreak === 'number' ? localStreak : 0;
+    if (rawDays <= 0) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('zeroday_legacy_streak_imported', 'true');
+      }
+      return null;
+    }
+
+    const cappedDays = Math.min(30, Math.max(0, rawDays));
+    const { data, error } = await supabase.rpc('import_my_legacy_streak', {
+      p_days: cappedDays
+    });
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('zeroday_legacy_streak_imported', 'true');
+    }
+
+    if (!error && data) {
+      return (data as { imported_days?: number }).imported_days ?? cappedDays;
+    }
+    return null;
+  } catch (err) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('zeroday_legacy_streak_imported', 'true');
+    }
+    return null;
+  }
+}
+
 import { supabase, isSupabaseConfigured } from '../config/supabase.ts';
 import type { UserState } from '../types/index.ts';
 import type { Database, Json } from '../types/database.types.ts';
@@ -237,6 +276,15 @@ export async function syncUserProfile(
       return cached;
     }
 
+    // Legacy streak import (one-shot, capped at 30 days)
+    if (localState?.streakDays && typeof localStorage !== 'undefined' && !localStorage.getItem('zeroday_legacy_streak_imported')) {
+      try {
+        await importMyLegacyStreakOnce(localState.streakDays);
+      } catch (streakErr) {
+        console.warn('[Sync] Legacy streak import skipped or failed:', streakErr);
+      }
+    }
+
     // Fetch remote profile
     const { data: profile, error } = await supabase
       .from('profiles')
@@ -321,8 +369,8 @@ export async function fetchRankedLeaderboard(): Promise<GlobalLeaderboardEntry[]
   if (isSupabaseConfigured) {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
+        .from('public_profiles')
+        .select('id, nick, elo, rank, xp')
         .order('elo', { ascending: false })
         .limit(100);
 

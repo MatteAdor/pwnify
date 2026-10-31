@@ -38,6 +38,9 @@ const APK_FILENAME = 'zeroday.apk';
 
 const APK_GITHUB_MIRROR = 'https://github.com/MatteAdor/zeroday_app/releases';
 
+// Migration notice for APK signature changes (kept disabled until public rollout)
+const SHOW_RELEASE_MIGRATION_NOTICE = false;
+
 
 export const LandingPortal: React.FC<LandingPortalProps> = ({
   onLaunchApp,
@@ -478,6 +481,33 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <div>3. {isEn ? 'Open APK and sign in with your username.' : 'Apri l\'APK e accedi con il tuo username.'}</div>
               </div>
 
+              {/* Migration & Sideloading Notice (Disabled by default flag) */}
+              {SHOW_RELEASE_MIGRATION_NOTICE && (
+                <div className="bg-amber-950/20 border border-amber-500/30 rounded-lg p-3 space-y-2 text-[11px] text-amber-200/90 font-mono">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{isEn ? 'IMPORTANT: Signature Migration Notice' : 'IMPORTANTE: Cambio Firma Crittografica'}</span>
+                  </div>
+                  <div className="space-y-1.5 text-[10px] leading-relaxed">
+                    <p>
+                      {isEn
+                        ? '1. Install Pwnify then uninstall ZeroDay: Install the new Pwnify app from the download link above, then uninstall the old ZeroDay app. Your account, PRO license, and ranked ELO are safe on the Supabase cloud; only local unimported guest data will be lost.'
+                        : '1. Installa Pwnify e disinstalla ZeroDay: Installa la nuova app Pwnify dal link qui sopra, quindi disinstalla la vecchia app ZeroDay. Il tuo account, la licenza PRO e il rating ELO sono sincronizzati al sicuro su cloud Supabase; solo i dati locali non importati andranno persi.'}
+                    </p>
+                    <p>
+                      {isEn
+                        ? '2. Permesso "Installa app sconosciute": Se il browser blocca l\'installazione, tocca Impostazioni > App > Accesso speciale > Installa app sconosciute e abilita il permesso per il tuo browser (Chrome/Edge/Firefox).'
+                        : '2. Permesso "Installa app sconosciute": Se il browser blocca l\'apertura del file APK, vai su Impostazioni > App > Accesso speciale > Installa app sconosciute e consenti l\'installazione per il tuo browser.'}
+                    </p>
+                    <p>
+                      {isEn
+                        ? '3. Avviso Google Play Protect: Poiché l\'APK è distribuito direttamente e firmato con chiave privata autonoma, Play Protect potrebbe mostrare "App non riconosciuta". Tocca "Ulteriori dettagli" / "Maggiori informazioni" e seleziona "Installa comunque".'
+                        : '3. Avviso Google Play Protect: Trattandosi di distribuzione diretta autonoma firmata con chiave proprietaria, Play Protect potrebbe segnalare "App non riconosciuta". Tocca "Maggiori dettagli" (o "Ulteriori dettagli") e seleziona "Installa comunque".'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* Download Card 2: Web Platform */}
@@ -606,7 +636,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               <span>{isEn ? 'PREDICTIVE READINESS RADAR' : 'RADAR DI IDONEITÀ ALL\'ESAME'}</span>
             </div>
             <h3 className="text-lg font-bold text-white">
-              {isEn ? 'Telemetry that predicts your exam pass rate' : 'Telemetria che prevede il tuo superamento dell\'esame'}
+              {isEn ? 'Telemetry that tracks your preparation index across 6 domains' : 'Telemetria che misura il tuo indice di preparazione sui 6 domini'}
             </h3>
             <p className="text-sm text-slate-300 leading-relaxed">
               {isEn
@@ -614,7 +644,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 : 'L\'algoritmo di telemetria a 6 assi calcola le tue competenze in AppSec, Difesa di Rete, Crittografia, IAM, Risposta a Incidenti e Governance per dirti se sei pronto per l\'esame.'}
             </p>
             <div className="pt-2 text-xs font-mono text-slate-400">
-              Pass probability calculated with 94.2% historical accuracy
+              Stima trasparente basata sui tuoi progressi pratici
             </div>
           </div>
 

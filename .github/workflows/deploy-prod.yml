@@ -1,10 +1,38 @@
 name: Deploy Production
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Eseguire solo simulazione db push (--dry-run) senza applicare modifiche'
+        required: true
+        type: boolean
+        default: true
+      confirm_prod_deploy:
+        description: 'Digitare "DEPLOY-PRODUCTION" per confermare il rilascio effettivo (ignorato se dry_run=true)'
+        required: false
+        type: string
+        default: ''
+      allow_other_migrations:
+        description: 'Consenti migrazioni diverse dalla lista autorizzata (20261022000001 e 20261024000001-04)'
+        required: false
+        type: boolean
+        default: false
+      deploy_functions:
+        description: 'Esegui deploy delle Edge Functions (get_turn_credentials)'
+        required: false
+        type: boolean
+        default: false
+      seed_questions:
+        description: 'Esegui seed remoto delle domande cifrate'
+        required: false
+        type: boolean
+        default: false
+      trigger_frontend:
+        description: 'Esegui webhook di trigger deploy frontend'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -20,31 +48,95 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify explicit production release confirmation
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if [ "${{ inputs.confirm_prod_deploy }}" != "DEPLOY-PRODUCTION" ]; then
+            echo "::error::Deploy aborted: confirmation phrase does not match 'DEPLOY-PRODUCTION'."
+            exit 1
+          fi
+
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Link Production Project
         run: |
           supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
-      - name: Apply Database Migrations to Production
+      - name: Verify Pending Migrations (Safety Guard)
         run: |
-          supabase db push --include-all
+          echo "Inspecting pending migrations via dry-run simulation with --linked..."
+          DRY_RUN_OUTPUT=$(supabase db push --dry-run --linked 2>&1 || true)
+          echo "$DRY_RUN_OUTPUT"
+
+          # Extract unique pending .sql migration filenames
+          PENDING=$(echo "$DRY_RUN_OUTPUT" | grep -Eo "[0-9]{14}_[a-zA-Z0-9_]+\.sql" | sort -u || true)
+
+          # Expected exact list of authorized pending migrations
+          EXPECTED=$(cat << 'EOF' | sort -u
+20261022000001_elo_5_tiers_100_start.sql
+20261024000001_server_validated_streak.sql
+20261024000002_public_profiles_view.sql
+20261024000003_daily_flash_draws.sql
+20261024000004_core_rpcs_security_definer.sql
+EOF
+)
+
+          echo "=========================================="
+          echo "EXPECTED MIGRATIONS:"
+          echo "$EXPECTED"
+          echo "------------------------------------------"
+          echo "DETECTED PENDING MIGRATIONS:"
+          if [ -z "$PENDING" ]; then
+            echo "(None detected)"
+          else
+            echo "$PENDING"
+          fi
+          echo "=========================================="
+
+          if [ "${{ inputs.allow_other_migrations }}" != "true" ]; then
+            if [ "$PENDING" != "$EXPECTED" ]; then
+              echo "::error title=unapproved_migrations::Pending migrations do not match expected list exactly. Aborting release."
+              exit 1
+            fi
+            echo "All pending migrations verified: EXACT match with authorized list."
+          else
+            echo "allow_other_migrations is true: skipping strict list check."
+          fi
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+
+      - name: Apply Database Migrations to Production (Dry Run)
+        if: ${{ inputs.dry_run }}
+        run: |
+          supabase db push --dry-run --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+
+      - name: Apply Database Migrations to Production
+        if: ${{ !inputs.dry_run }}
+        run: |
+          supabase db push --include-all --linked
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
       - name: Deploy Edge Functions to Production
+        if: ${{ !inputs.dry_run && inputs.deploy_functions }}
         run: |
           supabase functions deploy get_turn_credentials --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Seed Questions to Production (In-Memory Decryption)
-        if: env.QUESTION_BANK_KEY != '' && env.QUESTION_BANK_REMOTE_URL != ''
+        if: ${{ !inputs.dry_run && inputs.seed_questions && env.QUESTION_BANK_KEY != '' && env.QUESTION_BANK_REMOTE_URL != '' }}
         run: |
           npm ci
           node scripts/seed_questions_remote.cjs
@@ -56,7 +148,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_PROD_SERVICE_ROLE_KEY }}
 
       - name: Trigger Frontend Deploy (Vercel / Cloudflare Hook)
-        if: env.DEPLOY_HOOK_URL != ''
+        if: ${{ !inputs.dry_run && inputs.trigger_frontend && env.DEPLOY_HOOK_URL != '' }}
         run: |
           curl -X POST -s -o /dev/null -w "%{http_code}" "$DEPLOY_HOOK_URL"
         env:

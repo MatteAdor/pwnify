@@ -146,7 +146,7 @@ public class DirectUpdatePlugin extends Plugin {
                 input = connection.getInputStream();
 
                 File cacheDir = getContext().getCacheDir();
-                File outputFile = new File(cacheDir, "zeroday-update.apk");
+                File outputFile = new File(cacheDir, "pwnify-update.apk");
                 if (outputFile.exists()) {
                     outputFile.delete();
                 }
