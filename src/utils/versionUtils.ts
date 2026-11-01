@@ -231,7 +231,7 @@ export function resolveApkDownloadUrl(config?: RemotePlatformConfig | null): str
       const sanitized = sanitizeApkUrl(config.apk_download_url.trim());
       if (isAllowedDownloadUrl(sanitized)) return sanitized;
     }
-    return '/downloads/zeroday.apk';
+    return DEFAULT_FALLBACK_APK_URL;
   }
 
   if (config?.apk_download_url && config.apk_download_url.trim()) {
