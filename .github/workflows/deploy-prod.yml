@@ -29,7 +29,7 @@ on:
         type: boolean
         default: false
       allow_other_migrations:
-        description: 'Consenti migrazioni diverse dalla lista autorizzata (20261022000001 e 20261024000001-04)'
+        description: 'Consenti migrazioni in sospeso diverse dall elenco atteso (attese 0 dopo Fase A)'
         required: false
         type: boolean
         default: false
@@ -77,17 +77,16 @@ jobs:
           # Extract unique pending .sql migration filenames
           PENDING=$(echo "$DRY_RUN_OUTPUT" | grep -Eo "[0-9]{14}_[a-zA-Z0-9_]+\.sql" | sort -u || true)
 
-          # Expected exact list of authorized pending migrations
-          EXPECTED=$(printf '%s\n' \
-            "20261022000001_elo_5_tiers_100_start.sql" \
-            "20261024000001_server_validated_streak.sql" \
-            "20261024000002_public_profiles_view.sql" \
-            "20261024000003_daily_flash_draws.sql" \
-            "20261024000004_core_rpcs_security_definer.sql" | sort -u)
+          # Expected exact list of authorized pending migrations (Phase A applied: zero pending expected)
+          EXPECTED=""
 
           echo "=========================================="
-          echo "EXPECTED MIGRATIONS:"
-          echo "$EXPECTED"
+          echo "EXPECTED PENDING MIGRATIONS:"
+          if [ -z "$EXPECTED" ]; then
+            echo "(None expected - all Phase A migrations applied)"
+          else
+            echo "$EXPECTED"
+          fi
           echo "------------------------------------------"
           echo "DETECTED PENDING MIGRATIONS:"
           if [ -z "$PENDING" ]; then
@@ -99,10 +98,10 @@ jobs:
 
           if [ "${{ inputs.allow_other_migrations }}" != "true" ]; then
             if [ "$PENDING" != "$EXPECTED" ]; then
-              echo "::error title=unapproved_migrations::Pending migrations do not match expected list exactly. Aborting release."
+              echo "::error title=unapproved_migrations::Pending migrations detected when 0 expected. Aborting release."
               exit 1
             fi
-            echo "All pending migrations verified: EXACT match with authorized list."
+            echo "All migrations verified: database is up to date (0 pending migrations)."
           else
             echo "allow_other_migrations is true: skipping strict list check."
           fi

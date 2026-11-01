@@ -8,10 +8,10 @@ Questo documento definisce la sequenza operativa per il rilascio sicuro in produ
 
 | Passo | Descrizione | Responsabile | Cosa controllare | Procedura di Rollback |
 |---|---|---|---|---|
-| **1. Backup DB** | Verifica ultimo run `db-backup.yml` e stato dump | AI / Operatore | Esito run su API pubblica GitHub e integrità del dump S3/R2 | Se fallito, non procedere: eseguire dump manuale da Dashboard Supabase |
-| **2. Dry-Run Migrazione** | Dispatch `deploy-prod.yml` con `dry_run=true` | Operatore | Output `supabase db push --dry-run`: applica solo `20261024000001` - `04` | Nessuna modifica applicata: nessuna azione di rollback |
-| **3. Applicazione Fase A** | Dispatch `deploy-prod.yml` con `dry_run=false` e conferma | Operatore | Approvazione Environment `production`, push migrazioni `20261024*` (A) | Ripristino dump backup o esecuzione script inverso di drop colonne/tabelle A |
-| **4. Health Checks Fase A** | Esecuzione script di sola lettura `health_checks_phase_a.sql` | Operatore / AI | Tutti gli ASSERT superati (streaks, daily flash, view, backfill) | Se anomalie, verificare log Supabase prima del merge frontend |
+| **1. Backup DB** | Verifica ultimo run `db-backup.yml` e stato dump | AI / Operatore | **[COMPLETATO]** Dump cifrato e verificato | Se fallito, non procedere: eseguire dump manuale da Dashboard Supabase |
+| **2. Dry-Run Migrazione** | Dispatch `deploy-prod.yml` con `dry_run=true` | Operatore | **[COMPLETATO]** Simulazione dry-run verificata | Nessuna modifica applicata: nessuna azione di rollback |
+| **3. Applicazione Fase A** | Dispatch `deploy-prod.yml` con `dry_run=false` e conferma | Operatore | **[COMPLETATO]** Migrazioni Fase A applicate (`20261022000001`, `20261024000001-04`) | Ripristino dump backup o esecuzione script inverso di drop colonne/tabelle A |
+| **4. Health Checks Fase A** | Esecuzione script di sola lettura `health_checks_phase_a.sql` | Operatore / AI | **[COMPLETATO]** Verifiche superate (streaks, flash, view) | Se anomalie, verificare log Supabase prima del merge frontend |
 | **5. Merge PR #5** | Rimozione stato Draft e merge PR #5 su `main` | Operatore | Build Vercel automatica completata con successo | Git revert commit di merge su `main` (trigger Vercel rollback) |
 | **6. Rilascio APK** | Build e firma release Android (APK / AAB) | Operatore | Version code incrementato, verifica firma release | Mantenere versione corrente su Play Console |
 | **7. Fase C (Contract)** | Esecuzione controllata contratti da `supabase/contract/` | Operatore | Pre-flight su nick duplicati (nessun abort su `lower(nick)`) | Rollback manuale: ripristino privilegi `GRANT UPDATE` da backup |
@@ -76,20 +76,12 @@ Questo documento definisce la sequenza operativa per il rilascio sicuro in produ
   3. Nessuna migrazione di `supabase/contract/` (Fase C) viene rilevata o pianificata.
   4. Vengono saltati il deploy delle funzioni, il seed e l'hook Vercel.
 
-### Passo 3: Esecuzione Rilascio Fase A in Produzione
-- **Azione**: L'operatore avvia il workflow definitivo:
-  - **Branch**: `feature/retention-b0`
-  - **dry_run**: `false`
-  - **confirm_prod_deploy**: `DEPLOY-PRODUCTION`
-- **Autorizzazione**: Richiede l'approvazione manuale dell'ambiente `production` da parte dell'operatore autorizzato.
-- **Cosa verificare**:
-  1. Successo del comando `supabase db push --include-all`.
-  2. Deploy della funzione Edge `get_turn_credentials`.
-  3. Esecuzione seed protetto e chiamata al deploy hook frontend.
+### Passo 3: Esecuzione Rilascio Fase A in Produzione [COMPLETATO]
+- **Stato**: Eseguito con successo. Migrazioni `20261022000001` e `20261024000001-04` applicate in produzione.
+- **Guardia deploy-prod.yml**: Aggiornata per attendere 0 migrazioni pendenti (qualsiasi file rilevato causa abort).
 
-### Passo 4: Controlli di Salute Post-Fase A
-- **Azione**: L'operatore esegue in console SQL di sola lettura il file `supabase/health_checks_phase_a.sql`.
-- **Cosa verificare**:
+### Passo 4: Controlli di Salute Post-Fase A [COMPLETATO]
+- **Stato**: Verifiche completate con successo via health check di sola lettura.
   1. Tabelle `user_streaks` e `daily_flash_draws` presenti con RLS attivo.
   2. Vista `public_profiles` presente ed esportabile.
   3. Colonna `nick_updated_at` presente in `public.profiles`.

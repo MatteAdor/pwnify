@@ -4,12 +4,15 @@
 
 Le migrazioni sono strutturate per consentire un rollout a zero-downtime senza rompere i client attivi (sito web e APK 1.2.1):
 
-### FASE A — EXPAND (Retrocompatibile con i client correnti)
-Applicabile immediatamente in produzione senza interrompere l'APK 1.2.1 né il sito attuale:
+### FASE A — EXPAND [APPLICATA IN PRODUZIONE]
+Le migrazioni della Fase A (`20261022000001` e `20261024000001-04`) sono state applicate con successo sul database di produzione:
+- `20261022000001_elo_5_tiers_100_start.sql`: ELO 5 tiers a 100 base start.
 - `20261024000001_server_validated_streak.sql`: Colonne streak server-authoritative (`streak_freeze_count`, `streak_protection_active`, `streak_freeze_used_at`), trigger validazione streak, RPC `record_user_streak_activity` e utility `get_server_time`.
 - `20261024000002_public_profiles_view.sql`: Colonne opt-in (`is_public_profile`, `is_profession_public`, `profession`, `nick_updated_at`), creazione view `public.public_profiles` con pseudonimi salati `Operatore-XXXXXX` e `GRANT SELECT` ad `anon` e `authenticated`, RPC `is_nick_available`, `update_my_profile_preferences`, `update_my_inventory_cosmetics`. La tabella base `profiles` mantiene `SELECT` per `anon`.
-- `20261024000003_daily_flash_draws.sql`: Tabella `daily_flash_draws` e vincolo `(user_id, draw_date)`. RPC `claim_daily_flash_draw` con lettura segreto da Supabase Vault o GUC (`app.settings.daily_flash_secret`), senza alcun fallback in chiaro (solleva `55000` se non configurato).
+- `20261024000003_daily_flash_draws.sql`: Tabella `daily_flash_draws` e vincolo `(user_id, draw_date)`. RPC `claim_daily_flash_draw` con lettura segreto da Supabase Vault (`daily_flash_secret`), senza alcun fallback in chiaro (solleva `55000` se non configurato).
 - `20261024000004_core_rpcs_security_definer.sql`: Versioni `SECURITY DEFINER SET search_path = ''` delle 5 RPC core (`find_or_create_match`, `submit_answer`, `forfeit_match`, `claim_daily_flash_draw`, `migrate_my_legacy_progress`), preservando algoritmi ELO, rotazione domande e anti-farming.
+
+*Nota di sicurezza:* La guardia `deploy-prod.yml` attende ora 0 migrazioni pendenti (qualsiasi file rilevato da `supabase db push --dry-run` provocherà l'abort del rilascio).
 
 ---
 
