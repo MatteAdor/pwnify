@@ -112,4 +112,22 @@ describe('Android Identity & Deep Link Cross-Consistency Suite', () => {
       `updateManager.ts must open store with appId '${EXPECTED_APPLICATION_ID}'`
     );
   });
+
+  it('verifies network_security_config.xml enforces https, system trust anchors, and rejects placeholder digests', () => {
+    const xml = readProjectFile('android/app/src/main/res/xml/network_security_config.xml');
+
+    assert.ok(
+      xml.includes('cleartextTrafficPermitted="false"'),
+      'network_security_config.xml must prohibit cleartext traffic'
+    );
+    assert.ok(
+      xml.includes('<certificates src="system" />'),
+      'network_security_config.xml must trust system certificates'
+    );
+    assert.strictEqual(
+      /AAAA|BBBB/.test(xml),
+      false,
+      'network_security_config.xml must not contain placeholder digests (AAAA/BBBB)'
+    );
+  });
 });

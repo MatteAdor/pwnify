@@ -3,8 +3,6 @@ import { UserState, SkillNode, PaywallContext } from './types';
 import { INITIAL_DAILY_BOUNTIES } from './data/bountiesAndPbq';
 import { Navbar } from './components/Navbar';
 import { BottomNav, ActiveTab } from './components/BottomNav';
-import { ProfileTab } from './components/Profile/ProfileTab';
-import { SettingsModal } from './components/Settings/SettingsModal';
 import { OnboardingFunnel } from './components/Onboarding/OnboardingFunnel';
 import { TacticalSkillTree } from './components/SkillTree/TacticalSkillTree';
 import { InteractiveQuizModal } from './components/Quiz/InteractiveQuizModal';
@@ -45,7 +43,6 @@ import {
   sanitizeUserState,
   syncDatabaseWithBackend,
   updateOperatorUsername,
-  updateOperatorBio,
   recordCertPassed,
   UserAccount 
 } from './utils/userDatabase';
@@ -63,7 +60,6 @@ import confetti from 'canvas-confetti';
 
 const THEME_BG_MAP: Record<TerminalThemeId, string> = {
   cyber_emerald: 'bg-[#090D16]',
-  obsidian_zinc: 'bg-[#09090B]',
   matrix_phosphor: 'bg-[#030d06]',
   cyberpunk_neon: 'bg-[#0c071a]',
   amber_crt: 'bg-[#120b04]',
@@ -139,18 +135,8 @@ export const App: React.FC = () => {
   const [forceCookieBanner, setForceCookieBanner] = useState<boolean>(false);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<ActiveTab>('learn');
-  const MAIN_TABS: ActiveTab[] = ['learn', 'practice', 'arena', 'quests', 'profile'];
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-
-  const handleSelectTab = (newTab: ActiveTab) => {
-    if (newTab === activeTab) return;
-    const currentIdx = MAIN_TABS.indexOf(activeTab);
-    const newIdx = MAIN_TABS.indexOf(newTab);
-    setSlideDirection(newIdx > currentIdx ? 'left' : 'right');
-    setActiveTab(newTab);
-  };
+  const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
+  const MAIN_TABS: ActiveTab[] = ['tree', 'arena', 'missions', 'radar', 'certs'];
 
   // Horizontal Swipe Gestures for Seamless Tab Navigation
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -181,14 +167,12 @@ export const App: React.FC = () => {
       if (currentIndex === -1) return;
 
       if (deltaX < 0 && currentIndex < MAIN_TABS.length - 1) {
-        // Swiped Left -> Move to Next Tab (slides from right)
+        // Swiped Left -> Move to Next Tab
         sound.playTap();
-        setSlideDirection('left');
         setActiveTab(MAIN_TABS[currentIndex + 1]);
       } else if (deltaX > 0 && currentIndex > 0) {
-        // Swiped Right -> Move to Previous Tab (slides from left)
+        // Swiped Right -> Move to Previous Tab
         sound.playTap();
-        setSlideDirection('right');
         setActiveTab(MAIN_TABS[currentIndex - 1]);
       }
     }
@@ -337,20 +321,11 @@ export const App: React.FC = () => {
   const [isArsenalOpen, setIsArsenalOpen] = useState<boolean>(false);
   const [currentTheme, setCurrentTheme] = useState<TerminalThemeId>(() => {
     try {
-      const saved = localStorage.getItem('0x_arsenal_theme') as TerminalThemeId;
-      if (saved && saved !== 'cyber_emerald') return saved;
-      return 'obsidian_zinc';
+      return (localStorage.getItem('0x_arsenal_theme') as TerminalThemeId) || 'cyber_emerald';
     } catch {
-      return 'obsidian_zinc';
+      return 'cyber_emerald';
     }
   });
-
-  useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', currentTheme);
-      document.body.setAttribute('data-theme', currentTheme);
-    }
-  }, [currentTheme]);
   const [currentTitle, setCurrentTitle] = useState<string>(() => {
     try {
       return localStorage.getItem('0x_arsenal_title') || 'Script Kiddie';
@@ -506,10 +481,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     setCurrentTheme(themeId);
     try {
       localStorage.setItem('0x_arsenal_theme', themeId);
-      if (typeof document !== 'undefined') {
-        document.documentElement.setAttribute('data-theme', themeId);
-        document.body.setAttribute('data-theme', themeId);
-      }
     } catch (e) {
       console.error(e);
     }
@@ -642,7 +613,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleResetData = () => {
     setCurrentSession(null);
     setUserState(createDefaultGuestState());
-    handleSelectTab('learn');
+    setActiveTab('tree');
   };
 
   // Onboarding Complete Handler
@@ -885,10 +856,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   };
 
   return (
-    <div 
-      data-theme={currentTheme}
-      className={`min-h-screen ${THEME_BG_MAP[currentTheme] || 'bg-[#090D16]'} text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300`}
-    >
+    <div className={`min-h-screen ${THEME_BG_MAP[currentTheme] || 'bg-[#090D16]'} text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300 transition-colors duration-300`}>
       {/* Public Presentation & Download Portal vs Interactive Web App */}
       {viewMode === 'portal' ? (
         <LandingPortal
@@ -970,7 +938,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               window.location.hash = '';
             }}
             currentTitle={currentTitle}
-            onOpenProfile={() => handleSelectTab('profile')}
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}
@@ -1046,74 +1013,65 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             onTouchEnd={handleTouchEnd}
             className="flex-1 overflow-y-auto"
           >
-            <div 
-              key={activeTab} 
-              className={slideDirection === 'left' ? 'animate-tab-slide-left' : slideDirection === 'right' ? 'animate-tab-slide-right' : 'animate-fade-in'}
-            >
-              {activeTab === 'practice' && (
-                <CertPrepTab
-                  userState={userState}
-                  onOpenPaywallContext={triggerPaywall}
-                  onCompletePbq={handleCompletePbq}
-                  onPassCert={handlePassCert}
-                />
-              )}
+            {activeTab === 'tree' && (
+              <TacticalSkillTree
+                userState={userState}
+                onSelectNode={handleSelectNode}
+                onOpenPaywall={() => triggerPaywall('manual_upgrade')}
+                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+              />
+            )}
 
-              {activeTab === 'learn' && (
-                <TacticalSkillTree
+            {activeTab === 'arena' && (
+              isBrowserEnvironment() ? (
+                <ArenaWebLockedView onBackToSkillTree={() => setActiveTab('tree')} />
+              ) : (
+                <ArenaPvP
                   userState={userState}
-                  onSelectNode={handleSelectNode}
-                  onOpenPaywall={() => triggerPaywall('manual_upgrade')}
-                  onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
-                />
-              )}
-
-              {activeTab === 'arena' && (
-                isBrowserEnvironment() ? (
-                  <ArenaWebLockedView onBackToSkillTree={() => handleSelectTab('learn')} />
-                ) : (
-                  <ArenaPvP
-                    userState={userState}
-                    onConsumeTicket={handleConsumeTicket}
-                    onWinMatch={handleWinMatch}
-                    onLossMatch={handleLossMatch}
-                    onOpenPaywall={(ctx) => triggerPaywall(ctx)}
-                    onOpenHackerCard={() => setIsHackerCardOpen(true)}
-                    initialDuelChallenge={activeDuelForArena}
-                    onClearInitialDuel={() => setActiveDuelForArena(null)}
-                    onUpdateSurvivalScore={handleUpdateSurvivalScore}
-                  />
-                )
-              )}
-
-              {activeTab === 'quests' && (
-                <MissionsTab
-                  userState={userState}
-                  onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
-                  onOpenPaywallContext={triggerPaywall}
-                  onClaimFreeBounty={handleClaimFreeBounty}
-                  onClaimProBounty={handleClaimProBounty}
-                />
-              )}
-
-              {activeTab === 'profile' && (
-                <ProfileTab
-                  userState={userState}
+                  onConsumeTicket={handleConsumeTicket}
+                  onWinMatch={handleWinMatch}
+                  onLossMatch={handleLossMatch}
                   onOpenPaywall={(ctx) => triggerPaywall(ctx)}
                   onOpenHackerCard={() => setIsHackerCardOpen(true)}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
-                  onNavigateToPractice={() => handleSelectTab('practice')}
-                  currentTheme={currentTheme}
-                  currentTitle={currentTitle}
+                  initialDuelChallenge={activeDuelForArena}
+                  onClearInitialDuel={() => setActiveDuelForArena(null)}
+                  onUpdateSurvivalScore={handleUpdateSurvivalScore}
                 />
-              )}
-            </div>
+              )
+            )}
+
+            {activeTab === 'missions' && (
+              <MissionsTab
+                userState={userState}
+                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                onOpenPaywallContext={triggerPaywall}
+                onClaimFreeBounty={handleClaimFreeBounty}
+                onClaimProBounty={handleClaimProBounty}
+              />
+            )}
+
+            {activeTab === 'radar' && (
+              <ReadinessRadar
+                userState={userState}
+                onOpenPaywall={(ctx) => triggerPaywall(ctx)}
+                onOpenHackerCard={() => setIsHackerCardOpen(true)}
+              />
+            )}
+
+            {activeTab === 'certs' && (
+              <CertPrepTab
+                userState={userState}
+                onOpenPaywallContext={triggerPaywall}
+                onCompletePbq={handleCompletePbq}
+                onPassCert={handlePassCert}
+              />
+            )}
           </main>
 
           {/* Bottom Persistent Navigation */}
           <BottomNav
             activeTab={activeTab}
-            onSelectTab={handleSelectTab}
+            onSelectTab={setActiveTab}
             winStreak={userState.winStreak}
           />
 
@@ -1141,33 +1099,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               setIsLegalModalOpen(true);
             }}
             onOpenCookiePrefs={() => setForceCookieBanner(true)}
-            currentTitle={currentTitle}
-          />
-
-          {/* Settings & Account Management Modal (Mimo Style) */}
-          <SettingsModal
-            isOpen={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-            userState={userState}
-            onUpdateUsername={handleUpdateUsername}
-            onUpdateBio={(bio) => {
-              const res = updateOperatorBio(bio);
-              if (res.success) {
-                setUserState(prev => ({ ...prev, bio }));
-              }
-              return res;
-            }}
-            onOpenPaywall={() => triggerPaywall('manual_upgrade')}
-            onOpenAuth={() => setIsAuthOpen(true)}
-            onOpenArsenal={() => setIsArsenalOpen(true)}
-            onOpenLegal={(tab) => {
-              setLegalTab(tab);
-              setIsLegalModalOpen(true);
-            }}
-            onOpenCookiePrefs={() => setForceCookieBanner(true)}
-            onResetData={handleResetData}
-            currentTheme={currentTheme}
-            onSelectTheme={handleSelectTheme}
             currentTitle={currentTitle}
           />
 
@@ -1368,29 +1299,25 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         onCloseForce={() => setForceCookieBanner(false)}
       />
 
-      {/* In-App Update Gate: Native Mobile only — never render on web */}
-      {isNativeApp() && (
+      {/* In-App Update Gate (Force Update inevitable blocking modal) */}
+      {(updateState.status === 'FORCE_REQUIRED' ||
+        updateState.status === 'DOWNLOADING' ||
+        updateState.status === 'DOWNLOADED' ||
+        updateState.status === 'INSTALLING' ||
+        (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
+        <ForceUpdateModal state={updateState} />
+      ) : (
         <>
-          {(updateState.status === 'FORCE_REQUIRED' ||
-            updateState.status === 'DOWNLOADING' ||
-            updateState.status === 'DOWNLOADED' ||
-            updateState.status === 'INSTALLING' ||
-            (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
-            <ForceUpdateModal state={updateState} />
-          ) : (
-            <>
-              {/* Flexible Non-Blocking Update Discrete Banner */}
-              <FlexibleUpdateBanner state={updateState} />
+          {/* Flexible Non-Blocking Update Discrete Banner */}
+          <FlexibleUpdateBanner state={updateState} />
 
-              {/* Centered Download / Install Modal */}
-              <UpdateProgressModal state={updateState} />
-            </>
-          )}
-
-          {/* Post-Update "What's New" Highlights */}
-          <WhatsNewModal state={updateState} />
+          {/* Centered Download / Install Modal */}
+          <UpdateProgressModal state={updateState} />
         </>
       )}
+
+      {/* Post-Update "What's New" Highlights */}
+      <WhatsNewModal state={updateState} />
     </div>
   );
 };
