@@ -6,6 +6,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 export const DEFAULT_ALLOWED_ORIGINS = [
+  "https://pwnify.xyz",
+  "https://www.pwnify.xyz",
   "https://zeroday-app.vercel.app",
   "https://localhost",
   "capacitor://localhost",
@@ -21,8 +23,8 @@ export function isOriginAllowed(origin: string, envOrigins: string[] = []): bool
   const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
   if (allowedList.includes(origin)) return true;
   if (origin.endsWith(".zeroday.gg")) return true;
-  // Vercel deployment & branch preview URLs for this repository (zeroday-app / pwnify)
-  if (/^https:\/\/(zeroday-app|pwnify)(-[a-z0-9-]+)?(-zero-day-app)?\.vercel\.app$/i.test(origin)) {
+  // Vercel preview deployment URLs requiring team suffix (-zero-day-app.vercel.app)
+  if (/^https:\/\/(zeroday-app|pwnify)(-git-[a-z0-9-]+|-[a-z0-9]+)-zero-day-app\.vercel\.app$/i.test(origin)) {
     return true;
   }
   return false;

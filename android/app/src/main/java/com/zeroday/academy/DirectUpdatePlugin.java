@@ -35,7 +35,7 @@ public class DirectUpdatePlugin extends Plugin {
         String host = url.getHost() != null ? url.getHost().toLowerCase() : "";
         String path = url.getPath() != null ? url.getPath() : "";
 
-        if (host.equals("zeroday.academy") || host.endsWith(".zeroday.academy") || host.equals("zeroday-app.vercel.app")) {
+        if (host.equals("zeroday.academy") || host.endsWith(".zeroday.academy") || host.equals("zeroday-app.vercel.app") || host.equals("pwnify.xyz") || host.equals("www.pwnify.xyz")) {
             return path.startsWith("/downloads/");
         }
 

@@ -172,6 +172,9 @@ export function isAllowedDownloadUrl(urlStr: string): boolean {
     if (host === 'zeroday-app.vercel.app') {
       return pathname.startsWith('/downloads/');
     }
+    if (host === 'pwnify.xyz' || host === 'www.pwnify.xyz') {
+      return pathname.startsWith('/downloads/');
+    }
 
     // GitHub official repository releases & raw assets (strictly restricted to owner/repo)
     if (host === 'github.com') {
@@ -205,7 +208,7 @@ export function resolveApkSha256(config: RemotePlatformConfig, targetBuildCode?:
 
 
 
-export const DEFAULT_FALLBACK_APK_URL = 'https://zeroday.academy/#download';
+export const DEFAULT_FALLBACK_APK_URL = 'https://pwnify.xyz/#download';
 
 /**
  * Sanitizes URLs pointing to legacy or dead endpoints.

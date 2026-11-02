@@ -140,7 +140,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   {isEn 
                     ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
                     : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
-                  <a href="mailto:dpo@zeroday.academy" className="text-emerald-400 underline font-mono">dpo@zeroday.academy</a>.
+                  <a href="mailto:privacy@pwnify.xyz" className="text-emerald-400 underline font-mono">privacy@pwnify.xyz</a>.
                 </p>
               </section>
 
