@@ -1265,7 +1265,10 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         onCloseForce={() => setForceCookieBanner(false)}
       />
 
-      {/* In-App Update Gate (Force Update inevitable blocking modal) */}
+      {/* In-App Update Gate: Native Mobile only — never render on web */}
+      {isNativeApp() && (
+        <>
+          
       {(updateState.status === 'FORCE_REQUIRED' ||
         updateState.status === 'DOWNLOADING' ||
         updateState.status === 'DOWNLOADED' ||
@@ -1284,6 +1287,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
       {/* Post-Update "What's New" Highlights */}
       <WhatsNewModal state={updateState} />
+        </>
+      )}
     </div>
   );
 };

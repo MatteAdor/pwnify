@@ -94,7 +94,7 @@ class UpdateManager {
       totalBytes: 0,
       errorMessage: null,
       forceMessage: null,
-      storeUrl: 'https://play.google.com/store/apps/details?id=com.zeroday.academy',
+      storeUrl: 'https://play.google.com/store/apps/details?id=com.pwnify.app',
       apkDownloadUrl: resolveApkDownloadUrl(),
       apkSha256: '',
       changelog: null,
@@ -345,7 +345,15 @@ class UpdateManager {
       });
 
       // Check What's New modal eligibility (first launch after an update)
-      this.evaluateWhatsNew(config);
+      if (isNativeApp()) {
+        this.evaluateWhatsNew(config);
+      }
+
+      // Web environments are always live and up-to-date — never trigger APK update gates on web visitors
+      if (!isNativeApp()) {
+        this.updateState({ status: 'UP_TO_DATE' });
+        return;
+      }
 
       const disposition: UpdateDisposition = evaluateUpdateDisposition(
         this.state.clientVersionCode,
@@ -455,7 +463,7 @@ class UpdateManager {
         flavor: 'play',
       });
       try {
-        await AppUpdate.openAppStore({ appId: 'com.zeroday.academy' });
+        await AppUpdate.openAppStore({ appId: 'com.pwnify.app' });
       } catch {
         window.open(this.state.storeUrl, '_blank');
       }
