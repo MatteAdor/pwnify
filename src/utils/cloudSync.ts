@@ -18,6 +18,7 @@ export interface VersionedProfileCache {
   profession: string;
   flagged: boolean;
   legacyImported: boolean;
+  isPro?: boolean;
   syncedAt: number;
 }
 
@@ -138,7 +139,7 @@ export function resolveProfileConflict(
     ...serverInventory
   };
 
-  // ELO and rank are strictly server-authoritative
+  // ELO and rank are strictly server-authoritative, as is PRO entitlement status
   return {
     version: 2,
     userId: serverProfile.id,
@@ -150,6 +151,7 @@ export function resolveProfileConflict(
     profession: serverProfile.profession || 'Security Specialist',
     flagged: serverProfile.flagged,
     legacyImported: serverProfile.legacy_imported,
+    isPro: Boolean(serverProfile.is_pro),
     syncedAt: Date.now()
   };
 }

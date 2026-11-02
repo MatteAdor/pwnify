@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def getSignProp = { String key ->
+    project.findProperty(key) ?: localProperties.getProperty(key) ?: System.getenv(key) ?: System.getenv(key.replace("ZERODAY_", "ANDROID_"))
+}
+
 android {
     namespace = "com.zeroday.academy"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -32,14 +44,14 @@ android {
     }
     signingConfigs {
         release {
-            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
+            def ksPath = getSignProp("ZERODAY_KEYSTORE_PATH")
             if (ksPath) {
                 def ksFile = file(ksPath).isAbsolute() ? file(ksPath) : rootProject.file(ksPath)
                 if (ksFile.exists()) {
                     storeFile ksFile
-                    storePassword (project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD") ?: "")
-                    keyAlias (project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS") ?: "")
-                    keyPassword (project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD") ?: "")
+                    storePassword (getSignProp("ZERODAY_KEYSTORE_PASSWORD") ?: "")
+                    keyAlias (getSignProp("ZERODAY_KEY_ALIAS") ?: "")
+                    keyPassword (getSignProp("ZERODAY_KEY_PASSWORD") ?: "")
                 }
             }
         }
@@ -53,10 +65,10 @@ android {
                    n.contains("bundleplayrelease") || n.contains("bundledirectrelease")
         }
         if (isReleaseTask) {
-            def ksPath = project.findProperty("ZERODAY_KEYSTORE_PATH") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: System.getenv("ZERODAY_KEYSTORE_PATH")
-            def ksPass = project.findProperty("ZERODAY_KEYSTORE_PASSWORD") ?: System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: System.getenv("ZERODAY_KEYSTORE_PASSWORD")
-            def kAlias = project.findProperty("ZERODAY_KEY_ALIAS") ?: System.getenv("ANDROID_KEY_ALIAS") ?: System.getenv("ZERODAY_KEY_ALIAS")
-            def kPass = project.findProperty("ZERODAY_KEY_PASSWORD") ?: System.getenv("ANDROID_KEY_PASSWORD") ?: System.getenv("ZERODAY_KEY_PASSWORD")
+            def ksPath = getSignProp("ZERODAY_KEYSTORE_PATH")
+            def ksPass = getSignProp("ZERODAY_KEYSTORE_PASSWORD")
+            def kAlias = getSignProp("ZERODAY_KEY_ALIAS")
+            def kPass = getSignProp("ZERODAY_KEY_PASSWORD")
 
             if (!ksPath || !ksPass || !kAlias || !kPass) {
                 throw new GradleException("BUILD FAILED: Missing required release signing credentials.\n" +
@@ -72,8 +84,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

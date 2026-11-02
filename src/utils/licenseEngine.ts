@@ -18,7 +18,7 @@ function computeChecksum(part1: string, part2: string): string {
 /**
  * Standard pure-JS synchronous SHA-256 implementation to hash strings without exposing plaintext PII.
  */
-function sha256Hex(asciiInput: string): string {
+export function sha256Hex(asciiInput: string): string {
   const mathPow = Math.pow;
   const maxWord = mathPow(2, 32);
   let i = 0, j = 0;

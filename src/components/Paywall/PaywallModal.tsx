@@ -10,6 +10,7 @@ import {
 import confetti from 'canvas-confetti';
 import { verifyLicenseKey } from '../../utils/licenseEngine';
 import { isSafeRedirectUrl } from '../../utils/security';
+import { getCurrentSession } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
 import {
   isPlayDistribution,
@@ -157,9 +158,27 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       !checkoutUrl.includes('test_');
 
     if (MONETIZATION_CONFIG.enableRealRedirect || isConfiguredUrl) {
-      if (isSafeRedirectUrl(checkoutUrl)) {
+      let finalUrl = checkoutUrl;
+      try {
+        const urlObj = new URL(checkoutUrl);
+        const session = getCurrentSession();
+        if (session?.email) {
+          urlObj.searchParams.set('checkout[email]', session.email);
+        }
+        if (session?.id) {
+          urlObj.searchParams.set('checkout[custom][user_id]', session.id);
+        }
+        if (session?.username) {
+          urlObj.searchParams.set('checkout[custom][username]', session.username);
+        }
+        finalUrl = urlObj.toString();
+      } catch {
+        finalUrl = checkoutUrl;
+      }
+
+      if (isSafeRedirectUrl(finalUrl)) {
         setIsProcessing(true);
-        window.location.href = checkoutUrl;
+        window.location.href = finalUrl;
         return;
       }
       setErrorMessage('Unauthorized payment redirect URL.');

@@ -7,6 +7,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { verifyLicenseKey, generateLicenseKey } from '../src/utils/licenseEngine';
+import { hashUserPassword, verifyUserPassword } from '../src/utils/userDatabase';
+import { verifyCheckoutToken } from '../src/utils/security';
 
 /**
  * Timing-safe string comparison mirror for testing.
@@ -114,3 +116,28 @@ test('State Machine: Event classification for Lemon Squeezy Webhook', () => {
   assert.ok(PRO_REVOCATION_EVENTS.includes('subscription_expired'));
   assert.equal(PRO_ACTIVATION_EVENTS.includes('subscription_cancelled'), false);
 });
+
+test('Password Security: Salted SHA-256 and Transparent Legacy Base64 Migration', () => {
+  const plain = 'SecretP@ssw0rd123!';
+  const hashed = hashUserPassword(plain);
+
+  assert.ok(hashed.startsWith('sha256$'), 'Password hash uses salted sha256 prefix');
+  assert.equal(verifyUserPassword(plain, hashed), true, 'Correct password verifies against salted hash');
+  assert.equal(verifyUserPassword('WrongPassword', hashed), false, 'Wrong password fails verification');
+
+  // Verify backward compatibility with legacy base64 passwords
+  const legacyBtoa = Buffer.from(plain).toString('base64');
+  assert.equal(verifyUserPassword(plain, legacyBtoa), true, 'Legacy base64 password verifies for transparent migration');
+  assert.equal(verifyUserPassword('WrongPassword', legacyBtoa), false, 'Wrong password fails on legacy hash');
+});
+
+test('Checkout Security: Reject forged tokens and unauthorized bypasses', () => {
+  // Direct forged token in URL
+  const forgedParams = new URLSearchParams('checkout=0x_pro_verified');
+  // Outside of browser window / local environment, verifyCheckoutToken must strictly return false
+  assert.equal(verifyCheckoutToken(forgedParams, 'Attacker'), false, 'Forged checkout param is rejected');
+
+  const forgedSigParams = new URLSearchParams('session_id=fake_sess&signature=FAKE1234');
+  assert.equal(verifyCheckoutToken(forgedSigParams, 'Attacker'), false, 'Forged signature is rejected');
+});
+

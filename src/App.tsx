@@ -21,6 +21,7 @@ import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownlo
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
 import { supabase, isSupabaseConfigured } from './config/supabase';
+import { syncUserProfile } from './utils/cloudSync';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -269,6 +270,37 @@ export const App: React.FC = () => {
     updateManager.setArenaDuelActive(activeTab === 'arena');
   }, [activeTab]);
 
+  // Authoritative background profile & entitlement synchronization
+  useEffect(() => {
+    let isCancelled = false;
+    const runSync = async () => {
+      if (!isSupabaseConfigured) return;
+      try {
+        const synced = await syncUserProfile(userState);
+        if (synced && !isCancelled) {
+          setUserState(prev => {
+            const isAutoPro = isContributor(prev.username) || isContributor(prev.userEmail) || Boolean(synced.isPro);
+            if (prev.elo !== synced.elo || prev.xp !== synced.xp || prev.isPro !== isAutoPro) {
+              const updated = {
+                ...prev,
+                elo: synced.elo,
+                xp: Math.max(prev.xp, synced.xp),
+                isPro: isAutoPro
+              };
+              persistActiveAccountState(updated);
+              return updated;
+            }
+            return prev;
+          });
+        }
+      } catch (e) {
+        console.warn('[Sync] Background sync notice:', e);
+      }
+    };
+    runSync();
+    return () => { isCancelled = true; };
+  }, [userState.username, userState.isLoggedIn]);
+
   // View Mode: 'portal' (Public Presentation & Download Hub) vs 'app' (Interactive Web Platform)
   const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
     try {
@@ -345,24 +377,82 @@ export const App: React.FC = () => {
         const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
         const incomingLicense = params.get('license');
 
-        if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
-          const key = incomingLicense && verifyLicenseKey(incomingLicense) 
-            ? incomingLicense 
-            : generateLicenseKey(userState.username);
-          setUserState(prev => ({
-            ...prev,
-            isPro: true,
-            streakShieldActive: true,
-            readinessScore: 92,
-            licenseKey: key
-          }));
+        if (incomingLicense && verifyLicenseKey(incomingLicense)) {
+          // Authoritative verification via Supabase Edge Function
+          if (isSupabaseConfigured) {
+            supabase.functions.invoke('validate_license', {
+              body: { license_key: incomingLicense }
+            }).then(({ data, error }) => {
+              if (!error && data?.valid && data?.is_pro) {
+                setUserState(prev => {
+                  const updated = {
+                    ...prev,
+                    isPro: true,
+                    streakShieldActive: true,
+                    readinessScore: 92,
+                    licenseKey: incomingLicense
+                  };
+                  persistActiveAccountState(updated);
+                  return updated;
+                });
+                setVerifiedCheckoutLicense(incomingLicense);
+                sound.playVictoryFanfare();
+                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+              }
+            }).catch(() => {});
+          } else {
+            // Offline demo fallback
+            setUserState(prev => {
+              const updated = {
+                ...prev,
+                isPro: true,
+                streakShieldActive: true,
+                readinessScore: 92,
+                licenseKey: incomingLicense
+              };
+              persistActiveAccountState(updated);
+              return updated;
+            });
+            setVerifiedCheckoutLicense(incomingLicense);
+            sound.playVictoryFanfare();
+            confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+          }
+        } else if (isCheckoutVerified) {
+          // Local developer environment verified checkout
+          const key = generateLicenseKey(userState.username);
+          setUserState(prev => {
+            const updated = {
+              ...prev,
+              isPro: true,
+              streakShieldActive: true,
+              readinessScore: 92,
+              licenseKey: key
+            };
+            persistActiveAccountState(updated);
+            return updated;
+          });
           setVerifiedCheckoutLicense(key);
           sound.playVictoryFanfare();
           confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        } else if (params.has('checkout') || params.has('session_id')) {
+          // Returning from external payment gateway: immediately sync authoritative profile status
+          syncUserProfile(userState).then(synced => {
+            if (synced?.isPro) {
+              setUserState(prev => {
+                const updated = { ...prev, isPro: true, streakShieldActive: true };
+                persistActiveAccountState(updated);
+                return updated;
+              });
+              sound.playVictoryFanfare();
+              confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+            }
+          }).catch(() => {});
+        }
+
+        if (params.has('checkout') || params.has('session_id') || params.has('license') || params.has('sig') || params.has('signature')) {
           if (window.history) {
             window.history.replaceState({}, '', window.location.pathname);
           }
-          return;
         }
       } else {
         // In Play distribution, strip checkout/license parameters from URL without processing

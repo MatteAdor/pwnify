@@ -12,6 +12,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5173",
   "http://127.0.0.1:4173",
   "https://zeroday.gg",
+  "https://www.zeroday.gg",
+  "https://pwnify.app",
+  "https://www.pwnify.app",
+  "https://zeroday-app.vercel.app",
   "capacitor://localhost",
 ];
 
@@ -23,7 +27,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; allowe
     .filter(Boolean);
 
   const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
-  const isAllowed = !origin || allowedList.includes(origin) || origin.endsWith(".zeroday.gg");
+  const isAllowed = !origin || allowedList.includes(origin) || origin.endsWith(".zeroday.gg") || origin.endsWith(".pwnify.app") || origin.endsWith(".vercel.app");
 
   return {
     allowed: isAllowed,
