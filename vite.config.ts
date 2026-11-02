@@ -80,4 +80,10 @@ function localDatabasePlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), localDatabasePlugin()],
+  server: {
+    host: true,
+    watch: {
+      ignored: ['**/android/**', '**/.tmp**/**', '**/database/**', '**/dist/**', '**/.git/**']
+    }
+  }
 })

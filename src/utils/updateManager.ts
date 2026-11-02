@@ -345,7 +345,15 @@ class UpdateManager {
       });
 
       // Check What's New modal eligibility (first launch after an update)
-      this.evaluateWhatsNew(config);
+      if (isNativeApp()) {
+        this.evaluateWhatsNew(config);
+      }
+
+      // Web environments are always live and up-to-date — never trigger APK update gates on web visitors
+      if (!isNativeApp()) {
+        this.updateState({ status: 'UP_TO_DATE' });
+        return;
+      }
 
       const disposition: UpdateDisposition = evaluateUpdateDisposition(
         this.state.clientVersionCode,
