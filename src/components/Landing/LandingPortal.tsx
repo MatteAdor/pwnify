@@ -321,10 +321,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         <header className="sticky top-0 z-50 h-16 sm:h-[72px] flex items-center justify-between border-b border-[rgba(186,215,247,0.12)] bg-[#05060f]/80 backdrop-blur-md -mx-4 sm:-mx-6 px-4 sm:px-8 mb-8 sm:mb-10">
           <a href="#" className="flex items-center gap-3 text-decoration-none">
-            <div className="w-8 h-8 rounded-md bg-[rgba(186,215,247,0.06)] border border-[rgba(186,215,247,0.12)] flex items-center justify-center shadow-[inset_0_1px_1px_rgba(216,236,248,0.2)]">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1e4fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
+            <div className="w-8 h-8 rounded-md bg-black border border-[rgba(186,215,247,0.15)] flex items-center justify-center shadow-[inset_0_1px_1px_rgba(216,236,248,0.2)] overflow-hidden">
+              <img src="/pwnify-rounded.png" alt="Pwnify Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xl tracking-tight skywash-title">Pwnify</span>
@@ -1090,7 +1088,10 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* 7. CATHEDRAL FOOTER (WITHOUT OPERATIONAL STATUS BADGE) */}
         {/* ================================================================= */}
         <footer className="mt-16 sm:mt-24 border-t border-[rgba(186,215,247,0.12)] py-12 text-center text-xs text-[#9da7ba]">
-          <div className="skywash-title text-xl font-medium mb-3">Pwnify</div>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <img src="/pwnify-rounded.png" alt="Pwnify Logo" className="w-6 h-6 rounded-md object-cover border border-[rgba(186,215,247,0.15)]" />
+            <div className="skywash-title text-xl font-medium">Pwnify</div>
+          </div>
           <p className="max-w-md mx-auto text-[#9da7ba] mb-6">
             {isEn 
               ? 'Gamified Cybersecurity Readiness & Certification Engine · Designed with Midnight Cathedral Precision.'

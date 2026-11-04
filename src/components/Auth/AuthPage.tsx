@@ -763,9 +763,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 ← {isEn ? 'Portal' : 'Portale'}
               </button>
             )}
-            <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
-              Pwnify
-            </span>
+            <div className="flex items-center gap-1.5">
+              <img src="/pwnify-rounded.png" alt="Pwnify" className="w-4 h-4 rounded object-cover" />
+              <span className="font-mono text-xs font-bold text-emerald-400 tracking-wider">
+                Pwnify
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">

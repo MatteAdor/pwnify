@@ -183,7 +183,7 @@ export const AppDownloadGateModal: React.FC<AppDownloadGateModalProps> = ({
             onClick={() => sound.playVictoryFanfare()}
             className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg cursor-pointer"
           >
-            <img src="/brand/zeroday_icon_192.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
+            <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
             <span>{isEn ? 'DOWNLOAD PWNIFY APK (ANDROID)' : 'SCARICA PWNIFY APK (ANDROID)'}</span>
             <span className="text-[10px] bg-slate-950/20 px-1.5 py-0.5 rounded font-mono">{APK_SIZE}</span>
           </a>
