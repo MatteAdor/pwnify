@@ -14,7 +14,7 @@ on:
         type: string
         default: ''
       deploy_functions:
-        description: 'Esegui deploy delle Edge Functions (get_turn_credentials)'
+        description: 'Esegui deploy delle Edge Functions (get_turn_credentials, validate_license)'
         required: false
         type: boolean
         default: false
@@ -129,6 +129,7 @@ jobs:
         if: ${{ !inputs.dry_run && inputs.deploy_functions }}
         run: |
           supabase functions deploy get_turn_credentials --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
+          supabase functions deploy validate_license --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
