@@ -44,3 +44,9 @@ keystore.properties
 
 local.properties
 **/local.properties
+
+# Local temporary and design test files
+comparison-breakdown.html
+test-design.html
+social_ads/
+promo_videos/
