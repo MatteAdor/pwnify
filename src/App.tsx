@@ -1299,25 +1299,29 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         onCloseForce={() => setForceCookieBanner(false)}
       />
 
-      {/* In-App Update Gate (Force Update inevitable blocking modal) */}
-      {(updateState.status === 'FORCE_REQUIRED' ||
-        updateState.status === 'DOWNLOADING' ||
-        updateState.status === 'DOWNLOADED' ||
-        updateState.status === 'INSTALLING' ||
-        (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
-        <ForceUpdateModal state={updateState} />
-      ) : (
+      {/* In-App Update Gate (Native Android Only - never block or nag web visitors) */}
+      {isNativeApp() && (
         <>
-          {/* Flexible Non-Blocking Update Discrete Banner */}
-          <FlexibleUpdateBanner state={updateState} />
+          {(updateState.status === 'FORCE_REQUIRED' ||
+            updateState.status === 'DOWNLOADING' ||
+            updateState.status === 'DOWNLOADED' ||
+            updateState.status === 'INSTALLING' ||
+            (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
+            <ForceUpdateModal state={updateState} />
+          ) : (
+            <>
+              {/* Flexible Non-Blocking Update Discrete Banner */}
+              <FlexibleUpdateBanner state={updateState} />
 
-          {/* Centered Download / Install Modal */}
-          <UpdateProgressModal state={updateState} />
+              {/* Centered Download / Install Modal */}
+              <UpdateProgressModal state={updateState} />
+            </>
+          )}
+
+          {/* Post-Update "What's New" Highlights */}
+          <WhatsNewModal state={updateState} />
         </>
       )}
-
-      {/* Post-Update "What's New" Highlights */}
-      <WhatsNewModal state={updateState} />
     </div>
   );
 };

@@ -106,13 +106,17 @@ describe('Version Engine & Comparison Suite', () => {
 
   it('isAllowedDownloadUrl strictly requires HTTPS and allowlisted repo/domain paths', () => {
     // Valid domains & paths
-    assert.strictEqual(isAllowedDownloadUrl('https://zeroday.academy/downloads/zeroday.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://zeroday-app.vercel.app/downloads/zeroday.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://pwnify.xyz/downloads/pwnify.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://www.pwnify.xyz/downloads/pwnify.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://github.com/MatteAdor/pwnify/releases/download/v1.2.7/pwnify-1.2.7.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://raw.githubusercontent.com/MatteAdor/pwnify/main/apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://github.com/MatteAdor/zeroday_app/releases/download/v1.0.0/zeroday.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://raw.githubusercontent.com/MatteAdor/zeroday_app/main/apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://objects.githubusercontent.com/github-production-release-asset-2e65be/12345'), true);
+
+    // Removed legacy domain (zeroday.academy is forbidden)
+    assert.strictEqual(isAllowedDownloadUrl('https://zeroday.academy/downloads/zeroday.apk'), false);
 
     // Forbidden third-party GitHub repos
     assert.strictEqual(isAllowedDownloadUrl('https://github.com/attacker/malicious_app/releases/download/v1.0/trojan.apk'), false);

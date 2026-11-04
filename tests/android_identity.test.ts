@@ -130,4 +130,72 @@ describe('Android Identity & Deep Link Cross-Consistency Suite', () => {
       'network_security_config.xml must not contain placeholder digests (AAAA/BBBB)'
     );
   });
+
+  it('verifies get_turn_credentials and validate_license CORS strictly exclude zeroday.gg and allow authorized domains', () => {
+    const files = [
+      'supabase/functions/get_turn_credentials/index.ts',
+      'supabase/functions/validate_license/index.ts'
+    ];
+
+    for (const relPath of files) {
+      const content = readProjectFile(relPath);
+      assert.strictEqual(
+        content.includes('zeroday.gg'),
+        false,
+        `${relPath} must not contain any reference to zeroday.gg`
+      );
+      assert.ok(content.includes('"https://pwnify.xyz"'));
+      assert.ok(content.includes('"https://www.pwnify.xyz"'));
+      assert.ok(content.includes('"https://zeroday-app.vercel.app"'));
+      assert.ok(content.includes('"https://localhost"'));
+      assert.ok(content.includes('"capacitor://localhost"'));
+    }
+
+    // CORS logic test
+    const defaultAllowedOrigins = [
+      "https://pwnify.xyz",
+      "https://www.pwnify.xyz",
+      "https://zeroday-app.vercel.app",
+      "https://localhost",
+      "capacitor://localhost",
+    ];
+
+    const isOriginAllowedCheck = (origin: string): boolean => {
+      if (!origin) return false;
+      if (defaultAllowedOrigins.includes(origin)) return true;
+      if (/^https:\/\/(zeroday-app|pwnify)(-git-[a-z0-9-]+|-[a-z0-9]+)-zero-day-app\.vercel\.app$/i.test(origin)) {
+        return true;
+      }
+      return false;
+    };
+
+    assert.strictEqual(isOriginAllowedCheck('https://pwnify.xyz'), true);
+    assert.strictEqual(isOriginAllowedCheck('https://www.pwnify.xyz'), true);
+    assert.strictEqual(isOriginAllowedCheck('https://zeroday-app.vercel.app'), true);
+    assert.strictEqual(isOriginAllowedCheck('https://localhost'), true);
+    assert.strictEqual(isOriginAllowedCheck('capacitor://localhost'), true);
+    assert.strictEqual(isOriginAllowedCheck('https://pwnify-git-feat-zero-day-app.vercel.app'), true);
+    assert.strictEqual(isOriginAllowedCheck('https://zeroday.gg'), false);
+    assert.strictEqual(isOriginAllowedCheck('https://sub.zeroday.gg'), false);
+    assert.strictEqual(isOriginAllowedCheck('https://evil.example'), false);
+    assert.strictEqual(isOriginAllowedCheck('https://pwnify-evil.vercel.app'), false);
+  });
+
+  it('verifies DirectUpdatePlugin.java allowlist contains MatteAdor/pwnify and excludes zeroday.academy', () => {
+    const javaContent = readProjectFile('android/app/src/main/java/com/zeroday/academy/DirectUpdatePlugin.java');
+
+    assert.ok(
+      javaContent.includes('"MatteAdor/pwnify"'),
+      'DirectUpdatePlugin.java must allow MatteAdor/pwnify repo'
+    );
+    assert.ok(
+      javaContent.includes('"MatteAdor/zeroday_app"'),
+      'DirectUpdatePlugin.java must keep MatteAdor/zeroday_app repo as redirect fallback'
+    );
+    assert.strictEqual(
+      javaContent.includes('"zeroday.academy"'),
+      false,
+      'DirectUpdatePlugin.java URL allowlist must not contain "zeroday.academy"'
+    );
+  });
 });

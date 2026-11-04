@@ -150,7 +150,12 @@ export function formatVersionDisplay(versionName: string, versionCode: number | 
   return `${cleanName} (build ${versionCode})`;
 }
 
-export const ALLOWED_APK_REPO = 'MatteAdor/zeroday_app';
+export const ALLOWED_APK_REPOS = [
+  'MatteAdor/pwnify',
+  'MatteAdor/zeroday_app',
+] as const;
+
+export const ALLOWED_APK_REPO = 'MatteAdor/pwnify';
 
 export function isValidSha256(hash?: string | null): boolean {
   if (!hash) return false;
@@ -165,23 +170,17 @@ export function isAllowedDownloadUrl(urlStr: string): boolean {
     const host = parsed.hostname.toLowerCase();
     const pathname = parsed.pathname;
 
-    // ZeroDay Academy official domains
-    if (host === 'zeroday.academy' || host.endsWith('.zeroday.academy')) {
-      return pathname.startsWith('/downloads/');
-    }
-    if (host === 'zeroday-app.vercel.app') {
-      return pathname.startsWith('/downloads/');
-    }
-    if (host === 'pwnify.xyz' || host === 'www.pwnify.xyz') {
+    // Allowed official domains
+    if (host === 'zeroday-app.vercel.app' || host === 'pwnify.xyz' || host === 'www.pwnify.xyz') {
       return pathname.startsWith('/downloads/');
     }
 
     // GitHub official repository releases & raw assets (strictly restricted to owner/repo)
     if (host === 'github.com') {
-      return pathname.startsWith(`/${ALLOWED_APK_REPO}/releases/download/`);
+      return ALLOWED_APK_REPOS.some((repo) => pathname.startsWith(`/${repo}/releases/download/`));
     }
     if (host === 'raw.githubusercontent.com') {
-      return pathname.startsWith(`/${ALLOWED_APK_REPO}/`);
+      return ALLOWED_APK_REPOS.some((repo) => pathname.startsWith(`/${repo}/`));
     }
     if (host === 'objects.githubusercontent.com') {
       // GitHub release asset CDN redirect host

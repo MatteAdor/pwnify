@@ -15,14 +15,12 @@ export const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:4173",
   "http://127.0.0.1:5173",
   "http://127.0.0.1:4173",
-  "https://zeroday.gg",
 ];
 
 export function isOriginAllowed(origin: string, envOrigins: string[] = []): boolean {
   if (!origin) return false;
   const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
   if (allowedList.includes(origin)) return true;
-  if (origin.endsWith(".zeroday.gg")) return true;
   // Vercel preview deployment URLs requiring team suffix (-zero-day-app.vercel.app)
   if (/^https:\/\/(zeroday-app|pwnify)(-git-[a-z0-9-]+|-[a-z0-9]+)-zero-day-app\.vercel\.app$/i.test(origin)) {
     return true;
