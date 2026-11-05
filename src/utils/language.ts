@@ -18,6 +18,9 @@ export function saveLanguage(lang: Language): void {
   try {
     if (typeof window !== 'undefined') {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+      if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.lang = lang;
+      }
       window.dispatchEvent(new CustomEvent('zeroday_language_change', { detail: lang }));
     }
   } catch {}
@@ -573,6 +576,9 @@ export function useLanguage() {
       const customEvent = e as CustomEvent<Language>;
       if (customEvent.detail) {
         setLang(customEvent.detail);
+        if (typeof document !== 'undefined' && document.documentElement) {
+          document.documentElement.lang = customEvent.detail;
+        }
       }
     };
     window.addEventListener('zeroday_language_change', handleLangChange);
@@ -580,6 +586,9 @@ export function useLanguage() {
   }, []);
 
   const changeLanguage = (newLang: Language) => {
+    if (typeof document !== 'undefined' && document.documentElement) {
+      document.documentElement.lang = newLang;
+    }
     saveLanguage(newLang);
     setLang(newLang);
   };

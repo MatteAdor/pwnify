@@ -3,19 +3,29 @@ import { UserState, SkillNode, PaywallContext } from './types';
 import { INITIAL_DAILY_BOUNTIES } from './data/bountiesAndPbq';
 import { Navbar } from './components/Navbar';
 import { BottomNav, ActiveTab } from './components/BottomNav';
-import { OnboardingFunnel } from './components/Onboarding/OnboardingFunnel';
-import { TacticalSkillTree } from './components/SkillTree/TacticalSkillTree';
-import { InteractiveQuizModal } from './components/Quiz/InteractiveQuizModal';
-import { ArenaPvP, DuelChallengeData } from './components/Arena/ArenaPvP';
 import { MissionsTab } from './components/Missions/MissionsTab';
 import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
-import { CertPrepTab } from './components/Certs/CertPrepTab';
-import { PaywallModal } from './components/Paywall/PaywallModal';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
 import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { AuthModal } from './components/Auth/AuthModal';
-import { AuthPage } from './components/Auth/AuthPage';
+import type { DuelChallengeData } from './components/Arena/ArenaPvP';
+
+// Lazy-loaded heavy modules for code-splitting (Landing page isolation)
+const OnboardingFunnel = React.lazy(() => import('./components/Onboarding/OnboardingFunnel').then(m => ({ default: m.OnboardingFunnel })));
+const TacticalSkillTree = React.lazy(() => import('./components/SkillTree/TacticalSkillTree').then(m => ({ default: m.TacticalSkillTree })));
+const InteractiveQuizModal = React.lazy(() => import('./components/Quiz/InteractiveQuizModal').then(m => ({ default: m.InteractiveQuizModal })));
+const ArenaPvP = React.lazy(() => import('./components/Arena/ArenaPvP').then(m => ({ default: m.ArenaPvP })));
+const CertPrepTab = React.lazy(() => import('./components/Certs/CertPrepTab').then(m => ({ default: m.CertPrepTab })));
+const PaywallModal = React.lazy(() => import('./components/Paywall/PaywallModal').then(m => ({ default: m.PaywallModal })));
+const AuthPage = React.lazy(() => import('./components/Auth/AuthPage').then(m => ({ default: m.AuthPage })));
+const ViewFallback: React.FC = () => (
+  <div className="flex items-center justify-center p-12 min-h-[300px] text-zinc-400 font-mono text-xs">
+    <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin mr-3" />
+    <span>INITIALIZING INTERFACE...</span>
+  </div>
+);
+
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
@@ -928,7 +938,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           onOpenCookiePrefs={() => setForceCookieBanner(true)}
         />
       ) : !userState.isLoggedIn ? (
-        <AuthPage
+        <React.Suspense fallback={<ViewFallback />}>
+          <AuthPage
           onLoginSuccess={handleLoginSuccess}
           currentUserState={userState}
           onGuestAccess={() => setUserState(prev => {
@@ -946,11 +957,14 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             window.location.hash = '';
           }}
         />
+        </React.Suspense>
       ) : !userState.onboardingCompleted ? (
-        <OnboardingFunnel
+        <React.Suspense fallback={<ViewFallback />}>
+          <OnboardingFunnel
           onComplete={handleOnboardingComplete}
           onOpenPaywall={() => triggerPaywall('diagnostic_funnel')}
         />
+        </React.Suspense>
       ) : (
         <>
           {/* Browser Sandbox Persistent Reminder Banner */}
@@ -1069,6 +1083,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             onTouchEnd={handleTouchEnd}
             className="flex-1 overflow-y-auto"
           >
+            <React.Suspense fallback={<ViewFallback />}>
             {activeTab === 'tree' && (
               <TacticalSkillTree
                 userState={userState}
@@ -1122,6 +1137,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 onPassCert={handlePassCert}
               />
             )}
+            </React.Suspense>
           </main>
 
           {/* Bottom Persistent Navigation */}
@@ -1133,7 +1149,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
           {/* Hardcore Interactive Quiz Modal */}
           {selectedNode && (
-            <InteractiveQuizModal
+            <React.Suspense fallback={null}>
+              <InteractiveQuizModal
               node={selectedNode}
               isOpen={isQuizModalOpen}
               onClose={() => setIsQuizModalOpen(false)}
@@ -1141,6 +1158,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               onOpenPaywall={() => triggerPaywall('blurred_breakdown')}
               onCompleteNode={handleCompleteNode}
             />
+            </React.Suspense>
           )}
 
           {/* Operator Authentication Modal (Login / Sign Up) */}
@@ -1159,6 +1177,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           />
 
           {/* Pwnify PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
+          <React.Suspense fallback={null}>
           <PaywallModal
             isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}
@@ -1176,6 +1195,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               }));
             }}
           />
+          </React.Suspense>
 
           {/* Viral Hacker Operator ID Card Modal (9:16) */}
           <HackerIDCardModal
