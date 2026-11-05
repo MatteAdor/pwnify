@@ -354,9 +354,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
 
             <img 
-
-              src="/zerox-rounded.png" 
-
+              src="/pwnify-rounded.png"
               alt="Pwnify" 
 
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain shadow-sm" 

@@ -87,7 +87,7 @@ export const CALLSIGN_TITLES = [
   { id: 't_packet', title: 'Packet Whisperer', minElo: 1200, proOnly: false },
   { id: 't_kernel', title: 'Kernel Spectre', minElo: 1400, proOnly: false },
   { id: 't_c2', title: 'C2 Architect', minElo: 1600, proOnly: true },
-  { id: 't_zeroday', title: '0xDAY Sovereign', minElo: 1900, proOnly: true }
+  { id: 't_zeroday', title: 'Pwnify Sovereign', minElo: 1900, proOnly: true }
 ];
 
 interface CyberArsenalModalProps {

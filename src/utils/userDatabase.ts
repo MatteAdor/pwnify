@@ -2,7 +2,7 @@ import { UserState, EloRankTier } from '../types';
 import { INITIAL_DAILY_BOUNTIES } from '../data/bountiesAndPbq';
 import { calculateDynamicTelemetry } from './readinessEngine';
 import { sanitizeCallsign } from './security';
-import { isContributor } from './licenseEngine';
+import { isContributor, sha256Hex } from './licenseEngine';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
@@ -11,6 +11,41 @@ const LEGACY_STORAGE_PURGED_FLAG = 'zeroday_legacy_purged_v4';
 const PENDING_2FA_STORAGE_KEY = 'zeroday_pending_2fa_v1';
 
 export type AuthProvider = 'email' | 'google' | 'github';
+
+/**
+ * Hashes a plaintext password using a salted SHA-256 digest.
+ */
+export function hashUserPassword(password: string, salt?: string): string {
+  const chosenSalt = salt || (
+    typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('')
+      : Math.random().toString(36).substring(2, 10)
+  );
+  const digest = sha256Hex(chosenSalt + ':' + password);
+  return 'sha256$' + chosenSalt + '$' + digest;
+}
+
+/**
+ * Verifies a password against a stored hash (supporting salted SHA-256 and legacy base64).
+ */
+export function verifyUserPassword(inputPassword: string, storedHash?: string): boolean {
+  if (!storedHash) return false;
+  if (storedHash.startsWith('sha256$')) {
+    const parts = storedHash.split('$');
+    if (parts.length === 3) {
+      const salt = parts[1];
+      const expectedDigest = parts[2];
+      const computed = sha256Hex(salt + ':' + inputPassword);
+      return computed.toLowerCase() === expectedDigest.toLowerCase();
+    }
+  }
+  // Fallback for legacy base64-encoded passwords (for automatic migration)
+  try {
+    return storedHash === btoa(inputPassword);
+  } catch {
+    return false;
+  }
+}
 
 export interface UserAccount {
   id: string;
@@ -27,6 +62,7 @@ interface Pending2FA {
   email: string;
   code: string;
   expiresAt: number;
+  attempts?: number;
 }
 
 /**
@@ -361,12 +397,19 @@ export async function syncDatabaseWithBackend(): Promise<UserAccount[]> {
  */
 export function send2FACode(email: string): { code: string; expiresAt: number } {
   const cleanEmail = email.trim().toLowerCase();
-  // Generate random 6-digit code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  let codeNum: number;
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    codeNum = 100000 + (buf[0] % 900000);
+  } else {
+    codeNum = Math.floor(100000 + Math.random() * 900000);
+  }
+  const code = codeNum.toString();
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
 
   try {
-    const pending: Pending2FA = { email: cleanEmail, code, expiresAt };
+    const pending: Pending2FA = { email: cleanEmail, code, expiresAt, attempts: 0 };
     sessionStorage.setItem(PENDING_2FA_STORAGE_KEY, JSON.stringify(pending));
   } catch (e) {
     console.error('Failed to store pending 2FA', e);
@@ -392,11 +435,23 @@ export function verify2FACode(email: string, inputCode: string): { valid: boolea
     }
 
     if (Date.now() > pending.expiresAt) {
+      sessionStorage.removeItem(PENDING_2FA_STORAGE_KEY);
       return { valid: false, error: 'The 2FA code has expired. Please request a new one.' };
     }
 
+    if ((pending.attempts || 0) >= 5) {
+      sessionStorage.removeItem(PENDING_2FA_STORAGE_KEY);
+      return { valid: false, error: 'Too many incorrect attempts. Please request a new code.' };
+    }
+
     if (pending.code !== inputCode.trim()) {
-      return { valid: false, error: 'Incorrect 2FA code. Please try again.' };
+      pending.attempts = (pending.attempts || 0) + 1;
+      sessionStorage.setItem(PENDING_2FA_STORAGE_KEY, JSON.stringify(pending));
+      const remaining = 5 - pending.attempts;
+      return {
+        valid: false,
+        error: `Incorrect 2FA code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+      };
     }
 
     // Code verified! Remove pending entry
@@ -448,7 +503,7 @@ export function completeEmailRegistration(
     id: 'usr_mail_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     username: safeName,
     email: cleanEmail,
-    passwordHash: btoa(passwordPlain),
+    passwordHash: hashUserPassword(passwordPlain),
     provider: 'email',
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
@@ -481,8 +536,14 @@ export function loginEmailAccount(
     return { success: false, error: 'No account found with this Callsign or Email.' };
   }
 
-  if (found.passwordHash && found.passwordHash !== btoa(passwordPlain)) {
+  if (found.passwordHash && !verifyUserPassword(passwordPlain, found.passwordHash)) {
     return { success: false, error: 'Incorrect password.' };
+  }
+
+  // Transparent migration from legacy btoa to salted sha256
+  if (found.passwordHash && !found.passwordHash.startsWith('sha256$')) {
+    found.passwordHash = hashUserPassword(passwordPlain);
+    saveAccounts(accounts);
   }
 
   // Merge any active progress or guest payments with saved account data

@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def getSignProp = { String key ->
+    project.findProperty(key) ?: localProperties.getProperty(key) ?: System.getenv(key) ?: System.getenv(key.replace("ZERODAY_", "ANDROID_"))
+}
+
 android {
     namespace = "com.zeroday.academy"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -118,8 +130,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

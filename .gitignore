@@ -46,9 +46,11 @@ zeroday-backup-key.txt
 .agent
 .claude
 
+local.properties
+**/local.properties
+
 # Social Media Ads & Promo Video Production (local only, excluded from git & app build)
 social_ads/
 promo_videos/
 comparison-breakdown.html
 test-design.html
-

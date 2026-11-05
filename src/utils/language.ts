@@ -26,7 +26,7 @@ export function saveLanguage(lang: Language): void {
 export const TRANSLATIONS = {
   en: {
     // Auth & Navigation
-    authGateway: '0XDAY // AUTHENTICATION GATEWAY',
+    authGateway: 'PWNIFY // AUTHENTICATION GATEWAY',
     academyTitle: 'Cyber Warfare Academy',
     academySubtitle: 'CompTIA Security+, Cisco CCNA & CEH Exam Simulator.',
     loginTab: 'LOG IN',
@@ -298,7 +298,7 @@ export const TRANSLATIONS = {
 
   it: {
     // Auth & Navigation
-    authGateway: '0XDAY // GATEWAY DI AUTENTICAZIONE',
+    authGateway: 'PWNIFY // GATEWAY DI AUTENTICAZIONE',
     academyTitle: 'Accademia di Cyber Warfare',
     academySubtitle: 'Simulatore d\'esame CompTIA Security+, Cisco CCNA & CEH.',
     loginTab: 'ACCEDI',

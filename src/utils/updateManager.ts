@@ -345,7 +345,15 @@ class UpdateManager {
       });
 
       // Check What's New modal eligibility (first launch after an update)
-      this.evaluateWhatsNew(config);
+      if (isNativeApp()) {
+        this.evaluateWhatsNew(config);
+      }
+
+      // Web environments are always live and up-to-date — never trigger APK update gates on web visitors
+      if (!isNativeApp()) {
+        this.updateState({ status: 'UP_TO_DATE' });
+        return;
+      }
 
       // On web browser environments, web clients are always up to date with deployed assets.
       // Do not trigger native APK update gates or blocking update modals for web visitors.

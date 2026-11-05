@@ -127,7 +127,21 @@ serve(async (req: Request) => {
     });
 
     // 5. Resolve target user UUID: priority to custom_data.user_id, fallback to customerEmail
-    let targetUserId: string | null = customData.user_id || null;
+    let targetUserId: string | null = null;
+    const candidateUserId = customData.user_id ? String(customData.user_id).trim() : null;
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (candidateUserId && UUID_REGEX.test(candidateUserId)) {
+      const { data: profileCheck } = await adminSupabase
+        .from("profiles")
+        .select("id")
+        .eq("id", candidateUserId)
+        .maybeSingle();
+
+      if (profileCheck?.id) {
+        targetUserId = profileCheck.id;
+      }
+    }
 
     if (!targetUserId && customerEmail) {
       const { data: userData, error: userSearchError } = await adminSupabase
@@ -140,7 +154,7 @@ serve(async (req: Request) => {
         targetUserId = userData.id;
       } else {
         // Query auth.users via RPC or admin API
-        const { data: authList } = await adminSupabase.auth.admin.listUsers();
+        const { data: authList } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
         const matched = authList?.users?.find(
           (u) => u.email?.toLowerCase() === customerEmail.toLowerCase()
         );

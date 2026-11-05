@@ -138,17 +138,16 @@ export function verifyCheckoutToken(params: URLSearchParams, username: string): 
     return verifyLicenseKey(licenseKey);
   }
 
-  // If a session_id and signature are passed, verify the cryptographic signature
-  if (sessionId && signature) {
-    const expected = generateCheckoutSignature(sessionId, username);
-    return signature.toUpperCase() === expected;
-  }
-
-  // Allow simulated checkout tag ONLY on local developer environment (localhost/127.0.0.1)
-  if (checkoutParam === '0x_pro_verified' || checkoutParam === 'success') {
-    if (typeof window !== 'undefined') {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocal) {
+  // Allow simulated checkout tag or local signature verification ONLY on local developer environment (localhost/127.0.0.1)
+  // In production, entitlements are strictly server-authoritative via Supabase and Lemon Squeezy webhooks.
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal) {
+      if (sessionId && signature) {
+        const expected = generateCheckoutSignature(sessionId, username);
+        return signature.toUpperCase() === expected;
+      }
+      if (checkoutParam === '0x_pro_verified' || checkoutParam === 'success') {
         return true;
       }
     }
