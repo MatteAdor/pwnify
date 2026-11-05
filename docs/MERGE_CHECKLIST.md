@@ -7,7 +7,7 @@ Questo documento stabilisce l'ordine operativo rigoroso per il completamento del
 ## Sequenza Operativa di Rilascio
 
 ```
-[1. Deploy Funzioni] ──> [2. Vault Daily Flash] ──> [3. Review Giacomo] ──> [4. Merge PR #5] ──> [5. Release & Tag] ──> [6. SQL Remote Config] ──> [7. Test Telefono]
+[1. Deploy Funzioni] ──> [2. Vault Daily Flash] ──> [3. Squash & Merge PR #5] ──> [4. Build APK da main] ──> [5. Tag & Release su main] ──> [6. Hash & SQL Remote Config] ──> [7. Prova Telefono]
 ```
 
 ---
@@ -29,11 +29,11 @@ Questo documento stabilisce l'ordine operativo rigoroso per il completamento del
 
 ### Passo 2: Inizializzazione Segreto Daily Flash nel Vault
 - **Azione**:
-  Creare il secret `daily_flash_seed` all'interno di `vault.secrets` generando l'entropia direttamente sul database, senza far transitare la chiave nel client o nei log:
+  Creare il secret `daily_flash_secret` (nome esatto letto da `claim_daily_flash_draw`) all'interno di `vault.secrets` generando l'entropia direttamente sul database tramite `extensions.gen_random_bytes(32)`:
   ```sql
   SELECT vault.create_secret(
-      encode(gen_random_bytes(32), 'hex'),
-      'daily_flash_seed',
+      encode(extensions.gen_random_bytes(32), 'hex'),
+      'daily_flash_secret',
       'Daily Flash RFC HMAC-SHA256 deterministic seed'
   );
   ```
@@ -42,82 +42,105 @@ Questo documento stabilisce l'ordine operativo rigoroso per il completamento del
      ```sql
      SELECT id, name, description, created_at 
      FROM vault.secrets 
-     WHERE name = 'daily_flash_seed';
+     WHERE name = 'daily_flash_secret';
      ```
      Verificare che restituisca esattamente 1 riga (senza stampare `decrypted_secret`).
   2. **Comportamento fail-open**: Se il secret non è configurato o la chiamata al Vault fallisce, la funzione `claim_daily_flash_draw` effettua il fallback trasparente al Daily base (+150 XP) senza generare errori o bloccare l'utente.
 
 ---
 
-### Passo 3: Revisione Finale e Approvazione di Giacomo
+### Passo 3: Transizione PR #5 e Squash & Merge su `main`
 - **Azione**:
-  Richiedere la revisione formale della PR #5 a Giacomo (@giacomo).
+  1. Segnare la PR #5 da Draft a **Ready for review**:
+     ```bash
+     gh pr ready 5
+     ```
+  2. Richiedere la revisione e approvazione a Giacomo (@giacomo).
+  3. Effettuare il merge con **Squash and merge** su `main`:
+     ```bash
+     gh pr merge 5 --squash
+     ```
 - **Cosa verificare**:
-  1. **CI Checks**: Tutti i controlli su GitHub Actions e Vercel devono essere verdi.
-  2. **Perimetro Git**: Nessun file estraneo presente nel diff (72 file totali, escluse cartelle `scratch/`, `openui-agent/` e `wip/`).
-  3. **Security Audit**: Gitleaks pulito, rimozione del fallback hardcoded di download APK, permessi Android minimi.
-
----
-
-### Passo 4: Merge di PR #5 su `main`
-- **Azione**:
-  Eseguire il merge della PR #5 su `main` (tramite interfaccia GitHub con opzione *Rebase and merge* o *Squash and merge*, oppure tramite CLI):
-  ```bash
-  gh pr merge 5 --merge
-  ```
-- **Cosa verificare**:
-  1. Il workflow CI su `main` viene completato senza errori.
-  2. Vercel effettua il deploy automatico in produzione sui domini `https://pwnify.xyz` e `https://zeroday-app.vercel.app`.
+  1. Il workflow CI su `main` viene completato con esito verde.
+  2. Vercel effettua il deploy automatico di produzione sui domini `https://pwnify.xyz` e `https://zeroday-app.vercel.app`.
   3. Navigazione web: apertura della landing page Midnight Cathedral, verifica dei metatag Open Graph Pwnify, e verifica assenza del modale di update forzato nativo sulla piattaforma web.
 
 ---
 
-### Passo 5: Pubblicazione Release e Creazione Tag Git
+### Passo 4: Ricostruzione APK da `main` in Worktree Pulito
 - **Azione**:
-  Promuovere la bozza release `v1.2.7` da DRAFT a PUBLISHED associando il tag `v1.2.7`:
+  Dopo il merge, creare un worktree git pulito allineato a `origin/main` ed eseguire la build release dell'APK (versionCode 7, firmato con la keystore dell'operatore):
   ```bash
-  gh release edit v1.2.7 --draft=false
+  git fetch origin
+  git worktree add ../clean-pwnify-release origin/main
+  cd ../clean-pwnify-release
+  cp ../zeroDay_app/android/local.properties android/local.properties
+  npm ci
+  npx tsc -b
+  npm test
+  npm run build
+  npx cap sync android
+  cd android && ./gradlew assembleDirectRelease --no-daemon
   ```
 - **Cosa verificare**:
-  1. Il tag `v1.2.7` compare nei tag ufficiali del repository `MatteAdor/pwnify`.
+  1. Build completata con successo (`BUILD SUCCESSFUL`).
+  2. Package: `com.pwnify.app`, `versionCode 7`, `versionName 1.2.7`.
+  3. Firma: `CN=matteo adorni...` certificato release corretto.
+  4. Gitleaks: 0 leak nel worktree.
+
+---
+
+### Passo 5: Tag e Pubblicazione Release sul Commit di `main`
+- **Azione**:
+  Creare il tag `v1.2.7` e pubblicare la release ufficiale direttamente sul commit di merge su `main` allegando l'APK compilato al passo 4:
+  ```bash
+  gh release create v1.2.7 scratch/pwnify-1.2.7.apk \
+    --target main \
+    --title "v1.2.7" \
+    --notes "Pwnify 1.2.7 — Retention Engine B0 & Rebranding"
+  ```
+- **Cosa verificare**:
+  1. Il tag `v1.2.7` punta al commit di merge su `main`.
   2. L'asset `pwnify-1.2.7.apk` è scaricabile dall'URL pubblico:
      `https://github.com/MatteAdor/pwnify/releases/download/v1.2.7/pwnify-1.2.7.apk`
-  3. L'hash del binario scaricato corrisponde esattamente al valore auditato:
-     `24b945a864570e1b6fc34f0634aa5bc20955708358e0e5fe872566d379ecf7f3`
 
 ---
 
-### Passo 6: Applicazione Configurazione Remota (`app_versions_update.sql`)
+### Passo 6: Calcolo Hash SHA-256 e Aggiornamento Configurazione Remota
 - **Azione**:
-  Eseguire lo script `scratch/app_versions_update.sql` nell'editor SQL della dashboard Supabase di produzione:
-  ```sql
-  UPDATE public.app_versions
-  SET 
-      store_url = 'https://pwnify.xyz/#download',
-      latest_version = '1.2.7',
-      latest_version_code = 7,
-      apk_download_url = 'https://github.com/MatteAdor/pwnify/releases/download/v1.2.7/pwnify-1.2.7.apk',
-      apk_sha256 = '24b945a864570e1b6fc34f0634aa5bc20955708358e0e5fe872566d379ecf7f3',
-      apk_hashes = jsonb_set(
-          COALESCE(apk_hashes, '{}'::jsonb),
-          '{7}',
-          '"24b945a864570e1b6fc34f0634aa5bc20955708358e0e5fe872566d379ecf7f3"'
-      ),
-      force_message = '{"it": "Aggiornamento di sicurezza critico richiesto per accedere a Pwnify.", "en": "Critical security and protocol update required to access Pwnify."}'::jsonb,
-      updated_at = pg_catalog.now()
-  WHERE platform = 'android';
-  ```
+  1. Calcolare l'hash SHA-256 effettivo del binario appena generato da `main`:
+     ```powershell
+     (Get-FileHash scratch/pwnify-1.2.7.apk -Algorithm SHA256).Hash.ToLower()
+     ```
+  2. Sostituire l'hash risultante `<SHA256_APK_CALCOLATO>` in `scratch/app_versions_update.sql` ed eseguirlo nell'editor SQL di Supabase:
+     ```sql
+     UPDATE public.app_versions
+     SET 
+         store_url = 'https://pwnify.xyz/#download',
+         latest_version = '1.2.7',
+         latest_version_code = 7,
+         apk_download_url = 'https://github.com/MatteAdor/pwnify/releases/download/v1.2.7/pwnify-1.2.7.apk',
+         apk_sha256 = '<SHA256_APK_CALCOLATO>',
+         apk_hashes = jsonb_set(
+             COALESCE(apk_hashes, '{}'::jsonb),
+             '{7}',
+             '"<SHA256_APK_CALCOLATO>"'
+         ),
+         force_message = '{"it": "Aggiornamento critico di sicurezza richiesto per accedere a Pwnify.", "en": "Critical security and protocol update required to access Pwnify."}'::jsonb,
+         updated_at = pg_catalog.now()
+     WHERE platform = 'android';
+     ```
 - **Cosa verificare**:
-  1. La riga `android` della tabella `public.app_versions` riporta i nuovi parametri di release.
-  2. `min_supported_version_code` rimane non toccato per non causare lock-out prematuri ai client correnti prima dell'aggiornamento.
+  1. La riga `android` di `public.app_versions` contiene l'hash SHA-256 esatto dell'APK su GitHub.
+  2. `min_supported_version_code` rimane invariato per evitare lock-out prematuro dei client attivi.
 
 ---
 
-### Passo 7: Verifica Funzionale su Telefono Fisico (Release Smoke Test)
+### Passo 7: Verifica Funzionale su Telefono Fisico (Smoke Test)
 - **Azione**:
-  Scaricare e installare `pwnify-1.2.7.apk` su un dispositivo Android reale.
+  Installare `pwnify-1.2.7.apk` scaricato dalla release GitHub su un dispositivo Android reale.
 - **Cosa verificare**:
-  1. **Identità e Firma**: L'icona dell'app riflette il nuovo logo Pwnify, il nome visualizzato è "Pwnify", e l'aggiornamento si installa sopra le release precedenti firmate con la stessa chiave `CN=matteo adorni`.
-  2. **Avvio & Rete**: Connessione a Supabase corretta, sessione utente preservata, navigazione tra i tab attiva.
-  3. **Direct Update**: L'aggiornamento in-app riconosce l'URL `https://github.com/MatteAdor/pwnify/...` come consentito e non solleva eccezioni di sicurezza sull'allowlist.
-  4. **Duelli & Realtime**: Accesso alla modalità Arena PvP / Ranked con connessione WebRTC stabilita o fallback su Supabase Realtime senza crash.
+  1. **Identità e Firma**: Icona e splash screen con brand Pwnify, nome app "Pwnify", aggiornamento trasparente sopra le build precedenti.
+  2. **Avvio & Rete**: Connessione a Supabase e autenticazione attive.
+  3. **Direct Update**: Verifica aggiornamenti in-app valida senza eccezioni di sicurezza.
+  4. **Duelli & Realtime**: Accesso alla modalità Arena PvP / Ranked con match WebRTC/Realtime funzionante.
