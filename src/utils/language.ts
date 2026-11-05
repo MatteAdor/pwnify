@@ -14,6 +14,10 @@ export function getSavedLanguage(): Language {
   return 'en'; // Default
 }
 
+if (typeof document !== 'undefined' && document.documentElement) {
+  document.documentElement.lang = getSavedLanguage();
+}
+
 export function saveLanguage(lang: Language): void {
   try {
     if (typeof window !== 'undefined') {

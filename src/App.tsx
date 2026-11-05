@@ -30,7 +30,7 @@ import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
-import { supabase, isSupabaseConfigured } from './config/supabase';
+// Supabase loaded dynamically to keep critical landing path lean
 import { syncUserProfile } from './utils/cloudSync';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
@@ -284,6 +284,9 @@ export const App: React.FC = () => {
   useEffect(() => {
     let isCancelled = false;
     const runSync = async () => {
+      const session = getCurrentSession();
+      if (!session) return;
+      const { isSupabaseConfigured } = await import('./config/supabase');
       if (!isSupabaseConfigured) return;
       try {
         const synced = await syncUserProfile(userState);
@@ -389,44 +392,46 @@ export const App: React.FC = () => {
 
         if (incomingLicense && verifyLicenseKey(incomingLicense)) {
           // Authoritative verification via Supabase Edge Function
-          if (isSupabaseConfigured) {
-            supabase.functions.invoke('validate_license', {
-              body: { license_key: incomingLicense }
-            }).then(({ data, error }) => {
-              if (!error && data?.valid && data?.is_pro) {
-                setUserState(prev => {
-                  const updated = {
-                    ...prev,
-                    isPro: true,
-                    streakShieldActive: true,
-                    readinessScore: 92,
-                    licenseKey: incomingLicense
-                  };
-                  persistActiveAccountState(updated);
-                  return updated;
-                });
-                setVerifiedCheckoutLicense(incomingLicense);
-                sound.playVictoryFanfare();
-                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-              }
-            }).catch(() => {});
-          } else {
-            // Offline demo fallback
-            setUserState(prev => {
-              const updated = {
-                ...prev,
-                isPro: true,
-                streakShieldActive: true,
-                readinessScore: 92,
-                licenseKey: incomingLicense
-              };
-              persistActiveAccountState(updated);
-              return updated;
-            });
-            setVerifiedCheckoutLicense(incomingLicense);
-            sound.playVictoryFanfare();
-            confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-          }
+          import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured) {
+              supabase.functions.invoke('validate_license', {
+                body: { license_key: incomingLicense }
+              }).then(({ data, error }) => {
+                if (!error && data?.valid && data?.is_pro) {
+                  setUserState(prev => {
+                    const updated = {
+                      ...prev,
+                      isPro: true,
+                      streakShieldActive: true,
+                      readinessScore: 92,
+                      licenseKey: incomingLicense
+                    };
+                    persistActiveAccountState(updated);
+                    return updated;
+                  });
+                  setVerifiedCheckoutLicense(incomingLicense);
+                  sound.playVictoryFanfare();
+                  confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+                }
+              }).catch(() => {});
+            } else {
+              // Offline demo fallback
+              setUserState(prev => {
+                const updated = {
+                  ...prev,
+                  isPro: true,
+                  streakShieldActive: true,
+                  readinessScore: 92,
+                  licenseKey: incomingLicense
+                };
+                persistActiveAccountState(updated);
+                return updated;
+              });
+              setVerifiedCheckoutLicense(incomingLicense);
+              sound.playVictoryFanfare();
+              confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+            }
+          }).catch(() => {});
         } else if (isCheckoutVerified) {
           // Local developer environment verified checkout
           const key = generateLicenseKey(userState.username);
@@ -636,9 +641,11 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleLogout = () => {
     setCurrentSession(null);
     setUserState(createDefaultGuestState());
-    if (isSupabaseConfigured) {
-      supabase.auth.signOut().catch(() => {});
-    }
+    import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured) {
+        supabase.auth.signOut().catch(() => {});
+      }
+    }).catch(() => {});
   };
 
   // Trigger Paywall Helper

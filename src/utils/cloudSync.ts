@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from '../config/supabase.ts';
+const getSupabaseClient = async () => import('../config/supabase.ts');
 import type { UserState } from '../types/index.ts';
 import type { Database, Json } from '../types/database.types.ts';
 
@@ -174,6 +174,7 @@ export interface MigrationResult {
 export async function executeOneShotMigration(
   localState: Partial<UserState>
 ): Promise<MigrationResult> {
+  const { supabase, isSupabaseConfigured } = await getSupabaseClient();
   if (!isSupabaseConfigured) {
     return { success: false, importedXp: 0, elo: 100 };
   }
@@ -226,6 +227,7 @@ export async function syncUserProfile(
   localState?: Partial<UserState> | null
 ): Promise<VersionedProfileCache | null> {
   const cached = getCachedProfileV2();
+  const { supabase, isSupabaseConfigured } = await getSupabaseClient();
 
   if (!isSupabaseConfigured) {
     return cached;
@@ -320,6 +322,7 @@ export async function checkNetworkTelemetry(): Promise<NetworkTelemetry> {
  * Strictly excludes any simulated / fake bot accounts.
  */
 export async function fetchRankedLeaderboard(): Promise<GlobalLeaderboardEntry[]> {
+  const { supabase, isSupabaseConfigured } = await getSupabaseClient();
   if (isSupabaseConfigured) {
     try {
       const { data, error } = await supabase

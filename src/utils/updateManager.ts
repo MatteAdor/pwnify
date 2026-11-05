@@ -27,7 +27,8 @@ import {
   type UpdateDisposition 
 } from './versionUtils.ts';
 import { analytics } from './analytics.ts';
-import { supabase, isSupabaseConfigured } from '../config/supabase.ts';
+// Supabase dynamically imported inside fetchRemoteConfig to keep entry bundle lean
+
 
 export type UpdateStatus =
   | 'IDLE'
@@ -243,6 +244,7 @@ class UpdateManager {
    */
   public async fetchRemoteConfig(): Promise<RemotePlatformConfig | null> {
     try {
+      const { supabase, isSupabaseConfigured } = await import('../config/supabase.ts');
       if (isSupabaseConfigured) {
         // Try RPC first
         const { data, error } = await (supabase as unknown as { rpc: (name: string, params?: unknown) => Promise<{ data: unknown; error: unknown }> }).rpc('get_remote_app_config', {
