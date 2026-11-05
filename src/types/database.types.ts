@@ -8,7 +8,17 @@ export type Database = {
             [_ in never]: never
           }
           Views: {
-            [_ in never]: never
+            public_profiles: {
+              Row: {
+                id: string
+                nick: string
+                elo: number
+                rank: string
+                xp: number
+                profession: string | null
+              }
+              Relationships: []
+            }
           }
           Functions: {
             "graphql":
@@ -210,9 +220,42 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            public_profiles: {
+              Row: {
+                id: string
+                nick: string
+                elo: number
+                rank: string
+                xp: number
+                profession: string | null
+              }
+              Relationships: []
+            }
           }
           Functions: {
+            "get_server_time": {
+              Args: Record<PropertyKey, never>;
+              Returns: {
+                server_now_iso: string;
+                server_timestamp_ms: number;
+                server_date_utc: string;
+              };
+            },
+            "record_user_streak_activity": {
+              Args: {
+                p_timezone?: string;
+                p_verified_pbq_completion_id?: string | null;
+              };
+              Returns: {
+                streak_days: number;
+                shield_earned: boolean;
+                shield_consumed: boolean;
+                streak_shield_count: number;
+                effective_date: string;
+                timezone: string;
+                message?: string;
+              };
+            },
             "apply_elo_decay":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -242,6 +285,9 @@ isOneToOne: false
               "category": string,"code_snippet": string,"id": string,"options": Json,"question": string,"question_order": number
             }[]
                            },
+"is_nick_available":
+{ Args: { "p_nick": string }; Returns: boolean
+                           },
 "get_tier_from_elo":
 { Args: { "p_elo": number }; Returns: string
                            },
@@ -250,6 +296,9 @@ isOneToOne: false
                            },
 "migrate_my_legacy_progress":
 { Args: { "p_inventory": Json,"p_profession": string,"p_xp": number }; Returns: Json
+                           },
+"import_my_legacy_streak":
+{ Args: { "p_days": number }; Returns: Json
                            },
 "poll_matchmaking":
 { Args: Record<PropertyKey, never>; Returns: Json

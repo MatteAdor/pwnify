@@ -1,8 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { 
-  recordActivityAndUpdateStreak, 
-  toggleStreakFreeze, 
   recordCertPassed, 
   recordSeasonArchive,
   createCleanAccountState,
@@ -10,108 +8,137 @@ import {
 } from '../src/utils/userDatabase';
 import { 
   calculateBreachTriageRewards, 
-  DAILY_BREACHES,
-  getDailyBreachForDate 
+  DAILY_BREACHES 
 } from '../src/data/dailyBreaches';
 import { OFFICIAL_PBQ_LABS } from '../src/data/bountiesAndPbq';
+import { applyLearningActivity } from '../src/utils/streakSync';
+import { getStreakThresholdTitle, activateStreakFreeze } from '../src/utils/streakEngine';
+import { computeCohortPercentile } from '../src/utils/cohort';
 
-describe('Gamification & Ethical Retention Engine', () => {
+describe('Gamification & Ethical Retention Engine (Unified Server-Authoritative B0)', () => {
 
-  it('Streak Engine: Consecutive daily training increments streakDays', () => {
+  it('Streak Engine: Consecutive daily training increments streakDays by exactly 1', () => {
     let state = createCleanAccountState('TestOperator');
+    state.userTimezone = 'UTC';
     assert.strictEqual(state.streakDays, 0);
 
-    // Day 1
-    const res1 = recordActivityAndUpdateStreak(state, '2026-10-20');
-    assert.strictEqual(res1.streakChanged, true);
-    assert.strictEqual(res1.newStreak, 1);
-    assert.strictEqual(res1.updatedState.streakDays, 1);
-    assert.strictEqual(res1.updatedState.lastActiveDate, '2026-10-20');
+    // Day 1: 2026-10-20
+    const day1 = Date.UTC(2026, 9, 20, 10, 0, 0);
+    const s1 = applyLearningActivity(state, { nowMs: day1 });
+    assert.strictEqual(s1.streakDays, 1);
+    assert.strictEqual(s1.lastActiveDate, '2026-10-20');
 
     // Same day activity does not double-count streak
-    const resSame = recordActivityAndUpdateStreak(res1.updatedState, '2026-10-20');
-    assert.strictEqual(resSame.streakChanged, false);
-    assert.strictEqual(resSame.newStreak, 1);
-    assert.strictEqual(resSame.updatedState.streakDays, 1);
+    const sSame = applyLearningActivity(s1, { nowMs: day1 + 3600000 });
+    assert.strictEqual(sSame.streakDays, 1);
+    assert.strictEqual(sSame.lastActiveDate, '2026-10-20');
 
-    // Day 2 (consecutive)
-    const res2 = recordActivityAndUpdateStreak(res1.updatedState, '2026-10-21');
-    assert.strictEqual(res2.streakChanged, true);
-    assert.strictEqual(res2.newStreak, 2);
-    assert.strictEqual(res2.updatedState.streakDays, 2);
-    assert.strictEqual(res2.updatedState.lastActiveDate, '2026-10-21');
+    // Day 2 (consecutive): 2026-10-21
+    const day2 = Date.UTC(2026, 9, 21, 10, 0, 0);
+    const s2 = applyLearningActivity(s1, { nowMs: day2 });
+    assert.strictEqual(s2.streakDays, 2);
+    assert.strictEqual(s2.lastActiveDate, '2026-10-21');
+  });
+
+  it('Unified Streak: Every action (Daily, node, PBQ, ranked) increments streak by exactly 1 day, once per day', () => {
+    let state = createCleanAccountState('MultiActionUser');
+    state.userTimezone = 'UTC';
+    const day1 = Date.UTC(2026, 9, 20, 9, 0, 0);
+
+    // 1. Action: Daily Breach triage
+    const afterDaily = applyLearningActivity(state, { nowMs: day1 });
+    assert.strictEqual(afterDaily.streakDays, 1, 'First action of the day sets streak to 1');
+
+    // 2. Action: Skill Tree node completed 1 hour later (same day)
+    const afterNode = applyLearningActivity(afterDaily, { nowMs: day1 + 3600000 });
+    assert.strictEqual(afterNode.streakDays, 1, 'Skill node on same day must NOT double increment streak');
+
+    // 3. Action: PBQ Lab completed 2 hours later (same day)
+    const afterPbq = applyLearningActivity(afterNode, { nowMs: day1 + 7200000, isPbqPerfect: true });
+    assert.strictEqual(afterPbq.streakDays, 1, 'PBQ lab on same day must NOT increment streak past 1');
+    assert.strictEqual(afterPbq.streakShieldCount, 1, '100% PBQ awards earned shield slot');
+
+    // 4. Action: Ranked Match won 3 hours later (same day)
+    const afterRanked = applyLearningActivity(afterPbq, { nowMs: day1 + 10800000 });
+    assert.strictEqual(afterRanked.streakDays, 1, 'Ranked match on same day must NOT increment streak past 1');
+
+    // 5. Action: Next day arrives (Oct 21) -> user completes any action -> increments to 2
+    const day2 = Date.UTC(2026, 9, 21, 10, 0, 0);
+    const nextDayAction = applyLearningActivity(afterRanked, { nowMs: day2 });
+    assert.strictEqual(nextDayAction.streakDays, 2, 'Action on next consecutive day increments streak by exactly 1');
   });
 
   it('Streak Engine: Every 5 consecutive days earns 1 free streak shield (non-monetized)', () => {
     let state = createCleanAccountState('PersistentOperator');
+    state.userTimezone = 'UTC';
     state.streakDays = 4;
     state.lastActiveDate = '2026-10-20';
-    state.streakShieldsEarned = 0;
+    state.lastActiveTimestamp = Date.UTC(2026, 9, 20, 10, 0, 0);
+    state.streakShieldCount = 0;
 
-    const res = recordActivityAndUpdateStreak(state, '2026-10-21');
-    assert.strictEqual(res.newStreak, 5);
-    assert.strictEqual(res.shieldEarned, true);
-    assert.strictEqual(res.updatedState.streakShieldsEarned, 1);
+    const day21 = Date.UTC(2026, 9, 21, 10, 0, 0);
+    const res = applyLearningActivity(state, { nowMs: day21 });
+    assert.strictEqual(res.streakDays, 5);
+    assert.strictEqual(res.streakShieldCount, 1, 'Earns 1 free shield at 5-day consistency');
   });
 
   it('Streak Engine: Earned shield is consumed when missing a day, protecting the streak', () => {
     let state = createCleanAccountState('ShieldUser');
+    state.userTimezone = 'UTC';
     state.streakDays = 10;
     state.lastActiveDate = '2026-10-20';
-    state.streakShieldsEarned = 1;
+    state.lastActiveTimestamp = Date.UTC(2026, 9, 20, 10, 0, 0);
+    state.streakShieldCount = 1;
+    state.streakShieldActive = true;
 
     // Inactive on 2026-10-21, returns on 2026-10-22 (2 days diff)
-    const res = recordActivityAndUpdateStreak(state, '2026-10-22');
-    assert.strictEqual(res.shieldConsumed, true);
-    assert.strictEqual(res.newStreak, 11); // Protected & incremented
-    assert.strictEqual(res.updatedState.streakShieldsEarned, 0);
+    const day22 = Date.UTC(2026, 9, 22, 10, 0, 0);
+    const res = applyLearningActivity(state, { nowMs: day22 });
+    assert.strictEqual(res.streakDays, 11, 'Protected & incremented via consumed shield');
+    assert.strictEqual(res.streakShieldCount, 0, 'Shield was consumed');
   });
 
   it('Streak Engine: Vacation/Freeze mode preserves streak with zero anxiety or guilt', () => {
     let state = createCleanAccountState('VacationUser');
+    state.userTimezone = 'UTC';
     state.streakDays = 15;
     state.lastActiveDate = '2026-10-10';
-    state.streakFreezeActive = true;
-    state.streakFreezeExpiresDate = '2026-10-25';
+    state.lastActiveTimestamp = Date.UTC(2026, 9, 10, 10, 0, 0);
+    state.freezeUntilDate = '2026-10-25';
 
     // Operator returns during vacation window on 2026-10-20 (10 days later)
-    const res = recordActivityAndUpdateStreak(state, '2026-10-20');
-    assert.strictEqual(res.freezeProtected, true);
-    assert.strictEqual(res.newStreak, 16);
-    assert.strictEqual(res.updatedState.streakDays, 16);
+    const day20 = Date.UTC(2026, 9, 20, 10, 0, 0);
+    const res = applyLearningActivity(state, { nowMs: day20 });
+    assert.strictEqual(res.streakDays, 16, 'Streak preserved and continued through freeze');
   });
 
   it('Streak Engine: Resets honestly to 1 when gap > 1 day and no shield or freeze available', () => {
     let state = createCleanAccountState('UnprotectedUser');
+    state.userTimezone = 'UTC';
     state.streakDays = 12;
     state.lastActiveDate = '2026-10-10';
-    state.streakShieldsEarned = 0;
-    state.streakFreezeActive = false;
+    state.lastActiveTimestamp = Date.UTC(2026, 9, 10, 10, 0, 0);
+    state.streakShieldCount = 0;
+    state.streakShieldActive = false;
+    state.freezeUntilDate = null;
     state.isPro = false;
 
     // Returns 5 days later
-    const res = recordActivityAndUpdateStreak(state, '2026-10-15');
-    assert.strictEqual(res.shieldConsumed, false);
-    assert.strictEqual(res.freezeProtected, false);
-    assert.strictEqual(res.newStreak, 1);
-    assert.strictEqual(res.updatedState.streakDays, 1);
+    const day15 = Date.UTC(2026, 9, 15, 10, 0, 0);
+    const res = applyLearningActivity(state, { nowMs: day15 });
+    assert.strictEqual(res.streakDays, 1, 'Resets honestly to 1');
   });
 
   it('Milestone Rewards: 7, 30, 60, 100 days award permanent titles & tangible XP bonuses', () => {
-    let state = createCleanAccountState('MilestoneAchiever');
-    state.streakDays = 6;
-    state.lastActiveDate = '2026-10-20';
-    state.xp = 500;
-
-    // Hits 7-day milestone
-    const res = recordActivityAndUpdateStreak(state, '2026-10-21');
-    assert.strictEqual(res.newStreak, 7);
-    assert.ok(res.milestoneUnlocked);
-    assert.strictEqual(res.milestoneUnlocked?.days, 7);
-    assert.strictEqual(res.milestoneUnlocked?.title, '7-Day Persistent Operative');
-    assert.strictEqual(res.updatedState.xp, 600); // +100 XP
-    assert.ok(res.updatedState.streakMilestonesUnlocked?.includes(7));
-    assert.ok(res.updatedState.earnedTitles?.includes('7-Day Persistent Operative'));
+    assert.strictEqual(getStreakThresholdTitle(7)?.title, '7-Day Persistent Operative');
+    assert.strictEqual(getStreakThresholdTitle(30)?.title, 'Monthly Defcon Sentinel');
+    assert.strictEqual(getStreakThresholdTitle(60)?.title, 'ZeroDay Red Team Veteran');
+    assert.strictEqual(getStreakThresholdTitle(100)?.title, 'Centurion Elite Vanguard');
+    assert.strictEqual(STREAK_MILESTONES.length, 4);
+    assert.strictEqual(STREAK_MILESTONES[0].days, 7);
+    assert.strictEqual(STREAK_MILESTONES[1].days, 30);
+    assert.strictEqual(STREAK_MILESTONES[2].days, 60);
+    assert.strictEqual(STREAK_MILESTONES[3].days, 100);
   });
 
   it('Controlled Surprise: Daily breach rewards are transparent, non-monetized, with declared odds', () => {
@@ -188,6 +215,23 @@ describe('Gamification & Ethical Retention Engine', () => {
     assert.ok(incidentIds.includes('breach_shellshock'));
     assert.ok(incidentIds.includes('breach_solarwinds'));
     assert.ok(incidentIds.includes('breach_citrix_bleed'));
+  });
+
+  it('Peer Cohort League: Percentile displays only when active cohort has at least 50 operators; below threshold displays nothing (null)', () => {
+    // Under threshold (< 50 operators): must return null (renders nothing)
+    assert.strictEqual(computeCohortPercentile(1, 0), null, '0 operators yields null');
+    assert.strictEqual(computeCohortPercentile(1, 1), null, '1 operator yields null');
+    assert.strictEqual(computeCohortPercentile(5, 49), null, '49 operators (< 50) yields null');
+    assert.strictEqual(computeCohortPercentile(-1, 50), null, 'Negative position yields null');
+    assert.strictEqual(computeCohortPercentile(0, 50), null, 'Zero position yields null');
+
+    // Exactly at threshold (50 operators): active percentile calculation
+    assert.strictEqual(computeCohortPercentile(1, 50), 2, 'Rank 1 in 50 operators yields Top 2%');
+    assert.strictEqual(computeCohortPercentile(25, 50), 50, 'Rank 25 in 50 operators yields Top 50%');
+
+    // Above threshold (> 50 operators): active percentile calculation
+    assert.strictEqual(computeCohortPercentile(5, 100), 5, 'Rank 5 of 100 operators yields Top 5%');
+    assert.strictEqual(computeCohortPercentile(1, 500), 1, 'Rank 1 of 500 operators yields Top 1%');
   });
 
 });

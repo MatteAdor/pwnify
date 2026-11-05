@@ -66,22 +66,25 @@
   <div class="card">
     <div class="spinner"></div>
     <h3 style="color:#10B981;margin:0 0 6px;font-size:16px;letter-spacing:0.05em;">AUTENTICAZIONE RIUSCITA</h3>
-    <p class="meta">Rientro nell'applicazione ZeroDay sul tuo dispositivo...</p>
-    <a id="deepLinkBtn" href="#" class="btn" style="display:none;">APRI NELL'APP ZERODAY</a>
+    <p class="meta">Rientro nell'applicazione Pwnify sul tuo dispositivo...</p>
+    <a id="deepLinkBtn" href="#" class="btn" style="display:none;">APRI NELL'APP PWNIFY</a>
+    <a id="legacyDeepLinkBtn" href="#" class="btn" style="display:none;margin-top:8px;background:#18181b;color:#a1a1aa;border:1px solid #27272a;font-size:11px;">APRI IN ZERODAY (VERSIONE PRECEDENTE)</a>
   </div>
   <script>
     (function() {
       var hash = window.location.hash || '';
       var search = window.location.search || '';
-      var deepLink = 'com.zeroday.academy://auth/callback' + search + hash;
+      var deepLink = 'com.pwnify.app://auth/callback' + search + hash;
+      var legacyDeepLink = 'com.zeroday.academy://auth/callback' + search + hash;
       var btn = document.getElementById('deepLinkBtn');
-      if (btn) {
-        btn.href = deepLink;
-      }
+      if (btn) btn.href = deepLink;
+      var legacyBtn = document.getElementById('legacyDeepLinkBtn');
+      if (legacyBtn) legacyBtn.href = legacyDeepLink;
 
       var isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
       if (isMobile) {
         if (btn) btn.style.display = 'inline-block';
+        if (legacyBtn) legacyBtn.style.display = 'inline-block';
         // Auto trigger deep link intent to reopen app
         window.location.href = deepLink;
       } else {

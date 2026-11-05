@@ -21,7 +21,6 @@ import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownlo
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
 import { supabase, isSupabaseConfigured } from './config/supabase';
-import { syncUserProfile } from './utils/cloudSync';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -32,6 +31,8 @@ import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
 import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
+import { recordLearningActivity, StreakState } from './utils/streakEngine';
+import { syncAuthoritativeActivity, applyLearningActivity } from './utils/streakSync';
 import { 
   createDefaultGuestState, 
   getCachedGuestState,
@@ -42,9 +43,7 @@ import {
   sanitizeUserState,
   syncDatabaseWithBackend,
   updateOperatorUsername,
-  recordActivityAndUpdateStreak,
   recordCertPassed,
-  toggleStreakFreeze,
   UserAccount 
 } from './utils/userDatabase';
 import { isContributor } from './utils/licenseEngine';
@@ -195,7 +194,7 @@ export const App: React.FC = () => {
       const search = window.location.search;
       const isAuthCallback = hash.includes('access_token=') || search.includes('code=');
       if (isAuthCallback && /android/i.test(navigator.userAgent)) {
-        const deepLink = `com.zeroday.academy://auth/callback${search}${hash}`;
+        const deepLink = `com.pwnify.app://auth/callback${search}${hash}`;
         const timer = setTimeout(() => {
           try {
             window.location.href = deepLink;
@@ -269,37 +268,6 @@ export const App: React.FC = () => {
   useEffect(() => {
     updateManager.setArenaDuelActive(activeTab === 'arena');
   }, [activeTab]);
-
-  // Authoritative background profile & entitlement synchronization
-  useEffect(() => {
-    let isCancelled = false;
-    const runSync = async () => {
-      if (!isSupabaseConfigured) return;
-      try {
-        const synced = await syncUserProfile(userState);
-        if (synced && !isCancelled) {
-          setUserState(prev => {
-            const isAutoPro = isContributor(prev.username) || isContributor(prev.userEmail) || Boolean(synced.isPro);
-            if (prev.elo !== synced.elo || prev.xp !== synced.xp || prev.isPro !== isAutoPro) {
-              const updated = {
-                ...prev,
-                elo: synced.elo,
-                xp: Math.max(prev.xp, synced.xp),
-                isPro: isAutoPro
-              };
-              persistActiveAccountState(updated);
-              return updated;
-            }
-            return prev;
-          });
-        }
-      } catch (e) {
-        console.warn('[Sync] Background sync notice:', e);
-      }
-    };
-    runSync();
-    return () => { isCancelled = true; };
-  }, [userState.username, userState.isLoggedIn]);
 
   // View Mode: 'portal' (Public Presentation & Download Hub) vs 'app' (Interactive Web Platform)
   const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
@@ -377,82 +345,24 @@ export const App: React.FC = () => {
         const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
         const incomingLicense = params.get('license');
 
-        if (incomingLicense && verifyLicenseKey(incomingLicense)) {
-          // Authoritative verification via Supabase Edge Function
-          if (isSupabaseConfigured) {
-            supabase.functions.invoke('validate_license', {
-              body: { license_key: incomingLicense }
-            }).then(({ data, error }) => {
-              if (!error && data?.valid && data?.is_pro) {
-                setUserState(prev => {
-                  const updated = {
-                    ...prev,
-                    isPro: true,
-                    streakShieldActive: true,
-                    readinessScore: 92,
-                    licenseKey: incomingLicense
-                  };
-                  persistActiveAccountState(updated);
-                  return updated;
-                });
-                setVerifiedCheckoutLicense(incomingLicense);
-                sound.playVictoryFanfare();
-                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-              }
-            }).catch(() => {});
-          } else {
-            // Offline demo fallback
-            setUserState(prev => {
-              const updated = {
-                ...prev,
-                isPro: true,
-                streakShieldActive: true,
-                readinessScore: 92,
-                licenseKey: incomingLicense
-              };
-              persistActiveAccountState(updated);
-              return updated;
-            });
-            setVerifiedCheckoutLicense(incomingLicense);
-            sound.playVictoryFanfare();
-            confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-          }
-        } else if (isCheckoutVerified) {
-          // Local developer environment verified checkout
-          const key = generateLicenseKey(userState.username);
-          setUserState(prev => {
-            const updated = {
-              ...prev,
-              isPro: true,
-              streakShieldActive: true,
-              readinessScore: 92,
-              licenseKey: key
-            };
-            persistActiveAccountState(updated);
-            return updated;
-          });
+        if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
+          const key = incomingLicense && verifyLicenseKey(incomingLicense) 
+            ? incomingLicense 
+            : generateLicenseKey(userState.username);
+          setUserState(prev => ({
+            ...prev,
+            isPro: true,
+            streakShieldActive: true,
+            readinessScore: 92,
+            licenseKey: key
+          }));
           setVerifiedCheckoutLicense(key);
           sound.playVictoryFanfare();
           confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-        } else if (params.has('checkout') || params.has('session_id')) {
-          // Returning from external payment gateway: immediately sync authoritative profile status
-          syncUserProfile(userState).then(synced => {
-            if (synced?.isPro) {
-              setUserState(prev => {
-                const updated = { ...prev, isPro: true, streakShieldActive: true };
-                persistActiveAccountState(updated);
-                return updated;
-              });
-              sound.playVictoryFanfare();
-              confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-            }
-          }).catch(() => {});
-        }
-
-        if (params.has('checkout') || params.has('session_id') || params.has('license') || params.has('sig') || params.has('signature')) {
           if (window.history) {
             window.history.replaceState({}, '', window.location.pathname);
           }
+          return;
         }
       } else {
         // In Play distribution, strip checkout/license parameters from URL without processing
@@ -514,7 +424,7 @@ Features Unlocked:
   - Interactive PBQ Labs with Real-Time Validation
   - Unlimited 1v1 Blitz Arena Tickets & Win Streak Shields
   - Uncensored Root Cause Exploit Breakdowns & PoCs
-  - 2x XP Multiplier & Weekly League Safe Shield
+  - 2x XP Multiplier & Unlimited Arena Access
 Issued:              ${new Date().toISOString()}
 Verification:        Zero-Knowledge Algorithmic Checksum Passed
 =====================================================`;
@@ -587,21 +497,22 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     setUserState(prev => ({ ...prev, customTitle: title }));
   };
 
+
+
   // Daily 0xBreach Completion Handler
   const handleDailyBreachSuccess = (xpGained: number, eloGained: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
+      const updated = applyLearningActivity(prev);
       const currentBreachStreak = prev.dailyBreachStreak || 0;
       const todayStr = new Date().toISOString().split('T')[0];
-      const { updatedState } = recordActivityAndUpdateStreak(prev);
-
       const nextState: UserState = {
-        ...updatedState,
-        xp: updatedState.xp + xpGained * xpMultiplier,
-        elo: updatedState.elo + eloGained,
+        ...updated,
+        xp: prev.xp + xpGained * xpMultiplier,
+        elo: prev.elo + eloGained,
         dailyBreachStreak: currentBreachStreak + 1,
         lastDailyBreachDate: todayStr,
-        readinessScore: Math.min(100, updatedState.readinessScore + 5)
+        readinessScore: Math.min(100, prev.readinessScore + 5)
       };
       persistActiveAccountState(nextState);
       return nextState;
@@ -614,6 +525,40 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
       persistActiveAccountState(nextState);
       return nextState;
     });
+
+    // Authoritative Server Validation with Fail-Open UX
+    if (isSupabaseConfigured) {
+      const curStreakState: StreakState = {
+        streakDays: userState.streakDays || 0,
+        lastActiveDate: userState.lastActiveDate || null,
+        lastActiveTimestamp: userState.lastActiveTimestamp || 0,
+        streakShieldCount: userState.streakShieldCount || 0,
+        streakShieldActive: userState.streakShieldActive,
+        freezeUntilDate: userState.freezeUntilDate || null,
+        lastFreezeActivatedDate: userState.lastFreezeActivatedDate || null,
+        inGracePeriod: Boolean(userState.inGracePeriod),
+        graceExpiryTimestamp: userState.graceExpiryTimestamp || null,
+        timezone: userState.userTimezone || 'UTC',
+        lastShieldAwardedStreak: userState.lastShieldAwardedStreak || null
+      };
+
+      syncAuthoritativeActivity(curStreakState, { isPro: userState.isPro })
+        .then(res => {
+          if (res.source === 'server') {
+            setUserState(cur => ({
+              ...cur,
+              streakDays: res.streakDays,
+              streakShieldCount: res.streakShieldCount,
+              streakShieldActive: res.streakShieldActive,
+              lastActiveDate: res.lastActiveDate,
+              lastStreakSource: 'server'
+            }));
+          }
+        })
+        .catch(err => {
+          console.warn('[StreakSync] Background sync bypassed (fail-open):', err);
+        });
+    }
   };
 
   // Operator Authentication Modal State
@@ -730,6 +675,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleCompleteNode = (nodeId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
       const xpMultiplier = prev.isPro ? 2 : 1;
+      const updated = applyLearningActivity(prev);
       const updatedBounties = (prev.dailyBounties || INITIAL_DAILY_BOUNTIES).map(b => {
         if (b.id === 'bounty_zeroday') {
           const nextProg = Math.min(b.target, b.progress + 1);
@@ -741,16 +687,14 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         return b;
       });
 
-      const { updatedState } = recordActivityAndUpdateStreak(prev);
-
       const nextState: UserState = {
-        ...updatedState,
-        xp: updatedState.xp + gainedXp * xpMultiplier,
-        elo: updatedState.elo + gainedElo,
-        readinessScore: Math.min(100, updatedState.readinessScore + 6),
-        completedNodeIds: updatedState.completedNodeIds.includes(nodeId)
-          ? updatedState.completedNodeIds
-          : [...updatedState.completedNodeIds, nodeId],
+        ...updated,
+        xp: prev.xp + gainedXp * xpMultiplier,
+        elo: prev.elo + gainedElo,
+        readinessScore: Math.min(100, prev.readinessScore + 6),
+        completedNodeIds: prev.completedNodeIds.includes(nodeId)
+          ? prev.completedNodeIds
+          : [...prev.completedNodeIds, nodeId],
         dailyBounties: updatedBounties
       };
       persistActiveAccountState(nextState);
@@ -796,7 +740,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         return b;
       });
 
-      const { updatedState } = recordActivityAndUpdateStreak(prev);
+      const updatedState = applyLearningActivity(prev);
 
       const nextState: UserState = {
         ...updatedState,
@@ -871,16 +815,16 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   // PBQ Lab Completion Handler
   const handleCompletePbq = (pbqId: string, gainedXp: number, gainedElo: number) => {
     setUserState(prev => {
-      const { updatedState } = recordActivityAndUpdateStreak(prev);
-      const alreadyDone = updatedState.completedPbqIds?.includes(pbqId);
+      const updated = applyLearningActivity(prev, { isPbqPerfect: true });
+      const alreadyDone = updated.completedPbqIds?.includes(pbqId);
       const nextState: UserState = {
-        ...updatedState,
-        xp: updatedState.xp + (updatedState.isPro ? gainedXp * 2 : gainedXp),
-        elo: updatedState.elo + gainedElo,
-        readinessScore: Math.min(100, updatedState.readinessScore + 8),
+        ...updated,
+        xp: updated.xp + (updated.isPro ? gainedXp * 2 : gainedXp),
+        elo: updated.elo + gainedElo,
+        readinessScore: Math.min(100, updated.readinessScore + 8),
         completedPbqIds: alreadyDone
-          ? updatedState.completedPbqIds
-          : [...(updatedState.completedPbqIds || []), pbqId]
+          ? updated.completedPbqIds
+          : [...(updated.completedPbqIds || []), pbqId]
       };
       persistActiveAccountState(nextState);
       return nextState;
@@ -1355,28 +1299,27 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         onCloseForce={() => setForceCookieBanner(false)}
       />
 
-      {/* In-App Update Gate: Native Mobile only — never render on web */}
+      {/* In-App Update Gate (Native Android Only - never block or nag web visitors) */}
       {isNativeApp() && (
         <>
-          
-      {(updateState.status === 'FORCE_REQUIRED' ||
-        updateState.status === 'DOWNLOADING' ||
-        updateState.status === 'DOWNLOADED' ||
-        updateState.status === 'INSTALLING' ||
-        (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
-        <ForceUpdateModal state={updateState} />
-      ) : (
-        <>
-          {/* Flexible Non-Blocking Update Discrete Banner */}
-          <FlexibleUpdateBanner state={updateState} />
+          {(updateState.status === 'FORCE_REQUIRED' ||
+            updateState.status === 'DOWNLOADING' ||
+            updateState.status === 'DOWNLOADED' ||
+            updateState.status === 'INSTALLING' ||
+            (updateState.status === 'ERROR' && updateState.clientVersionCode < updateState.latestVersionCode)) ? (
+            <ForceUpdateModal state={updateState} />
+          ) : (
+            <>
+              {/* Flexible Non-Blocking Update Discrete Banner */}
+              <FlexibleUpdateBanner state={updateState} />
 
-          {/* Centered Download / Install Modal */}
-          <UpdateProgressModal state={updateState} />
-        </>
-      )}
+              {/* Centered Download / Install Modal */}
+              <UpdateProgressModal state={updateState} />
+            </>
+          )}
 
-      {/* Post-Update "What's New" Highlights */}
-      <WhatsNewModal state={updateState} />
+          {/* Post-Update "What's New" Highlights */}
+          <WhatsNewModal state={updateState} />
         </>
       )}
     </div>

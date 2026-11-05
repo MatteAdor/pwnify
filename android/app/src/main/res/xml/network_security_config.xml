@@ -7,14 +7,6 @@
         </trust-anchors>
     </base-config>
 
-    <!-- Production domain configuration -->
-    <domain-config>
-        <domain includeSubdomains="true">zeroday.gg</domain>
-        <domain includeSubdomains="true">api.zeroday.gg</domain>
-        <domain includeSubdomains="true">pwnify.app</domain>
-        <domain includeSubdomains="true">api.pwnify.app</domain>
-    </domain-config>
-
     <!-- Debug overrides for local development only -->
     <debug-overrides>
         <trust-anchors>

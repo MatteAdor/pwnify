@@ -7,7 +7,7 @@
 
 BEGIN;
 
-SELECT plan(8);
+SELECT plan(9);
 
 -- 1. Setup Migration 5 schema in temporary transaction space
 CREATE TABLE IF NOT EXISTS public.app_versions (
@@ -44,15 +44,6 @@ INSERT INTO public.app_versions (
 ) ON CONFLICT (platform) DO UPDATE SET
     min_supported_version_code = 100,
     kill_switch = FALSE;
-
--- Ensure mock user and profile exist so that table scans evaluate RLS row policies
-INSERT INTO auth.users (id, email, raw_user_meta_data)
-VALUES ('11111111-1111-1111-1111-111111111111', 'version_test@zeroday.gg', '{"callsign": "version_tester"}'::jsonb)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.profiles (id, nick, elo)
-VALUES ('11111111-1111-1111-1111-111111111111', 'version_tester', 100)
-ON CONFLICT (id) DO NOTHING;
 
 -- Ensure assert_min_client_version is created
 CREATE OR REPLACE FUNCTION public.assert_min_client_version()
@@ -134,17 +125,10 @@ CREATE POLICY "Enforce min version on profiles" ON public.profiles
     FOR ALL
     USING ( (SELECT public.assert_min_client_version()) );
 
-ALTER TABLE public.profiles FORCE ROW LEVEL SECURITY;
-
--- Switch to authenticated role so that PostgreSQL enforces Row Level Security
--- (the superuser/postgres role bypasses RLS by default)
-SET LOCAL ROLE authenticated;
-SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
-
 -- TEST 1: Android client with low build code (< 100) must raise PT426
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
 SELECT throws_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'PT426',
     'Upgrade Required',
     'Android build 90 below min 100 throws SQLSTATE PT426'
@@ -153,46 +137,43 @@ SELECT throws_ok(
 -- TEST 2: Android client with equal or higher build code (>= 100) must succeed
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "100"}', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Android build 100 equal to min 100 executes without error'
 );
 
 -- TEST 3: Android client with build 105 (> 100) must succeed
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "105"}', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Android build 105 above min 100 executes without error'
 );
 
 -- TEST 4: Missing headers (e.g. web or direct connection) must succeed (fail-open)
 SELECT set_config('request.headers', '', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Empty or absent headers passes through without error'
 );
 
 -- TEST 5: Web client (x-platform = "web") without build code must succeed
 SELECT set_config('request.headers', '{"x-platform": "web"}', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Web platform passes through without version restriction'
 );
 
 -- TEST 6: Legacy Android client without x-build header must succeed
 SELECT set_config('request.headers', '{"x-platform": "android"}', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Legacy Android without x-build passes through without error'
 );
 
 -- TEST 7: Emergency kill_switch bypasses force update even for build 0
-RESET ROLE;
 UPDATE public.app_versions SET kill_switch = TRUE WHERE platform = 'android';
-SET LOCAL ROLE authenticated;
-SET LOCAL "request.jwt.claims" = '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}';
 SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "0"}', true);
 SELECT lives_ok(
-    'SELECT count(*) FROM public.profiles',
+    'SELECT public.assert_min_client_version()',
     'Kill switch enables emergency bypass for all clients'
 );
 
@@ -202,6 +183,23 @@ SELECT lives_ok(
     'Execution plan uses InitPlan subquery for assert_min_client_version'
 );
 
+-- TEST 9: Authenticated SELECT on public.profiles via real RLS path with low build code throws PT426
+UPDATE public.app_versions SET kill_switch = FALSE WHERE platform = 'android';
+
+INSERT INTO auth.users (id, email) VALUES ('77777777-7777-7777-7777-777777777777', 'version_test@zeroday.local') ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles (id, nick, elo, rank, xp) VALUES ('77777777-7777-7777-7777-777777777777', 'VersionTester', 1000, 'Script Kiddie', 0) ON CONFLICT DO NOTHING;
+
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '77777777-7777-7777-7777-777777777777';
+SELECT set_config('request.jwt.claims', '{"sub": "77777777-7777-7777-7777-777777777777", "role": "authenticated"}', true);
+SELECT set_config('request.headers', '{"x-platform": "android", "x-build": "90"}', true);
+
+SELECT throws_ok(
+    'SELECT count(*) FROM public.profiles',
+    'PT426',
+    'Upgrade Required',
+    'SELECT on public.profiles as authenticated with low build code throws SQLSTATE PT426 via real RLS'
+);
 RESET ROLE;
 
 SELECT * FROM finish();

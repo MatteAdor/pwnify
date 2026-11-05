@@ -6,7 +6,8 @@ export interface DailyBreachIncident {
   threatActor: string;
   targetArchitecture: string;
   severity: 'CRITICAL' | 'HIGH' | 'MAXIMUM DEFCON';
-  cvssScore: number;
+  cvssScore?: number | null;
+  cvssDisplay?: string;
   scenario: string;
   vulnerableCodeSnippet: string;
   codeLanguage: string;
@@ -149,7 +150,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'Equation Group (NSA) / Shadow Brokers / WannaCry',
     targetArchitecture: 'Windows SMBv1 Server Kernel Driver (srv.sys)',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 9.8,
+    cvssScore: 8.8,
     scenario: 'A discrepancy between 16-bit and 32-bit mathematical casting in handling SMB_COM_TRANSACTION2_SECONDARY triggers a buffer overflow in the Windows kernel non-paged pool (srv.sys), granting SYSTEM-level RCE.',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
@@ -261,7 +262,8 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'Channel File 291 Rapid Response Content Update',
     targetArchitecture: 'CSAgent.sys Kernel Driver on Windows 10/11 & Server',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 9.9,
+    cvssScore: null,
+    cvssDisplay: 'N/A (incidente operativo, nessun CVE)',
     scenario: 'The Falcon kernel sensor received `Channel File 291` containing 21 uninitialized logic fields. The `CSAgent.sys` driver dereferenced a null pointer into unmapped memory, triggering a PAGE_FAULT_IN_NONPAGED_AREA bugcheck (global BSOD).',
     codeLanguage: 'c',
     vulnerableLineNumber: 4,
@@ -589,7 +591,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'Worm Operators & Remote CGI Exploiters',
     targetArchitecture: 'GNU Bash through version 4.3 on Unix/Linux',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 10.0,
+    cvssScore: 9.8,
     scenario: 'GNU Bash allows function definitions in environment variables. Bash continued parsing commands past the end of the function definition, executing arbitrary trailing commands immediately upon invocation in CGI scripts, OpenSSH ForceCommand, and DHCP clients.',
     codeLanguage: 'bash',
     vulnerableLineNumber: 2,
@@ -752,7 +754,8 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'Ransomware Affiliates & Cyber Extortion Groups',
     targetArchitecture: 'Citrix ADC and Citrix Gateway Appliances',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 9.4,
+    cvssScore: 7.5,
+    cvssDisplay: 'NVD 7.5 · Vendor 9.4',
     scenario: 'Citrix ADC and Gateway contain an unauthenticated memory buffer over-read in the OpenID Connect endpoint. An attacker supplying a crafted Host header receives uninitialized memory containing valid 32-byte session tokens, bypassing MFA completely.',
     codeLanguage: 'c',
     vulnerableLineNumber: 3,
@@ -806,7 +809,7 @@ export const DAILY_BREACHES: DailyBreachIncident[] = [
     threatActor: 'State-Sponsored Espionage (UTA0178)',
     targetArchitecture: 'Ivanti Connect Secure (ICS) and Policy Secure Gateways',
     severity: 'MAXIMUM DEFCON',
-    cvssScore: 9.8,
+    cvssScore: 8.2,
     scenario: 'An authentication bypass in the Web reverse proxy component of Ivanti Connect Secure allows unauthenticated remote attackers to access restricted control plane API endpoints. Chained with CVE-2024-21887, attackers execute arbitrary root commands.',
     codeLanguage: 'python',
     vulnerableLineNumber: 2,
@@ -936,8 +939,19 @@ export function calculateBreachTriageRewards(
   const isSpeedBonusEarned = secondsTaken <= 30;
   const speedBonusXp = isSpeedBonusEarned ? 20 : 0;
 
-  // 15% transparent probability of discovering a Classified Field Dossier
-  const roll = randomSeed !== undefined ? randomSeed : Math.random();
+  // 15% transparent probability of discovering a Classified Field Dossier.
+  // Deterministic seed based on incident ID and calendar date to prevent client refresh exploitation.
+  let roll = randomSeed !== undefined ? randomSeed : 0.5;
+  if (randomSeed === undefined) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    let hash = 0;
+    const seedStr = `${incident.id}_${todayStr}_dossier`;
+    for (let i = 0; i < seedStr.length; i++) {
+      hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+      hash |= 0;
+    }
+    roll = Math.abs(hash % 100) / 100;
+  }
   const classifiedDossierDiscovered = roll < 0.15;
   const dossierBonusXp = classifiedDossierDiscovered ? 50 : 0;
 

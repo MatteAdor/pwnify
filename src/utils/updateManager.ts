@@ -355,6 +355,13 @@ class UpdateManager {
         return;
       }
 
+      // On web browser environments, web clients are always up to date with deployed assets.
+      // Do not trigger native APK update gates or blocking update modals for web visitors.
+      if (!isNativeApp()) {
+        this.updateState({ status: 'UP_TO_DATE' });
+        return;
+      }
+
       const disposition: UpdateDisposition = evaluateUpdateDisposition(
         this.state.clientVersionCode,
         config
