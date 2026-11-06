@@ -19,19 +19,18 @@ export interface CertSummary {
 // In-memory cache for loaded certification questions
 const certQuestionCache = new Map<string, OfficialCertQuestion[]>();
 
-// Mapping canonical keys to static data files in public/data/
+// Mapping canonical keys to static data files in public/data/ (strictly kebab-case)
 const CERT_FILE_MAP: Record<string, string> = {
-  sec_plus: 'sec_plus.json',
-  'security-plus': 'sec_plus.json',
-  secplus: 'sec_plus.json',
+  sec_plus: 'security-plus.json',
+  'security-plus': 'security-plus.json',
+  secplus: 'security-plus.json',
   ccna: 'ccna.json',
-  aplus_core1: 'aplus_core1.json',
-  'a-plus-core1': 'aplus_core1.json',
-  aplus_core2: 'aplus_core2.json',
-  'a-plus-core2': 'aplus_core2.json',
-  netplus: 'netplus.json',
-  'network-plus': 'netplus.json',
-  ceh: 'ceh.json'
+  aplus_core1: 'a-plus-core1.json',
+  'a-plus-core1': 'a-plus-core1.json',
+  aplus_core2: 'a-plus-core2.json',
+  'a-plus-core2': 'a-plus-core2.json',
+  netplus: 'network-plus.json',
+  'network-plus': 'network-plus.json'
 };
 
 /**
@@ -46,7 +45,12 @@ export async function fetchQuestionsForCert(certKey: string): Promise<OfficialCe
     return certQuestionCache.get(normalizedKey)!;
   }
 
-  const fileName = CERT_FILE_MAP[normalizedKey] || `${normalizedKey}.json`;
+  const fileName = CERT_FILE_MAP[normalizedKey];
+  if (!fileName) {
+    console.warn(`[CertQuestions] No question file mapped for certificate key: "${certKey}"`);
+    return [];
+  }
+
   const basePath = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL 
     ? import.meta.env.BASE_URL 
     : '/';
@@ -111,10 +115,10 @@ export const ALL_OFFICIAL_QUESTIONS: OfficialCertQuestion[] = [];
  */
 export function getAvailableCertifications(): CertSummary[] {
   return [
-    { name: 'CompTIA Security+', code: 'SY0-701', category: 'sec_plus', questionCount: 314 },
+    { name: 'CompTIA Security+', code: 'SY0-701', category: 'security-plus', questionCount: 314 },
     { name: 'Cisco CCNA', code: '200-301', category: 'ccna', questionCount: 402 },
-    { name: 'CompTIA Network+', code: 'N10-008', category: 'netplus', questionCount: 300 },
-    { name: 'CompTIA A+ Core 1', code: '220-1101', category: 'aplus_core1', questionCount: 303 },
-    { name: 'CompTIA A+ Core 2', code: '220-1102', category: 'aplus_core2', questionCount: 305 },
+    { name: 'CompTIA Network+', code: 'N10-008', category: 'network-plus', questionCount: 300 },
+    { name: 'CompTIA A+ Core 1', code: '220-1101', category: 'a-plus-core1', questionCount: 303 },
+    { name: 'CompTIA A+ Core 2', code: '220-1102', category: 'a-plus-core2', questionCount: 305 },
   ];
 }

@@ -11,12 +11,12 @@ if (!fs.existsSync(fontsDir)) {
   fs.mkdirSync(fontsDir, { recursive: true });
 }
 
-// Clean up old giant TTF files if present
+// Clean up old unversioned or legacy TTF files
 const existingFiles = fs.readdirSync(fontsDir);
 for (const file of existingFiles) {
-  if (file.endsWith('.ttf')) {
+  if (file.endsWith('.ttf') || (file.endsWith('.woff2') && !file.includes('-v2.'))) {
     fs.unlinkSync(path.join(fontsDir, file));
-    console.log(`Removed legacy large TTF: ${file}`);
+    console.log(`[Clean] Removed outdated font: ${file}`);
   }
 }
 
@@ -61,24 +61,23 @@ async function downloadFile(url, destPath) {
 }
 
 async function run() {
-  console.log('Fetching Google Fonts definitions...');
+  console.log('Fetching Google Fonts definitions for self-hosted versioning (v2)...');
   const css = await fetchCss('JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700');
   const blocks = parseFontBlocks(css);
 
   const targets = [
-    { family: 'JetBrains Mono', weight: '400', fileName: 'jetbrains-mono-400.woff2' },
-    { family: 'JetBrains Mono', weight: '500', fileName: 'jetbrains-mono-500.woff2' },
-    { family: 'JetBrains Mono', weight: '600', fileName: 'jetbrains-mono-600.woff2' },
-    { family: 'JetBrains Mono', weight: '700', fileName: 'jetbrains-mono-700.woff2' },
-    { family: 'Plus Jakarta Sans', weight: '400', fileName: 'plus-jakarta-sans-400.woff2' },
-    { family: 'Plus Jakarta Sans', weight: '500', fileName: 'plus-jakarta-sans-500.woff2' },
-    { family: 'Plus Jakarta Sans', weight: '600', fileName: 'plus-jakarta-sans-600.woff2' },
-    { family: 'Plus Jakarta Sans', weight: '700', fileName: 'plus-jakarta-sans-700.woff2' }
+    { family: 'JetBrains Mono', weight: '400', fileName: 'jetbrains-mono-400-v2.woff2' },
+    { family: 'JetBrains Mono', weight: '500', fileName: 'jetbrains-mono-500-v2.woff2' },
+    { family: 'JetBrains Mono', weight: '600', fileName: 'jetbrains-mono-600-v2.woff2' },
+    { family: 'JetBrains Mono', weight: '700', fileName: 'jetbrains-mono-700-v2.woff2' },
+    { family: 'Plus Jakarta Sans', weight: '400', fileName: 'plus-jakarta-sans-400-v2.woff2' },
+    { family: 'Plus Jakarta Sans', weight: '500', fileName: 'plus-jakarta-sans-500-v2.woff2' },
+    { family: 'Plus Jakarta Sans', weight: '600', fileName: 'plus-jakarta-sans-600-v2.woff2' },
+    { family: 'Plus Jakarta Sans', weight: '700', fileName: 'plus-jakarta-sans-700-v2.woff2' }
   ];
 
   let totalBytes = 0;
   for (const target of targets) {
-    // Pick the latin subset block for this family and weight
     const matched = blocks.find(b => b.family === target.family && b.weight === target.weight && b.subset === 'latin')
       || blocks.find(b => b.family === target.family && b.weight === target.weight);
 

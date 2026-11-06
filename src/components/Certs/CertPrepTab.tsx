@@ -59,7 +59,6 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   // Real dynamic counts from OFFICIAL_PBQ_LABS pool
   const secPlusLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CompTIA Security+');
   const ccnaLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'Cisco CCNA');
-  const cehLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CEH v13');
 
   const certs = [
     {
@@ -131,20 +130,6 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       color: 'border-orange-500/40 text-orange-400 bg-orange-500/10',
       description: 'Windows/Linux/macOS operating systems, 7-step malware removal, Bash/PowerShell scripting, and operational security. 305 official questions.',
       nextStep: 'CompTIA Security+'
-    },
-    {
-      id: 'ceh',
-      name: 'Certified Ethical Hacker',
-      code: 'CEH v13 AI',
-      issuer: 'EC-Council',
-      questionCount: 120,
-      readiness: Math.round(userState.readinessScore * 0.5),
-      totalPBQs: cehLabs.length,
-      completedPBQs: cehLabs.filter(l => userState.completedPbqIds.includes(l.id)).length,
-      pbqRef: cehLabs[0]?.id || 'pbq_ceh_killchain',
-      color: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
-      description: 'Advanced penetration testing, Nmap enumeration, Active Directory Kerberoasting, malware memory forensics, and reverse engineering.',
-      nextStep: 'OffSec OSCP / CISSP'
     }
   ];
 

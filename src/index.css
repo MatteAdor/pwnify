@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Self-Hosted JetBrains Mono WOFF2 */
+/* Self-Hosted JetBrains Mono WOFF2 (v2) */
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-400-v2.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -13,7 +13,7 @@
 
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-500-v2.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -21,7 +21,7 @@
 
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('/fonts/jetbrains-mono-600.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-600-v2.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -29,16 +29,16 @@
 
 @font-face {
   font-family: 'JetBrains Mono';
-  src: url('/fonts/jetbrains-mono-700.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-700-v2.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* Alias JetBrainsMono Nerd Font Mono to JetBrains Mono WOFF2 */
+/* Alias JetBrainsMono Nerd Font Mono to JetBrains Mono WOFF2 (v2) */
 @font-face {
   font-family: 'JetBrainsMono Nerd Font Mono';
-  src: url('/fonts/jetbrains-mono-400.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-400-v2.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -46,7 +46,7 @@
 
 @font-face {
   font-family: 'JetBrainsMono Nerd Font Mono';
-  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-500-v2.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -54,7 +54,7 @@
 
 @font-face {
   font-family: 'JetBrainsMono Nerd Font Mono';
-  src: url('/fonts/jetbrains-mono-600.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-600-v2.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -62,16 +62,16 @@
 
 @font-face {
   font-family: 'JetBrainsMono Nerd Font Mono';
-  src: url('/fonts/jetbrains-mono-700.woff2') format('woff2');
+  src: url('/fonts/jetbrains-mono-700-v2.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* Self-Hosted Plus Jakarta Sans WOFF2 */
+/* Self-Hosted Plus Jakarta Sans WOFF2 (v2) */
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('/fonts/plus-jakarta-sans-400.woff2') format('woff2');
+  src: url('/fonts/plus-jakarta-sans-400-v2.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -79,7 +79,7 @@
 
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('/fonts/plus-jakarta-sans-500.woff2') format('woff2');
+  src: url('/fonts/plus-jakarta-sans-500-v2.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -87,7 +87,7 @@
 
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('/fonts/plus-jakarta-sans-600.woff2') format('woff2');
+  src: url('/fonts/plus-jakarta-sans-600-v2.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -95,7 +95,7 @@
 
 @font-face {
   font-family: 'Plus Jakarta Sans';
-  src: url('/fonts/plus-jakarta-sans-700.woff2') format('woff2');
+  src: url('/fonts/plus-jakarta-sans-700-v2.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
