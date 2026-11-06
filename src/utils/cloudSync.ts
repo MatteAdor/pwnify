@@ -1,4 +1,5 @@
 const getSupabaseClient = async () => import('../config/supabase.ts');
+import { getCurrentSession } from './userDatabase.ts';
 import type { UserState } from '../types/index.ts';
 import type { Database, Json } from '../types/database.types.ts';
 
@@ -174,6 +175,10 @@ export interface MigrationResult {
 export async function executeOneShotMigration(
   localState: Partial<UserState>
 ): Promise<MigrationResult> {
+  if (typeof window !== 'undefined') {
+    const session = getCurrentSession();
+    if (!session) return { success: false, importedXp: 0, elo: 100 };
+  }
   const { supabase, isSupabaseConfigured } = await getSupabaseClient();
   if (!isSupabaseConfigured) {
     return { success: false, importedXp: 0, elo: 100 };
@@ -227,6 +232,10 @@ export async function syncUserProfile(
   localState?: Partial<UserState> | null
 ): Promise<VersionedProfileCache | null> {
   const cached = getCachedProfileV2();
+  if (typeof window !== 'undefined') {
+    const session = getCurrentSession();
+    if (!session) return cached;
+  }
   const { supabase, isSupabaseConfigured } = await getSupabaseClient();
 
   if (!isSupabaseConfigured) {

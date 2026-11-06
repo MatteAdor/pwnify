@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
-import { CheckCircle2, ArrowRight, X } from 'lucide-react';
-import { getRandomQuestionsForCert } from '../../data/officialCertQuestions';
+import { CheckCircle2, ArrowRight, X, Loader2, AlertCircle } from 'lucide-react';
+import { fetchQuestionsForCert } from '../../data/officialCertQuestions';
 
 interface QuickQuestion {
   q: string;
@@ -54,26 +54,53 @@ export const CertQuickCheckModal: React.FC<CertQuickCheckModalProps> = ({
   certName,
   onClose
 }) => {
-  const [activeQuestions] = useState<QuickQuestion[]>(() => {
-    const pool = getRandomQuestionsForCert(certId, 5);
-    if (pool.length > 0) {
-      return pool.map(q => ({
-        q: q.question,
-        options: shuffleArray(q.options.map((opt, oIdx) => ({
-          id: `${q.id}_${oIdx}`,
-          text: opt,
-          isCorrect: oIdx === q.correctIndex
-        }))),
-        expl: q.explanation || `Correct answer: ${q.correctAnswer}`
-      }));
-    }
-    return QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
-  });
+  const [activeQuestions, setActiveQuestions] = useState<QuickQuestion[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [questionIndex, setQuestionIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
   const [answered, setAnswered] = useState<boolean>(false);
   const [completed, setCompleted] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setLoadError(null);
+
+    fetchQuestionsForCert(certId)
+      .then((pool) => {
+        if (!isMounted) return;
+        if (pool && pool.length > 0) {
+          const sampled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 5);
+          setActiveQuestions(
+            sampled.map(q => ({
+              q: q.question,
+              options: shuffleArray(q.options.map((opt, oIdx) => ({
+                id: `${q.id}_${oIdx}`,
+                text: opt,
+                isCorrect: oIdx === q.correctIndex
+              }))),
+              expl: q.explanation || `Correct answer: ${q.correctAnswer}`
+            }))
+          );
+        } else {
+          setActiveQuestions(QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) })));
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.warn(`[CertQuickCheckModal] Fallback to base questions:`, err);
+        setLoadError('Specific question set could not be fetched. Loaded baseline diagnostic pool.');
+        setActiveQuestions(QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) })));
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [certId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in">
@@ -96,8 +123,20 @@ export const CertQuickCheckModal: React.FC<CertQuickCheckModalProps> = ({
           </button>
         </div>
 
-        {!completed ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-3">
+            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+            <p className="text-xs font-mono text-zinc-400">Loading certification question bank...</p>
+          </div>
+        ) : !completed && activeQuestions.length > 0 ? (
           <div className="space-y-4">
+            {loadError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{loadError}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
               <span>Question {questionIndex + 1} of {activeQuestions.length}</span>
               <span className="text-emerald-400 font-bold">Score: {score}/{activeQuestions.length}</span>

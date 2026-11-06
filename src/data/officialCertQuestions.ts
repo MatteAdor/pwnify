@@ -1,5 +1,3 @@
-import rawQuestionsData from './officialQuestions.json';
-
 export interface OfficialCertQuestion {
   id: string;
   certification: string;
@@ -18,52 +16,105 @@ export interface CertSummary {
   questionCount: number;
 }
 
-export const ALL_OFFICIAL_QUESTIONS: OfficialCertQuestion[] = (rawQuestionsData.questions || []) as OfficialCertQuestion[];
+// In-memory cache for loaded certification questions
+const certQuestionCache = new Map<string, OfficialCertQuestion[]>();
 
-// Map of canonical certification IDs to questions
-const CERT_CATEGORY_MAP: Record<string, string[]> = {
-  sec_plus: ['CompTIA Security+', 'secplus'],
-  ccna: ['Cisco CCNA', 'ccna'],
-  aplus_core1: ['CompTIA A+ Core 1', 'aplus_core1'],
-  aplus_core2: ['CompTIA A+ Core 2', 'aplus_core2'],
-  netplus: ['CompTIA Network+', 'netplus'],
+// Mapping canonical keys to static data files in public/data/
+const CERT_FILE_MAP: Record<string, string> = {
+  sec_plus: 'sec_plus.json',
+  'security-plus': 'sec_plus.json',
+  secplus: 'sec_plus.json',
+  ccna: 'ccna.json',
+  aplus_core1: 'aplus_core1.json',
+  'a-plus-core1': 'aplus_core1.json',
+  aplus_core2: 'aplus_core2.json',
+  'a-plus-core2': 'aplus_core2.json',
+  netplus: 'netplus.json',
+  'network-plus': 'netplus.json',
+  ceh: 'ceh.json'
 };
 
 /**
- * Retrieve all questions matching a specific certification key or sourceCategory
+ * Fetch questions for a certification on demand with in-memory caching.
+ * Prevents bundling the ~750 kB question bank into main app bundles.
  */
-export function getQuestionsForCert(certKey: string): OfficialCertQuestion[] {
+export async function fetchQuestionsForCert(certKey: string): Promise<OfficialCertQuestion[]> {
   const normalizedKey = certKey.toLowerCase();
-  const searchTerms = CERT_CATEGORY_MAP[normalizedKey] || [normalizedKey];
+  
+  // Return cached pool if previously loaded
+  if (certQuestionCache.has(normalizedKey)) {
+    return certQuestionCache.get(normalizedKey)!;
+  }
 
-  return ALL_OFFICIAL_QUESTIONS.filter(q => {
-    const cert = q.certification.toLowerCase();
-    const cat = q.sourceCategory.toLowerCase();
-    return searchTerms.some(term => cert.includes(term.toLowerCase()) || cat.includes(term.toLowerCase()));
-  });
+  const fileName = CERT_FILE_MAP[normalizedKey] || `${normalizedKey}.json`;
+  const basePath = typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL 
+    ? import.meta.env.BASE_URL 
+    : '/';
+  const url = `${basePath.endsWith('/') ? basePath : basePath + '/'}data/${fileName}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      // Fallback relative path for native/capacitor local runtimes
+      const relRes = await fetch(`./data/${fileName}`);
+      if (!relRes.ok) {
+        throw new Error(`Failed to load questions from ${url} (status ${res.status})`);
+      }
+      const data: OfficialCertQuestion[] = await relRes.json();
+      certQuestionCache.set(normalizedKey, data);
+      return data;
+    }
+    const data: OfficialCertQuestion[] = await res.json();
+    certQuestionCache.set(normalizedKey, data);
+    return data;
+  } catch (err) {
+    console.warn(`[CertQuestions] Failed to fetch on-demand questions for ${certKey}:`, err);
+    return [];
+  }
 }
 
 /**
- * Returns N random questions for a certification (ideal for Quick Check quizzes)
+ * Asynchronously returns N random questions for a certification.
  */
-export function getRandomQuestionsForCert(certKey: string, count = 5): OfficialCertQuestion[] {
-  const pool = getQuestionsForCert(certKey);
+export async function getRandomQuestionsForCertAsync(
+  certKey: string,
+  count = 5
+): Promise<OfficialCertQuestion[]> {
+  const pool = await fetchQuestionsForCert(certKey);
   if (!pool.length) {
-    // Fallback: return any questions from the general pool
-    return [...ALL_OFFICIAL_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, count);
+    return [];
   }
   return [...pool].sort(() => 0.5 - Math.random()).slice(0, count);
 }
 
 /**
- * Returns available certification metadata
+ * Synchronous accessor utilizing cached questions if already loaded.
+ */
+export function getRandomQuestionsForCert(certKey: string, count = 5): OfficialCertQuestion[] {
+  const normalizedKey = certKey.toLowerCase();
+  const pool = certQuestionCache.get(normalizedKey) || [];
+  if (!pool.length) {
+    return [];
+  }
+  return [...pool].sort(() => 0.5 - Math.random()).slice(0, count);
+}
+
+export function getQuestionsForCert(certKey: string): OfficialCertQuestion[] {
+  const normalizedKey = certKey.toLowerCase();
+  return certQuestionCache.get(normalizedKey) || [];
+}
+
+export const ALL_OFFICIAL_QUESTIONS: OfficialCertQuestion[] = [];
+
+/**
+ * Returns available certification metadata without bundling question arrays.
  */
 export function getAvailableCertifications(): CertSummary[] {
   return [
-    { name: 'CompTIA Security+', code: 'SY0-701', category: 'sec_plus', questionCount: getQuestionsForCert('sec_plus').length },
-    { name: 'Cisco CCNA', code: '200-301', category: 'ccna', questionCount: getQuestionsForCert('ccna').length },
-    { name: 'CompTIA Network+', code: 'N10-008', category: 'netplus', questionCount: getQuestionsForCert('netplus').length },
-    { name: 'CompTIA A+ Core 1', code: '220-1101', category: 'aplus_core1', questionCount: getQuestionsForCert('aplus_core1').length },
-    { name: 'CompTIA A+ Core 2', code: '220-1102', category: 'aplus_core2', questionCount: getQuestionsForCert('aplus_core2').length },
+    { name: 'CompTIA Security+', code: 'SY0-701', category: 'sec_plus', questionCount: 314 },
+    { name: 'Cisco CCNA', code: '200-301', category: 'ccna', questionCount: 402 },
+    { name: 'CompTIA Network+', code: 'N10-008', category: 'netplus', questionCount: 300 },
+    { name: 'CompTIA A+ Core 1', code: '220-1101', category: 'aplus_core1', questionCount: 303 },
+    { name: 'CompTIA A+ Core 2', code: '220-1102', category: 'aplus_core2', questionCount: 305 },
   ];
 }

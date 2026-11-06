@@ -127,7 +127,7 @@ export const App: React.FC = () => {
   const [isGodMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     // Defense against production bypass: Never enable dev toolbar in production builds or outside localhost
-    if (!import.meta.env.DEV) return false;
+    if (!import.meta.env?.DEV) return false;
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (!isLocal) return false;
     const hasSession = sessionStorage.getItem('0x_godmode') === 'true';
@@ -193,7 +193,9 @@ export const App: React.FC = () => {
   const [updateState, setUpdateState] = useState<UpdateManagerState>(() => updateManager.getState());
 
   useEffect(() => {
-    updateManager.initialize();
+    if (isNativeApp()) {
+      updateManager.initialize();
+    }
     const unsubscribe = updateManager.subscribe((st) => setUpdateState(st));
     return () => unsubscribe();
   }, []);
@@ -1018,7 +1020,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}
-          {isGodMode && import.meta.env.DEV && (
+          {isGodMode && Boolean(import.meta.env?.DEV) && (
             <div className="bg-[#0c1220] border-b border-white/5 py-1 px-4 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] font-mono text-slate-400 animate-fade-in">
               <span className="text-emerald-400 font-bold">[DEV TEST]:</span>
               <button
