@@ -14,6 +14,35 @@ import {
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
+import { ENABLE_LOCAL_ACCOUNTS } from '../../config/auth';
+export { ENABLE_LOCAL_ACCOUNTS };
+
+export const LOCAL_ACCOUNT_NOTICE_SEEN_KEY = 'pwnify_local_account_notice_seen';
+export const LOCAL_ACCOUNT_DISABLED_NOTICE_IT = 'Gli accessi con email non sono più disponibili: usa Google o GitHub, oppure continua come ospite';
+export const LOCAL_ACCOUNT_DISABLED_NOTICE_EN = 'Email logins are no longer available: use Google or GitHub, or continue as guest';
+
+export const checkStoredLocalAccount = (): boolean => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+  try {
+    const rawAccounts = localStorage.getItem('zeroday_database_accounts_v1');
+    if (rawAccounts) {
+      const parsed = JSON.parse(rawAccounts);
+      if (Array.isArray(parsed) && parsed.some((acc: { provider?: string; passwordHash?: string }) => acc.provider === 'email' || Boolean(acc.passwordHash) || !acc.provider)) {
+        return true;
+      }
+    }
+    const rawSession = localStorage.getItem('zeroday_database_session_v1');
+    if (rawSession) {
+      const parsedSession = JSON.parse(rawSession);
+      if (parsedSession && (parsedSession.provider === 'email' || Boolean(parsedSession.passwordHash) || !parsedSession.provider)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+};
 import { isNativeApp } from '../../utils/platform';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
@@ -81,6 +110,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // Rate Limiting on Login (Security Defense against Brute Force)
   const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // Local account disabled notice (shown once if local account exists in localStorage)
+  const [showLocalNotice, setShowLocalNotice] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    if (ENABLE_LOCAL_ACCOUNTS) return false;
+    if (localStorage.getItem(LOCAL_ACCOUNT_NOTICE_SEEN_KEY) === 'true') return false;
+    return checkStoredLocalAccount();
+  });
+
+  useEffect(() => {
+    if (showLocalNotice && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(LOCAL_ACCOUNT_NOTICE_SEEN_KEY, 'true');
+      } catch {}
+    }
+  }, [showLocalNotice]);
   const [lockoutTimer, setLockoutTimer] = useState(0);
 
   // Countdown timer for lockout
@@ -806,11 +851,41 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* Clean Header */}
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {authMode === 'login' 
-              ? (isEn ? 'Log in' : 'Accedi') 
-              : (isEn ? 'Create Account' : 'Crea Account')}
+            {!ENABLE_LOCAL_ACCOUNTS
+              ? (isEn ? 'Sign in to Pwnify' : 'Accedi a Pwnify')
+              : authMode === 'login' 
+                ? (isEn ? 'Log in' : 'Accedi') 
+                : (isEn ? 'Create Account' : 'Crea Account')}
           </h1>
+          {!ENABLE_LOCAL_ACCOUNTS && (
+            <p className="text-xs text-zinc-400 mt-1 font-mono">
+              {isEn 
+                ? 'Sign in with your verified provider or continue as guest' 
+                : 'Accedi con il tuo provider verificato o continua come ospite'}
+            </p>
+          )}
         </div>
+
+        {/* Local Account Disabled Notice (shown once when local accounts exist in localStorage) */}
+        {showLocalNotice && (
+          <div 
+            data-testid="local-account-disabled-notice"
+            className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-start gap-2 animate-fade-in"
+          >
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span className="flex-1">
+              {isEn ? LOCAL_ACCOUNT_DISABLED_NOTICE_EN : LOCAL_ACCOUNT_DISABLED_NOTICE_IT}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowLocalNotice(false)}
+              className="text-amber-400 hover:text-white transition-colors"
+              aria-label="Dismiss notice"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Global Notifications */}
         {errorMsg && (
@@ -827,8 +902,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
         )}
 
-        {/* Mode Selector Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs font-bold">
+        {/* Mode Selector Tabs (Hidden when local accounts disabled) */}
+        {ENABLE_LOCAL_ACCOUNTS && (
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -862,6 +938,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <span>{t.signupTab}</span>
           </button>
         </div>
+        )}
 
         {/* Fast Authentication: Google & GitHub */}
         <div className="space-y-2.5">
@@ -886,16 +963,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-zinc-800 w-full" />
-          <span className="bg-[#0D121D] px-3 font-mono text-[10px] text-zinc-500 uppercase tracking-widest absolute">
-            {isEn ? 'or with email' : 'oppure con email'}
-          </span>
-        </div>
+        {/* Divider (Hidden when local accounts disabled) */}
+        {ENABLE_LOCAL_ACCOUNTS && (
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-zinc-800 w-full" />
+            <span className="bg-[#0D121D] px-3 font-mono text-[10px] text-zinc-500 uppercase tracking-widest absolute">
+              {isEn ? 'or with email' : 'oppure con email'}
+            </span>
+          </div>
+        )}
 
         {/* TAB 1: STANDARD LOGIN */}
-        {authMode === 'login' && (
+        {ENABLE_LOCAL_ACCOUNTS && authMode === 'login' && (
           <div className="space-y-4 animate-fade-in">
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
@@ -966,7 +1045,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* ============================================================== */}
         {/* TAB 2: SIGN UP VIA EMAIL (2FA -> PASSWORD -> ACCOUNT CREATION) */}
         {/* ============================================================== */}
-        {authMode === 'signup' && (
+        {ENABLE_LOCAL_ACCOUNTS && authMode === 'signup' && (
           <div className="space-y-4 animate-fade-in">
             {/* Step Progress Tracker */}
             <div className="flex items-center justify-between px-2 text-[11px] font-mono">

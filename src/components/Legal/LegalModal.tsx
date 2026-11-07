@@ -140,7 +140,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   {isEn 
                     ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
                     : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
-                  <a href="mailto:dpo@zeroday.academy" className="text-emerald-400 underline font-mono">dpo@zeroday.academy</a>.
+                  <a href="mailto:privacy@pwnify.xyz" className="text-emerald-400 underline font-mono">privacy@pwnify.xyz</a>.
                 </p>
               </section>
 
@@ -167,17 +167,47 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                       : 'Punti XP, punteggio ELO, completamento laboratori PBQ, certificazioni simulate e cronologia round Arena.'}
                   </li>
                   <li>
-                    <strong>{isEn ? 'Billing Data:' : 'Dati di fatturazione:'}</strong>{' '}
+                    <strong>{isEn ? 'Checkout & Billing Data:' : 'Dati di Checkout & Fatturazione:'}</strong>{' '}
                     {isEn
-                      ? 'Securely tokenized through PCI-DSS certified payment processors (Lemon Squeezy). No credit card numbers are stored on our servers.'
-                      : 'Gestiti in modo tokenizzato e sicuro tramite gateway certificato PCI-DSS (Lemon Squeezy). Nessun estremo di carta di credito viene mai memorizzato sui nostri server.'}
+                      ? 'When upgrading to PRO, user email, operator account ID, and callsign are transmitted to Lemon Squeezy LLC, acting as Merchant of Record for payment processing, tax compliance, and license fulfillment. No credit card or banking details are stored on Pwnify servers.'
+                      : 'Durante il passaggio a PRO, email utente, ID account operatore e callsign vengono trasmessi a Lemon Squeezy LLC, che agisce quale Merchant of Record indipendente per pagamenti, imposte e rilascio licenze. Nessun dato di carta o bancario è trattato o salvato sui server di Pwnify.'}
                   </li>
                 </ul>
               </section>
 
               <section className="space-y-1.5">
                 <h3 className="text-sm font-bold text-white font-mono">
-                  {isEn ? '3. User Rights & Data Deletion' : '3. Diritti dell\'Utente e Cancellazione dei Dati'}
+                  {isEn ? '3. Peer-to-Peer Duels & IP Visibility' : '3. Duelli Peer-to-Peer & Visibilità Indirizzo IP'}
+                </h3>
+                <p>
+                  {isEn
+                    ? '1v1 matches in Cyber Arena use direct WebRTC peer connections for real-time low-latency gameplay. By nature of the peer-to-peer protocol, your public IP address is directly visible to your match opponent unless firewall or NAT conditions force traffic through a TURN relay.'
+                    : 'Le partite 1v1 nella Cyber Arena utilizzano connessioni peer-to-peer dirette WebRTC per garantire bassa latenza. Per la natura del protocollo P2P, l\'indirizzo IP pubblico del tuo dispositivo è direttamente visibile all\'avversario durante il duello, salvo nei casi in cui restrizioni di rete impongano il passaggio da relay TURN.'}
+                </p>
+              </section>
+
+              <section className="space-y-1.5">
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '4. Third-Party Infrastructure Providers' : '4. Fornitori Terzi e Infrastruttura'}
+                </h3>
+                <p>
+                  {isEn
+                    ? 'Pwnify relies on the following specialized technical service providers:'
+                    : 'Pwnify si avvale dei seguenti fornitori tecnici di servizio:'}
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                  <li><strong>Supabase Inc.:</strong> {isEn ? 'Cloud PostgreSQL database, token auth, and Edge Functions.' : 'Database cloud PostgreSQL, autenticazione e Edge Functions.'}</li>
+                  <li><strong>Vercel Inc.:</strong> {isEn ? 'Frontend hosting and Edge Content Delivery Network.' : 'Hosting frontend e rete Edge CDN.'}</li>
+                  <li><strong>Lemon Squeezy LLC:</strong> {isEn ? 'Merchant of Record, billing, checkout, and VAT/tax compliance.' : 'Merchant of Record, checkout, pagamenti e adempimenti fiscali.'}</li>
+                  <li><strong>Metered Video:</strong> {isEn ? 'TURN relay infrastructure credentials for WebRTC traversal.' : 'Infrastruttura relay TURN per instradamento WebRTC.'}</li>
+                  <li><strong>Google LLC:</strong> {isEn ? 'Public STUN resolution (stun:stun.l.google.com:19302) for NAT traversal.' : 'Risoluzione STUN pubblica (stun:stun.l.google.com:19302) per NAT.'}</li>
+                  <li><strong>PeerJS Cloud:</strong> {isEn ? 'Signaling cloud (0.peerjs.com) for WebRTC session handshake.' : 'Server cloud di segnalazione (0.peerjs.com) per handshake WebRTC.'}</li>
+                </ul>
+              </section>
+
+              <section className="space-y-1.5">
+                <h3 className="text-sm font-bold text-white font-mono">
+                  {isEn ? '5. User Rights & Data Deletion' : '5. Diritti dell\'Utente e Cancellazione dei Dati'}
                 </h3>
                 <p>
                   {isEn
@@ -188,7 +218,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
               <section className="space-y-1.5">
                 <h3 className="text-sm font-bold text-white font-mono">
-                  {isEn ? '4. Age Verification & Minors' : '4. Consenso e Tutela dei Minori'}
+                  {isEn ? '6. Age Verification & Minors' : '6. Consenso e Tutela dei Minori'}
                 </h3>
                 <p>
                   {isEn

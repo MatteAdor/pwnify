@@ -247,7 +247,7 @@ export class RankedMatchController {
     // 2. Fetch opponent public profile
     if (this.opponentId) {
       const { data: profile } = await this.supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('id, nick, elo, rank')
         .eq('id', this.opponentId)
         .single();

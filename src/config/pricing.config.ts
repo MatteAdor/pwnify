@@ -45,7 +45,7 @@ export const PRICING_CONFIG: PricingConfig = {
         'All official PBQ labs & simulators',
         'Exploit anatomy & root cause analysis',
         'Targeted weakness remediation drills',
-        '2X XP boost & Demotion shield'
+        '2X XP boost permanente'
       ]
     },
     annual: {

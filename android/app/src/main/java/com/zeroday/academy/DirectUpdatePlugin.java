@@ -28,23 +28,36 @@ public class DirectUpdatePlugin extends Plugin {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private static final String ALLOWED_REPO_PATH = "MatteAdor/zeroday_app";
+    private static final String[] ALLOWED_REPO_PATHS = new String[] {
+        "MatteAdor/pwnify",
+        "MatteAdor/zeroday_app"
+    };
 
     private boolean isUrlAllowed(URL url) {
         if (url == null) return false;
         String host = url.getHost() != null ? url.getHost().toLowerCase() : "";
         String path = url.getPath() != null ? url.getPath() : "";
 
-        if (host.equals("zeroday.academy") || host.endsWith(".zeroday.academy") || host.equals("zeroday-app.vercel.app")) {
+        if (host.equals("zeroday-app.vercel.app") || host.equals("pwnify.xyz") || host.equals("www.pwnify.xyz")) {
             return path.startsWith("/downloads/");
         }
 
         if (host.equals("github.com")) {
-            return path.startsWith("/" + ALLOWED_REPO_PATH + "/releases/download/");
+            for (String repo : ALLOWED_REPO_PATHS) {
+                if (path.startsWith("/" + repo + "/releases/download/")) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         if (host.equals("raw.githubusercontent.com")) {
-            return path.startsWith("/" + ALLOWED_REPO_PATH + "/");
+            for (String repo : ALLOWED_REPO_PATHS) {
+                if (path.startsWith("/" + repo + "/")) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         if (host.equals("objects.githubusercontent.com")) {
@@ -146,7 +159,7 @@ public class DirectUpdatePlugin extends Plugin {
                 input = connection.getInputStream();
 
                 File cacheDir = getContext().getCacheDir();
-                File outputFile = new File(cacheDir, "zeroday-update.apk");
+                File outputFile = new File(cacheDir, "pwnify-update.apk");
                 if (outputFile.exists()) {
                     outputFile.delete();
                 }

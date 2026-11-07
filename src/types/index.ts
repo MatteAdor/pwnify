@@ -152,16 +152,28 @@ export interface UserState {
   profession?: string;
   lastUsernameChangeTimestamp?: number;
   language?: 'en' | 'it';
-  lastActiveDate?: string;
-  streakShieldsEarned?: number; // Earned free through 5 consecutive days or 5 triages
-  streakFreezeActive?: boolean; // Ethical vacation/pause mode
+  // Server-authoritative unified streak engine state (B0)
+  streakShieldCount?: number;
+  freezeUntilDate?: string | null;
+  lastFreezeActivatedDate?: string | null;
+  inGracePeriod?: boolean;
+  graceExpiryTimestamp?: number | null;
+  lastActiveDate?: string | null;
+  lastActiveTimestamp?: number;
+  userTimezone?: string;
+  lastShieldAwardedStreak?: number | null;
+  lastStreakSource?: 'server' | 'local';
+
+  // Gamification & Ethical Retention State (Main)
+  streakShieldsEarned?: number;
+  streakFreezeActive?: boolean;
   streakFreezeExpiresDate?: string;
-  streakMilestonesUnlocked?: number[]; // e.g. [7, 30, 60, 100]
-  earnedTitles?: string[]; // Permanent status honor titles
+  streakMilestonesUnlocked?: number[];
+  earnedTitles?: string[];
   leagueHistory?: Array<{ seasonId: string; rankPosition: number; tier: EloRankTier; xp: number; date: string }>;
   passedCerts?: Array<{ certId: string; passDate: string; scorePercent: number }>;
-  cpeMaintenanceActive?: boolean; // Post-exam continuous education maintenance mode
-  leaderboardOptIn?: boolean; // Privacy-first leaderboard visibility
+  cpeMaintenanceActive?: boolean;
+  leaderboardOptIn?: boolean;
 }
 
 export type PaywallContext = 
@@ -208,6 +220,7 @@ export interface LeagueHacker {
   avatar: string;
   tier: EloRankTier;
   xp: number;
+  elo?: number;
   isUser?: boolean;
   winStreak: number;
   status: 'promoted' | 'safe' | 'demoted';

@@ -103,9 +103,7 @@ export function calculateDynamicTelemetry(
     readinessScore = 15;
   }
   
-  if (isPro) {
-    readinessScore = Math.min(100, Math.max(readinessScore, 50));
-  }
+  // Authentic readiness: no deceptive artificial floors based on subscription status
 
   return {
     radarScores,

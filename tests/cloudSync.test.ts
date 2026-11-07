@@ -4,6 +4,7 @@ import {
   extractLegacyCosmetics,
   mergeCosmetics,
   resolveProfileConflict,
+  importMyLegacyStreakOnce,
   PROFILE_CACHE_KEY_V2
 } from '../src/utils/cloudSync.ts';
 import type { VersionedProfileCache, ProfileRow } from '../src/utils/cloudSync.ts';
@@ -143,5 +144,15 @@ describe('Step 2: Progress Migration & Cache Versioning (cloudSync.ts)', () => {
 
     // Assert v1 key remains untouched and separate
     assert.ok(localStorage.getItem('zeroday_cached_profile_v1'));
+  });
+
+  test('importMyLegacyStreakOnce enforces 30-day cap and one-shot localStorage flag', async () => {
+    localStorage.clear();
+    const res = await importMyLegacyStreakOnce(45);
+    assert.equal(localStorage.getItem('zeroday_legacy_streak_imported'), 'true');
+
+    // Second call immediately returns null because one-shot flag is set
+    const secondCall = await importMyLegacyStreakOnce(10);
+    assert.equal(secondCall, null);
   });
 });
