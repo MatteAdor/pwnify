@@ -249,7 +249,7 @@ export function renderHackerCardToCanvas(
   ctx.textAlign = 'right';
   ctx.font = 'bold 26px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#10b981';
-  ctx.fillText('pwnify.app // PWNIFY', width - margin - 60, footerY + 20);
+  ctx.fillText('pwnify.xyz // PWNIFY', width - margin - 60, footerY + 20);
 
   ctx.font = '20px "JetBrainsMono Nerd Font Mono", "JetBrains Mono", monospace';
   ctx.fillStyle = '#64748b';

@@ -130,8 +130,11 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources true
+            // Temporarily disabled R8 code shrinking and resource obfuscation for initial device testing.
+            // Avoids reflection stripping on Capacitor plugin bridges (DirectUpdatePlugin, AppUpdate, OAuth deep links)
+            // until live on-device adb logcat verification confirms zero ClassNotFoundException / NoSuchMethodError.
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

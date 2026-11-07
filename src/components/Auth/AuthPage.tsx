@@ -14,6 +14,8 @@ import {
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
+import { ENABLE_LOCAL_ACCOUNTS } from '../../config/auth';
+export { ENABLE_LOCAL_ACCOUNTS };
 import { isNativeApp } from '../../utils/platform';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
@@ -806,10 +808,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* Clean Header */}
         <div className="text-center">
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {authMode === 'login' 
-              ? (isEn ? 'Log in' : 'Accedi') 
-              : (isEn ? 'Create Account' : 'Crea Account')}
+            {!ENABLE_LOCAL_ACCOUNTS
+              ? (isEn ? 'Sign in to Pwnify' : 'Accedi a Pwnify')
+              : authMode === 'login' 
+                ? (isEn ? 'Log in' : 'Accedi') 
+                : (isEn ? 'Create Account' : 'Crea Account')}
           </h1>
+          {!ENABLE_LOCAL_ACCOUNTS && (
+            <p className="text-xs text-zinc-400 mt-1 font-mono">
+              {isEn 
+                ? 'Sign in with your verified provider or continue as guest' 
+                : 'Accedi con il tuo provider verificato o continua come ospite'}
+            </p>
+          )}
         </div>
 
         {/* Global Notifications */}
@@ -827,8 +838,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
         )}
 
-        {/* Mode Selector Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs font-bold">
+        {/* Mode Selector Tabs (Hidden when local accounts disabled) */}
+        {ENABLE_LOCAL_ACCOUNTS && (
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-900 border border-zinc-800 font-mono text-xs font-bold">
           <button
             type="button"
             onClick={() => {
@@ -862,6 +874,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <span>{t.signupTab}</span>
           </button>
         </div>
+        )}
 
         {/* Fast Authentication: Google & GitHub */}
         <div className="space-y-2.5">
@@ -886,16 +899,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </button>
         </div>
 
-        {/* Divider */}
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-zinc-800 w-full" />
-          <span className="bg-[#0D121D] px-3 font-mono text-[10px] text-zinc-500 uppercase tracking-widest absolute">
-            {isEn ? 'or with email' : 'oppure con email'}
-          </span>
-        </div>
+        {/* Divider (Hidden when local accounts disabled) */}
+        {ENABLE_LOCAL_ACCOUNTS && (
+          <div className="relative flex items-center justify-center">
+            <div className="border-t border-zinc-800 w-full" />
+            <span className="bg-[#0D121D] px-3 font-mono text-[10px] text-zinc-500 uppercase tracking-widest absolute">
+              {isEn ? 'or with email' : 'oppure con email'}
+            </span>
+          </div>
+        )}
 
         {/* TAB 1: STANDARD LOGIN */}
-        {authMode === 'login' && (
+        {ENABLE_LOCAL_ACCOUNTS && authMode === 'login' && (
           <div className="space-y-4 animate-fade-in">
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
@@ -966,7 +981,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {/* ============================================================== */}
         {/* TAB 2: SIGN UP VIA EMAIL (2FA -> PASSWORD -> ACCOUNT CREATION) */}
         {/* ============================================================== */}
-        {authMode === 'signup' && (
+        {ENABLE_LOCAL_ACCOUNTS && authMode === 'signup' && (
           <div className="space-y-4 animate-fade-in">
             {/* Step Progress Tracker */}
             <div className="flex items-center justify-between px-2 text-[11px] font-mono">
