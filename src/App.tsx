@@ -3,24 +3,35 @@ import { UserState, SkillNode, PaywallContext } from './types';
 import { INITIAL_DAILY_BOUNTIES } from './data/bountiesAndPbq';
 import { Navbar } from './components/Navbar';
 import { BottomNav, ActiveTab } from './components/BottomNav';
-import { OnboardingFunnel } from './components/Onboarding/OnboardingFunnel';
-import { TacticalSkillTree } from './components/SkillTree/TacticalSkillTree';
-import { InteractiveQuizModal } from './components/Quiz/InteractiveQuizModal';
-import { ArenaPvP, DuelChallengeData } from './components/Arena/ArenaPvP';
 import { MissionsTab } from './components/Missions/MissionsTab';
 import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
-import { CertPrepTab } from './components/Certs/CertPrepTab';
-import { PaywallModal } from './components/Paywall/PaywallModal';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
 import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
 import { AuthModal } from './components/Auth/AuthModal';
-import { AuthPage } from './components/Auth/AuthPage';
+import type { DuelChallengeData } from './components/Arena/ArenaPvP';
+
+// Lazy-loaded heavy modules for code-splitting (Landing page isolation)
+const OnboardingFunnel = React.lazy(() => import('./components/Onboarding/OnboardingFunnel').then(m => ({ default: m.OnboardingFunnel })));
+const TacticalSkillTree = React.lazy(() => import('./components/SkillTree/TacticalSkillTree').then(m => ({ default: m.TacticalSkillTree })));
+const InteractiveQuizModal = React.lazy(() => import('./components/Quiz/InteractiveQuizModal').then(m => ({ default: m.InteractiveQuizModal })));
+const ArenaPvP = React.lazy(() => import('./components/Arena/ArenaPvP').then(m => ({ default: m.ArenaPvP })));
+const CertPrepTab = React.lazy(() => import('./components/Certs/CertPrepTab').then(m => ({ default: m.CertPrepTab })));
+const PaywallModal = React.lazy(() => import('./components/Paywall/PaywallModal').then(m => ({ default: m.PaywallModal })));
+const AuthPage = React.lazy(() => import('./components/Auth/AuthPage').then(m => ({ default: m.AuthPage })));
+const ViewFallback: React.FC = () => (
+  <div className="flex items-center justify-center p-12 min-h-[300px] text-zinc-400 font-mono text-xs">
+    <div className="w-5 h-5 border-2 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin mr-3" />
+    <span>INITIALIZING INTERFACE...</span>
+  </div>
+);
+
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
 import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE } from './utils/platform';
 import { supabase, isSupabaseConfigured } from './config/supabase';
+import { syncUserProfile } from './utils/cloudSync';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
 import { updateManager, type UpdateManagerState } from './utils/updateManager';
 import { ForceUpdateModal } from './components/Update/ForceUpdateModal';
@@ -116,7 +127,7 @@ export const App: React.FC = () => {
   const [isGodMode] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     // Defense against production bypass: Never enable dev toolbar in production builds or outside localhost
-    if (!import.meta.env.DEV) return false;
+    if (!import.meta.env?.DEV) return false;
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     if (!isLocal) return false;
     const hasSession = sessionStorage.getItem('0x_godmode') === 'true';
@@ -182,7 +193,9 @@ export const App: React.FC = () => {
   const [updateState, setUpdateState] = useState<UpdateManagerState>(() => updateManager.getState());
 
   useEffect(() => {
-    updateManager.initialize();
+    if (isNativeApp()) {
+      updateManager.initialize();
+    }
     const unsubscribe = updateManager.subscribe((st) => setUpdateState(st));
     return () => unsubscribe();
   }, []);
@@ -269,6 +282,40 @@ export const App: React.FC = () => {
     updateManager.setArenaDuelActive(activeTab === 'arena');
   }, [activeTab]);
 
+  // Authoritative background profile & entitlement synchronization
+  useEffect(() => {
+    let isCancelled = false;
+    const runSync = async () => {
+      const session = getCurrentSession();
+      if (!session) return;
+      const { isSupabaseConfigured } = await import('./config/supabase');
+      if (!isSupabaseConfigured) return;
+      try {
+        const synced = await syncUserProfile(userState);
+        if (synced && !isCancelled) {
+          setUserState(prev => {
+            const isAutoPro = isContributor(prev.username) || isContributor(prev.userEmail) || Boolean(synced.isPro);
+            if (prev.elo !== synced.elo || prev.xp !== synced.xp || prev.isPro !== isAutoPro) {
+              const updated = {
+                ...prev,
+                elo: synced.elo,
+                xp: Math.max(prev.xp, synced.xp),
+                isPro: isAutoPro
+              };
+              persistActiveAccountState(updated);
+              return updated;
+            }
+            return prev;
+          });
+        }
+      } catch (e) {
+        console.warn('[Sync] Background sync notice:', e);
+      }
+    };
+    runSync();
+    return () => { isCancelled = true; };
+  }, [userState.username, userState.isLoggedIn]);
+
   // View Mode: 'portal' (Public Presentation & Download Hub) vs 'app' (Interactive Web Platform)
   const [viewMode, setViewMode] = useState<'portal' | 'app'>(() => {
     try {
@@ -345,17 +392,62 @@ export const App: React.FC = () => {
         const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
         const incomingLicense = params.get('license');
 
-        if (isCheckoutVerified || (incomingLicense && verifyLicenseKey(incomingLicense))) {
-          const key = incomingLicense && verifyLicenseKey(incomingLicense) 
-            ? incomingLicense 
-            : generateLicenseKey(userState.username);
-          setUserState(prev => ({
-            ...prev,
-            isPro: true,
-            streakShieldActive: true,
-            readinessScore: 92,
-            licenseKey: key
-          }));
+        if (incomingLicense && verifyLicenseKey(incomingLicense)) {
+          // Authoritative verification via Supabase Edge Function
+          import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
+            if (isSupabaseConfigured) {
+              supabase.functions.invoke('validate_license', {
+                body: { license_key: incomingLicense }
+              }).then(({ data, error }) => {
+                if (!error && data?.valid && data?.is_pro) {
+                  setUserState(prev => {
+                    const updated = {
+                      ...prev,
+                      isPro: true,
+                      streakShieldActive: true,
+                      readinessScore: 92,
+                      licenseKey: incomingLicense
+                    };
+                    persistActiveAccountState(updated);
+                    return updated;
+                  });
+                  setVerifiedCheckoutLicense(incomingLicense);
+                  sound.playVictoryFanfare();
+                  confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+                }
+              }).catch(() => {});
+            } else {
+              // Offline demo fallback
+              setUserState(prev => {
+                const updated = {
+                  ...prev,
+                  isPro: true,
+                  streakShieldActive: true,
+                  readinessScore: 92,
+                  licenseKey: incomingLicense
+                };
+                persistActiveAccountState(updated);
+                return updated;
+              });
+              setVerifiedCheckoutLicense(incomingLicense);
+              sound.playVictoryFanfare();
+              confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+            }
+          }).catch(() => {});
+        } else if (isCheckoutVerified) {
+          // Local developer environment verified checkout
+          const key = generateLicenseKey(userState.username);
+          setUserState(prev => {
+            const updated = {
+              ...prev,
+              isPro: true,
+              streakShieldActive: true,
+              readinessScore: 92,
+              licenseKey: key
+            };
+            persistActiveAccountState(updated);
+            return updated;
+          });
           setVerifiedCheckoutLicense(key);
           sound.playVictoryFanfare();
           confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
@@ -571,9 +663,11 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
   const handleLogout = () => {
     setCurrentSession(null);
     setUserState(createDefaultGuestState());
-    if (isSupabaseConfigured) {
-      supabase.auth.signOut().catch(() => {});
-    }
+    import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
+      if (isSupabaseConfigured) {
+        supabase.auth.signOut().catch(() => {});
+      }
+    }).catch(() => {});
   };
 
   // Trigger Paywall Helper
@@ -872,7 +966,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           onOpenCookiePrefs={() => setForceCookieBanner(true)}
         />
       ) : !userState.isLoggedIn ? (
-        <AuthPage
+        <React.Suspense fallback={<ViewFallback />}>
+          <AuthPage
           onLoginSuccess={handleLoginSuccess}
           currentUserState={userState}
           onGuestAccess={() => setUserState(prev => {
@@ -890,11 +985,14 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             window.location.hash = '';
           }}
         />
+        </React.Suspense>
       ) : !userState.onboardingCompleted ? (
-        <OnboardingFunnel
+        <React.Suspense fallback={<ViewFallback />}>
+          <OnboardingFunnel
           onComplete={handleOnboardingComplete}
           onOpenPaywall={() => triggerPaywall('diagnostic_funnel')}
         />
+        </React.Suspense>
       ) : (
         <>
           {/* Browser Sandbox Persistent Reminder Banner */}
@@ -941,7 +1039,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           />
 
           {/* Subheader Interactive Demo Toolbar (Strictly Protected by God Mode & DEV mode) */}
-          {isGodMode && import.meta.env.DEV && (
+          {isGodMode && Boolean(import.meta.env?.DEV) && (
             <div className="bg-[#0c1220] border-b border-white/5 py-1 px-4 text-center flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] font-mono text-slate-400 animate-fade-in">
               <span className="text-emerald-400 font-bold">[DEV TEST]:</span>
               <button
@@ -1013,6 +1111,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             onTouchEnd={handleTouchEnd}
             className="flex-1 overflow-y-auto"
           >
+            <React.Suspense fallback={<ViewFallback />}>
             {activeTab === 'tree' && (
               <TacticalSkillTree
                 userState={userState}
@@ -1066,6 +1165,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 onPassCert={handlePassCert}
               />
             )}
+            </React.Suspense>
           </main>
 
           {/* Bottom Persistent Navigation */}
@@ -1077,7 +1177,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
           {/* Hardcore Interactive Quiz Modal */}
           {selectedNode && (
-            <InteractiveQuizModal
+            <React.Suspense fallback={null}>
+              <InteractiveQuizModal
               node={selectedNode}
               isOpen={isQuizModalOpen}
               onClose={() => setIsQuizModalOpen(false)}
@@ -1085,6 +1186,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               onOpenPaywall={() => triggerPaywall('blurred_breakdown')}
               onCompleteNode={handleCompleteNode}
             />
+            </React.Suspense>
           )}
 
           {/* Operator Authentication Modal (Login / Sign Up) */}
@@ -1103,6 +1205,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           />
 
           {/* Pwnify PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
+          <React.Suspense fallback={null}>
           <PaywallModal
             isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}
@@ -1120,6 +1223,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               }));
             }}
           />
+          </React.Suspense>
 
           {/* Viral Hacker Operator ID Card Modal (9:16) */}
           <HackerIDCardModal

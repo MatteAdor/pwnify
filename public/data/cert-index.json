@@ -1,0 +1,37 @@
+[
+  {
+    "id": "security-plus",
+    "name": "CompTIA Security+",
+    "code": "SY0-701",
+    "questionCount": 314,
+    "file": "security-plus.json"
+  },
+  {
+    "id": "ccna",
+    "name": "Cisco CCNA",
+    "code": "200-301",
+    "questionCount": 402,
+    "file": "ccna.json"
+  },
+  {
+    "id": "network-plus",
+    "name": "CompTIA Network+",
+    "code": "N10-008",
+    "questionCount": 300,
+    "file": "network-plus.json"
+  },
+  {
+    "id": "a-plus-core1",
+    "name": "CompTIA A+ Core 1",
+    "code": "220-1101",
+    "questionCount": 303,
+    "file": "a-plus-core1.json"
+  },
+  {
+    "id": "a-plus-core2",
+    "name": "CompTIA A+ Core 2",
+    "code": "220-1102",
+    "questionCount": 305,
+    "file": "a-plus-core2.json"
+  }
+]

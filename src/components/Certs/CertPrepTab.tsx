@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { UserState, PbqLab } from '../../types';
 import { OFFICIAL_PBQ_LABS } from '../../data/bountiesAndPbq';
 import { sound } from '../../utils/soundEngine';
-import { shuffleArray } from '../../utils/shuffle';
 import { useLanguage } from '../../utils/language';
 import { 
   ShieldCheck, Lock, Terminal, 
-  CheckCircle2, AlertTriangle, ArrowRight, X, Play,
-  Award, Compass, Sparkles
+  CheckCircle2, AlertTriangle, Play,
+  Award, Compass, Sparkles, X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-import { getRandomQuestionsForCert } from '../../data/officialCertQuestions';
+const CertQuickCheckModal = React.lazy(() => 
+  import('./CertQuickCheckModal').then(m => ({ default: m.CertQuickCheckModal }))
+);
+
+const ModalFallback: React.FC = () => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
+    <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono text-xs">
+      <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin" />
+      <span>LOADING RAPID DRILL...</span>
+    </div>
+  </div>
+);
 
 interface CertPrepTabProps {
   userState: UserState;
@@ -19,39 +29,6 @@ interface CertPrepTabProps {
   onCompletePbq: (pbqId: string, gainedXp: number, gainedElo: number) => void;
   onPassCert?: (certId: string, scorePercent: number) => void;
 }
-
-const QUICK_QUESTIONS_BASE = [
-  {
-    q: 'Which IPsec encryption mode provides authentication, integrity, and payload confidentiality?',
-    options: [
-      { id: 'esp_1', text: 'ESP (Encapsulating Security Payload)', isCorrect: true },
-      { id: 'esp_2', text: 'AH (Authentication Header)', isCorrect: false },
-      { id: 'esp_3', text: 'IKEv1 Phase 1', isCorrect: false },
-      { id: 'esp_4', text: 'TLS Record Layer', isCorrect: false }
-    ],
-    expl: 'ESP (IP Protocol 50) encrypts the entire IP payload, providing confidentiality, data origin authentication, and connectionless integrity.'
-  },
-  {
-    q: 'Which security principle mandates that a user account has only the absolute minimum authorizations required?',
-    options: [
-      { id: 'polp_1', text: 'Principle of Least Privilege (PoLP)', isCorrect: true },
-      { id: 'polp_2', text: 'Separation of Duties', isCorrect: false },
-      { id: 'polp_3', text: 'Need-to-Know', isCorrect: false },
-      { id: 'polp_4', text: 'Dual Control', isCorrect: false }
-    ],
-    expl: 'The Principle of Least Privilege dictates granting only those permissions essential to perform authorized duties.'
-  },
-  {
-    q: 'In a Wireshark capture, which TCP flag combination alongside SYN indicates an open port during a stealth SYN scan?',
-    options: [
-      { id: 'syn_1', text: 'SYN-ACK', isCorrect: true },
-      { id: 'syn_2', text: 'RST-ACK', isCorrect: false },
-      { id: 'syn_3', text: 'FIN-PSH', isCorrect: false },
-      { id: 'syn_4', text: 'URG-ACK', isCorrect: false }
-    ],
-    expl: 'A SYN-ACK response confirms that the target TCP port is in a LISTEN state and ready to establish a connection.'
-  }
-];
 
 export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   userState,
@@ -63,14 +40,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   const isEn = lang === 'en';
 
   // Quick Domain Check modal state
-  const [quickCheckCert, setQuickCheckCert] = useState<string | null>(null);
-  const [activeQuickQuestions, setActiveQuickQuestions] = useState(() => 
-    QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }))
-  );
-  const [quickQuestionIndex, setQuickQuestionIndex] = useState<number>(0);
-  const [quickScore, setQuickScore] = useState<number>(0);
-  const [quickAnswered, setQuickAnswered] = useState<boolean>(false);
-  const [quickCompleted, setQuickCompleted] = useState<boolean>(false);
+  const [quickCheckTarget, setQuickCheckTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Active Interactive PBQ Lab state
   const [activePbq, setActivePbq] = useState<PbqLab | null>(null);
@@ -89,7 +59,6 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   // Real dynamic counts from OFFICIAL_PBQ_LABS pool
   const secPlusLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CompTIA Security+');
   const ccnaLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'Cisco CCNA');
-  const cehLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === 'CEH v13');
 
   const certs = [
     {
@@ -161,20 +130,6 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
       color: 'border-orange-500/40 text-orange-400 bg-orange-500/10',
       description: 'Windows/Linux/macOS operating systems, 7-step malware removal, Bash/PowerShell scripting, and operational security. 305 official questions.',
       nextStep: 'CompTIA Security+'
-    },
-    {
-      id: 'ceh',
-      name: 'Certified Ethical Hacker',
-      code: 'CEH v13 AI',
-      issuer: 'EC-Council',
-      questionCount: 120,
-      readiness: Math.round(userState.readinessScore * 0.5),
-      totalPBQs: cehLabs.length,
-      completedPBQs: cehLabs.filter(l => userState.completedPbqIds.includes(l.id)).length,
-      pbqRef: cehLabs[0]?.id || 'pbq_ceh_killchain',
-      color: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
-      description: 'Advanced penetration testing, Nmap enumeration, Active Directory Kerberoasting, malware memory forensics, and reverse engineering.',
-      nextStep: 'OffSec OSCP / CISSP'
     }
   ];
 
@@ -370,25 +325,7 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
                   <button
                     onClick={() => {
                       sound.playTap();
-                      const pool = getRandomQuestionsForCert(cert.id, 5);
-                      const formatted = pool.length > 0 
-                        ? pool.map(q => ({
-                            q: q.question,
-                            options: shuffleArray(q.options.map((opt, oIdx) => ({
-                              id: `${q.id}_${oIdx}`,
-                              text: opt,
-                              isCorrect: oIdx === q.correctIndex
-                            }))),
-                            expl: q.explanation || `Correct answer: ${q.correctAnswer}`
-                          }))
-                        : QUICK_QUESTIONS_BASE.map(q => ({ ...q, options: shuffleArray(q.options) }));
-
-                      setActiveQuickQuestions(formatted);
-                      setQuickCheckCert(cert.name);
-                      setQuickQuestionIndex(0);
-                      setQuickScore(0);
-                      setQuickAnswered(false);
-                      setQuickCompleted(false);
+                      setQuickCheckTarget({ id: cert.id, name: cert.name });
                     }}
                     className="min-h-[48px] py-3 px-3.5 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-100 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
@@ -420,105 +357,15 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
         })}
       </div>
 
-      {/* QUICK DOMAIN CHECK MODAL (FREE ACCESS) */}
-      {quickCheckCert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in">
-          <div className="relative w-full max-w-lg bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
-              <div>
-                <span className="text-xs font-mono text-zinc-400 font-bold block uppercase">
-                  Rapid Diagnostic Drill (5 Questions)
-                </span>
-                <h3 className="font-bold text-base text-white">{quickCheckCert}</h3>
-              </div>
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  setQuickCheckCert(null);
-                }}
-                className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {!quickCompleted ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-                  <span>Question {quickQuestionIndex + 1} of {activeQuickQuestions.length}</span>
-                  <span className="text-emerald-400 font-bold">Score: {quickScore}/{activeQuickQuestions.length}</span>
-                </div>
-
-                <p className="text-xs sm:text-sm text-zinc-200 font-medium leading-relaxed">
-                  {activeQuickQuestions[quickQuestionIndex].q}
-                </p>
-
-                <div className="space-y-2">
-                  {activeQuickQuestions[quickQuestionIndex].options.map((opt) => (
-                    <button
-                      key={opt.id}
-                      disabled={quickAnswered}
-                      onClick={() => {
-                        sound.playTap();
-                        const isRight = opt.isCorrect;
-                        if (isRight) {
-                          sound.playExploitSuccess();
-                          setQuickScore(prev => prev + 1);
-                        } else {
-                          sound.playPayloadBlocked();
-                        }
-                        setQuickAnswered(true);
-                      }}
-                      className="w-full min-h-[50px] p-3.5 rounded-xl border border-zinc-800 bg-zinc-900 text-left text-xs sm:text-sm font-mono font-bold hover:border-zinc-700 transition-all flex items-center justify-between text-zinc-200 cursor-pointer active:scale-[0.99]"
-                    >
-                      <span>{opt.text}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {quickAnswered && (
-                  <div className="pt-2 animate-fade-in space-y-3">
-                    <p className="text-xs text-zinc-300 bg-zinc-900 p-3.5 rounded-xl border border-zinc-800">
-                      <strong className="text-white font-black">Spiegazione Tecnica:</strong> {activeQuickQuestions[quickQuestionIndex].expl}
-                    </p>
-                    <button
-                      onClick={() => {
-                        sound.playTap();
-                        if (quickQuestionIndex < activeQuickQuestions.length - 1) {
-                          setQuickQuestionIndex(prev => prev + 1);
-                          setQuickAnswered(false);
-                        } else {
-                          setQuickCompleted(true);
-                        }
-                      }}
-                      className="w-full min-h-[50px] py-3.5 px-4 rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-98"
-                    >
-                      <span>{quickQuestionIndex < activeQuickQuestions.length - 1 ? 'PROSSIMA DOMANDA' : 'VEDI RISULTATO'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center space-y-4 py-2">
-                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-                <h4 className="text-base sm:text-lg font-bold text-white">Quick Check Completed</h4>
-                <p className="text-xs text-zinc-400 font-mono">
-                  You answered <span className="text-emerald-400 font-bold">{quickScore}/{activeQuickQuestions.length}</span> questions correctly.
-                </p>
-                <button
-                  onClick={() => {
-                    sound.playTap();
-                    setQuickCheckCert(null);
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs text-zinc-950 bg-emerald-500 hover:bg-emerald-400 cursor-pointer transition-colors"
-                >
-                  Close Check
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+      {/* QUICK DOMAIN CHECK MODAL (FREE ACCESS - LAZY LOADED) */}
+      {quickCheckTarget && (
+        <Suspense fallback={<ModalFallback />}>
+          <CertQuickCheckModal
+            certId={quickCheckTarget.id}
+            certName={quickCheckTarget.name}
+            onClose={() => setQuickCheckTarget(null)}
+          />
+        </Suspense>
       )}
 
       {/* FULL INTERACTIVE PBQ LAB MODAL (PRO EXCLUSIVE PLAYABLE) */}
