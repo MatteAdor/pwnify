@@ -16,6 +16,33 @@ import {
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
 import { ENABLE_LOCAL_ACCOUNTS } from '../../config/auth';
 export { ENABLE_LOCAL_ACCOUNTS };
+
+export const LOCAL_ACCOUNT_NOTICE_SEEN_KEY = 'pwnify_local_account_notice_seen';
+export const LOCAL_ACCOUNT_DISABLED_NOTICE_IT = 'Gli accessi con email non sono più disponibili: usa Google o GitHub, oppure continua come ospite';
+export const LOCAL_ACCOUNT_DISABLED_NOTICE_EN = 'Email logins are no longer available: use Google or GitHub, or continue as guest';
+
+export const checkStoredLocalAccount = (): boolean => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+  try {
+    const rawAccounts = localStorage.getItem('zeroday_database_accounts_v1');
+    if (rawAccounts) {
+      const parsed = JSON.parse(rawAccounts);
+      if (Array.isArray(parsed) && parsed.some((acc: { provider?: string; passwordHash?: string }) => acc.provider === 'email' || Boolean(acc.passwordHash) || !acc.provider)) {
+        return true;
+      }
+    }
+    const rawSession = localStorage.getItem('zeroday_database_session_v1');
+    if (rawSession) {
+      const parsedSession = JSON.parse(rawSession);
+      if (parsedSession && (parsedSession.provider === 'email' || Boolean(parsedSession.passwordHash) || !parsedSession.provider)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+};
 import { isNativeApp } from '../../utils/platform';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
@@ -83,6 +110,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // Rate Limiting on Login (Security Defense against Brute Force)
   const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // Local account disabled notice (shown once if local account exists in localStorage)
+  const [showLocalNotice, setShowLocalNotice] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
+    if (ENABLE_LOCAL_ACCOUNTS) return false;
+    if (localStorage.getItem(LOCAL_ACCOUNT_NOTICE_SEEN_KEY) === 'true') return false;
+    return checkStoredLocalAccount();
+  });
+
+  useEffect(() => {
+    if (showLocalNotice && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(LOCAL_ACCOUNT_NOTICE_SEEN_KEY, 'true');
+      } catch {}
+    }
+  }, [showLocalNotice]);
   const [lockoutTimer, setLockoutTimer] = useState(0);
 
   // Countdown timer for lockout
@@ -822,6 +865,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </p>
           )}
         </div>
+
+        {/* Local Account Disabled Notice (shown once when local accounts exist in localStorage) */}
+        {showLocalNotice && (
+          <div 
+            data-testid="local-account-disabled-notice"
+            className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-start gap-2 animate-fade-in"
+          >
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span className="flex-1">
+              {isEn ? LOCAL_ACCOUNT_DISABLED_NOTICE_EN : LOCAL_ACCOUNT_DISABLED_NOTICE_IT}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowLocalNotice(false)}
+              className="text-amber-400 hover:text-white transition-colors"
+              aria-label="Dismiss notice"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Global Notifications */}
         {errorMsg && (
