@@ -3,6 +3,7 @@ import { App } from '@capacitor/app';
 import { analytics } from './analytics.ts';
 
 export const APK_SIZE = '12.0 MB';
+export const SHOW_APK_DOWNLOAD = false;
 
 export type DistributionFlavor = 'play' | 'direct';
 

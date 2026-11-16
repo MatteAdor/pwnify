@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
-import { APK_SIZE, getCachedVersionInfo } from '../../utils/platform';
+import { APK_SIZE, getCachedVersionInfo, SHOW_APK_DOWNLOAD } from '../../utils/platform';
 import { resolveApkDownloadUrl } from '../../utils/versionUtils';
 import { updateManager } from '../../utils/updateManager';
 
@@ -118,16 +118,23 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
 
         {/* Primary Download CTA */}
         <div className="space-y-2 pt-2">
-          <a
-            href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
-            download="zeroday.apk"
-            onClick={() => sound.playVictoryFanfare()}
-            className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/10 cursor-pointer"
-          >
-            <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
-            <span>{isEn ? 'DOWNLOAD APK TO PLAY 1V1 DUELS' : 'SCARICA L\'APK PER GIOCARE NELL\'ARENA'}</span>
-            <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_SIZE}</span>
-          </a>
+          {SHOW_APK_DOWNLOAD ? (
+            <a
+              href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
+              download="zeroday.apk"
+              onClick={() => sound.playVictoryFanfare()}
+              className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/10 cursor-pointer"
+            >
+              <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
+              <span>{isEn ? 'DOWNLOAD APK TO PLAY 1V1 DUELS' : 'SCARICA L\'APK PER GIOCARE NELL\'ARENA'}</span>
+              <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_SIZE}</span>
+            </a>
+          ) : (
+            <div className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-400 bg-slate-800 border border-slate-700 flex items-center justify-center gap-2.5 shadow-sm cursor-default">
+              <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm grayscale opacity-60" />
+              <span>{isEn ? 'Android: Coming soon' : 'Android: in arrivo'}</span>
+            </div>
+          )}
 
           <button
             onClick={() => {

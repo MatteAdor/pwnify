@@ -138,9 +138,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn 
-                    ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please reach out to '
-                    : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per qualsiasi richiesta relativa alla privacy o per contattare il Responsabile della Protezione dei Dati (DPO), è possibile scrivere a '}
-                  <a href="mailto:[INDIRIZZO]" className="text-emerald-400 underline font-mono">[INDIRIZZO]</a>.
+                    ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please open an issue at github.com/MatteAdor/pwnify/issues indicating only that it is a privacy request, without personal data: we will follow up for a private contact.'
+                    : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per richieste sui dati personali apri una segnalazione sul repository github.com/MatteAdor/pwnify/issues indicando solo che si tratta di una richiesta privacy, senza dati personali: ti risponderemo per un contatto riservato.'}
                 </p>
               </section>
 
