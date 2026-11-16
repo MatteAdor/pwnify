@@ -101,7 +101,11 @@ async function prerender() {
   console.log(`[Prerender] Injected prerendered markup into dist/index.html (${(finalStats.size / 1024).toFixed(1)} kB).`);
 }
 
-prerender().catch((err) => {
-  console.error('[Prerender] Execution failed:', err);
-  process.exit(1);
-});
+prerender()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('[Prerender] Execution failed:', err);
+    process.exit(1);
+  });

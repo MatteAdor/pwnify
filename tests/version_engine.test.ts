@@ -106,11 +106,17 @@ describe('Version Engine & Comparison Suite', () => {
 
   it('isAllowedDownloadUrl strictly requires HTTPS and allowlisted repo/domain paths', () => {
     // Valid domains & paths
-    assert.strictEqual(isAllowedDownloadUrl('https://zeroday.academy/downloads/zeroday.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://zeroday-app.vercel.app/downloads/zeroday.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://pwnify.xyz/downloads/pwnify.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://www.pwnify.xyz/downloads/pwnify.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://github.com/MatteAdor/pwnify/releases/download/v1.2.7/pwnify-1.2.7.apk'), true);
+    assert.strictEqual(isAllowedDownloadUrl('https://raw.githubusercontent.com/MatteAdor/pwnify/main/apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://github.com/MatteAdor/zeroday_app/releases/download/v1.0.0/zeroday.apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://raw.githubusercontent.com/MatteAdor/zeroday_app/main/apk'), true);
     assert.strictEqual(isAllowedDownloadUrl('https://objects.githubusercontent.com/github-production-release-asset-2e65be/12345'), true);
+
+    // Removed legacy domain (zeroday.academy is forbidden)
+    assert.strictEqual(isAllowedDownloadUrl('https://zeroday.academy/downloads/zeroday.apk'), false);
 
     // Forbidden third-party GitHub repos
     assert.strictEqual(isAllowedDownloadUrl('https://github.com/attacker/malicious_app/releases/download/v1.0/trojan.apk'), false);
@@ -126,6 +132,9 @@ describe('Version Engine & Comparison Suite', () => {
     // Malicious or unapproved domains
     assert.strictEqual(isAllowedDownloadUrl('https://evil-site.com/zeroday.apk'), false);
     assert.strictEqual(isAllowedDownloadUrl('https://zeroday.academy.evil.com/fake.apk'), false);
+    assert.strictEqual(isAllowedDownloadUrl('https://sub.pwnify.xyz/downloads/pwnify.apk'), false);
+    assert.strictEqual(isAllowedDownloadUrl('https://evil-pwnify.xyz/downloads/pwnify.apk'), false);
+    assert.strictEqual(isAllowedDownloadUrl('https://pwnify.xyz/unauthorized/pwnify.apk'), false);
     assert.strictEqual(isAllowedDownloadUrl('javascript:alert(1)'), false);
     assert.strictEqual(isAllowedDownloadUrl(''), false);
   });
@@ -320,13 +329,13 @@ describe('Remote Config RPC & Fail-Open Suite', () => {
   });
 
   it('resolveApkDownloadUrl falls back to official portal download anchor when unconfigured', () => {
-    assert.strictEqual(DEFAULT_FALLBACK_APK_URL, 'https://zeroday.academy/#download');
-    assert.strictEqual(resolveApkDownloadUrl(null), 'https://zeroday.academy/#download');
+    assert.strictEqual(DEFAULT_FALLBACK_APK_URL, 'https://pwnify.xyz/#download');
+    assert.strictEqual(resolveApkDownloadUrl(null), 'https://pwnify.xyz/#download');
     assert.ok(
       !resolveApkDownloadUrl(null).startsWith('/downloads/'),
       'Fallback URL must never point to local relative file path'
     );
-    assert.strictEqual(resolveApkDownloadUrl(undefined), 'https://zeroday.academy/#download');
+    assert.strictEqual(resolveApkDownloadUrl(undefined), 'https://pwnify.xyz/#download');
   });
 
   it('updateManager handles missing or failing RPC gracefully without crashing or blocking client (fail-open)', async () => {

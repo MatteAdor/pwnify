@@ -6,37 +6,51 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
-const DEFAULT_ALLOWED_ORIGINS = [
+export const DEFAULT_ALLOWED_ORIGINS = [
+  "https://pwnify.xyz",
+  "https://www.pwnify.xyz",
+  "https://zeroday-app.vercel.app",
+  "https://localhost",
+  "capacitor://localhost",
   "http://localhost:5173",
   "http://localhost:4173",
   "http://127.0.0.1:5173",
   "http://127.0.0.1:4173",
-  "https://zeroday.gg",
-  "https://www.zeroday.gg",
-  "https://pwnify.app",
-  "https://www.pwnify.app",
-  "https://zeroday-app.vercel.app",
-  "capacitor://localhost",
 ];
 
-function getCorsHeaders(req: Request): { headers: Record<string, string>; allowed: boolean } {
+export function isOriginAllowed(origin: string, envOrigins: string[] = []): boolean {
+  if (!origin) return false;
+  const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
+  if (allowedList.includes(origin)) return true;
+  // Vercel preview deployment URLs requiring team suffix (-zero-day-app.vercel.app)
+  if (/^https:\/\/(zeroday-app|pwnify)(-git-[a-z0-9-]+|-[a-z0-9]+)-zero-day-app\.vercel\.app$/i.test(origin)) {
+    return true;
+  }
+  return false;
+}
+
+export function getCorsHeaders(req: Request): { headers: Record<string, string>; allowed: boolean } {
   const origin = req.headers.get("origin") || "";
   const envOrigins = (Deno.env.get("ALLOWED_ORIGINS") || "")
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);
 
-  const allowedList = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
-  const isAllowed = !origin || allowedList.includes(origin) || origin.endsWith(".zeroday.gg") || origin.endsWith(".pwnify.app") || origin.endsWith(".vercel.app");
+  const isAllowed = !origin || isOriginAllowed(origin, envOrigins);
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+
+  if (origin && isAllowed) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
 
   return {
     allowed: isAllowed,
-    headers: {
-      "Access-Control-Allow-Origin": isAllowed ? (origin || "*") : allowedList[0],
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      "Vary": "Origin",
-    },
+    headers,
   };
 }
 

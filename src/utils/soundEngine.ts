@@ -7,9 +7,13 @@ class SoundEngine {
 
   constructor() {
     // Lazy AudioContext initialization on first user gesture
-    const savedMute = localStorage.getItem('0xday_sound_muted');
-    if (savedMute !== null) {
-      this.isMuted = savedMute === 'true';
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const savedMute = localStorage.getItem('0xday_sound_muted');
+        if (savedMute !== null) {
+          this.isMuted = savedMute === 'true';
+        }
+      } catch {}
     }
   }
 

@@ -57,3 +57,22 @@
 -dontwarn com.google.android.gms.**
 -dontwarn org.apache.cordova.**
 -dontwarn androidx.**
+
+# =====================================================================
+# In-App Update & Custom Capacitor Plugins Keep Rules
+# =====================================================================
+-keep public class com.zeroday.academy.DirectUpdatePlugin { *; }
+-keepclassmembers class com.zeroday.academy.DirectUpdatePlugin {
+    @com.getcapacitor.PluginMethod public *;
+}
+
+# Keep all classes with @CapacitorPlugin and @PluginMethod
+-keep @com.getcapacitor.annotation.CapacitorPlugin public class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod public *;
+}
+
+# Google Play In-App Update library classes (AppUpdate plugin)
+-keep class com.google.android.play.core.appupdate.** { *; }
+-keep class com.google.android.play.core.tasks.** { *; }
+-dontwarn com.google.android.play.core.**

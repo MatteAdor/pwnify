@@ -53,7 +53,7 @@ function createMockSupabase(state: MockState): SupabaseClient<Database> {
                 error: null,
               };
             }
-            if (table === 'profiles') {
+            if (table === 'profiles' || table === 'public_profiles') {
               return {
                 data: {
                   id: state.opponentId,

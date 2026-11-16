@@ -4,7 +4,7 @@ import { calculateDynamicTelemetry } from '../../utils/readinessEngine';
 import { useLanguage } from '../../utils/language';
 import { 
   Radar as RadarIcon, Lock, Sparkles, AlertTriangle, 
-  BarChart2, ShieldCheck, CheckCircle2
+  BarChart2, ShieldCheck, CheckCircle2, Info
 } from 'lucide-react';
 
 interface ReadinessRadarProps {
@@ -156,17 +156,20 @@ export const ReadinessRadar: React.FC<ReadinessRadarProps> = ({
               <span>{isPassing ? t.abovePassingThreshold : t.belowPassingThreshold}</span>
             </div>
 
-            <h3 className="text-sm sm:text-base font-bold text-white">
-              {t.passingProbabilityLabel}:{' '}
-              <span className={`font-mono ${isPassing ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {isPassing ? t.probHigh : t.probLow}
-              </span>
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm sm:text-base font-bold text-white">
+                {t.passingProbabilityLabel}:{' '}
+                <span className={`font-mono ${isPassing ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {isPassing ? t.probHigh : t.probLow}
+                </span>
+              </h3>
+              <div className="relative group cursor-help" title={t.readinessFormulaTooltip}>
+                <Info className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-200 transition-colors" />
+              </div>
+            </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              {isEn 
-                ? 'Dynamic cognitive gap telemetry across CompTIA Security+, CCNA, and Linux operations.'
-                : 'Analisi predittiva delle lacune cognitive per CompTIA Security+, CCNA e ambienti Linux.'}
+            <p className="text-[11px] text-zinc-400 leading-relaxed italic border-l-2 border-zinc-700 pl-2">
+              {t.readinessDisclaimer}
             </p>
           </div>
         </div>
