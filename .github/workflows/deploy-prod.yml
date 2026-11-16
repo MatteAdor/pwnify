@@ -18,6 +18,11 @@ on:
         required: false
         type: boolean
         default: false
+      deploy_webhook:
+        description: 'Esegui deploy della sola Edge Function webhook Lemon Squeezy (verify_jwt=false da config.toml)'
+        required: false
+        type: boolean
+        default: false
       seed_questions:
         description: 'Esegui seed remoto delle domande cifrate'
         required: false
@@ -130,6 +135,13 @@ jobs:
         run: |
           supabase functions deploy get_turn_credentials --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
           supabase functions deploy validate_license --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy Lemon Squeezy Webhook Edge Function to Production
+        if: ${{ !inputs.dry_run && inputs.deploy_webhook }}
+        run: |
+          supabase functions deploy lemonsqueezy_webhook --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_ID }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 

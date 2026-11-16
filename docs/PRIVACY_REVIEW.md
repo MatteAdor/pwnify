@@ -7,7 +7,7 @@
 
 ## 1. Titolare del Trattamento e Canali di Contatto
 - **Titolare dichiarato:** Pwnify Cyber Academy
-- **Contatto primario per l'esercizio dei diritti (DPO / Privacy):** `privacy@pwnify.xyz`
+- **Contatto primario per l'esercizio dei diritti (DPO / Privacy):** `[INDIRIZZO]`
 - **Dominio web principale:** `pwnify.xyz` (con redirect da `www.pwnify.xyz`)
 - **Package Android:** `com.pwnify.app` (versionCode 7, versionName 1.2.7)
 
