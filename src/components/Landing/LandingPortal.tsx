@@ -72,7 +72,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     if (!stage) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (window.innerWidth <= 768) return;
+      if (window.innerWidth < 640) return;
       const rect = stage.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -89,7 +89,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     };
 
     const handleMouseLeave = () => {
-      if (window.innerWidth <= 768) return;
+      if (window.innerWidth < 640) return;
       if (centerCardRef.current) {
         centerCardRef.current.style.transform = 'translateX(-50%) rotateY(0deg) rotateX(0deg) translateY(0)';
       }
@@ -109,27 +109,37 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     };
   }, []);
 
-  // Touch Swipe on mobile
-  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.innerWidth > 768) return;
-    touchStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
+  // Mobile deck: native horizontal scroll-snap carousel (< 640px)
+  const isMobileDeck = typeof window !== 'undefined' && window.innerWidth < 640;
+  const deckStyle = (idx: number, desktopTransform: string): React.CSSProperties =>
+    isMobileDeck ? {} : { transform: desktopTransform, zIndex: mobileDeckIndex === idx ? 15 : 5 };
+
+  const centerDeckCard = (idx: number, smooth: boolean) => {
+    const st = stageRef.current;
+    const el = st?.children[idx] as HTMLElement | undefined;
+    if (!st || !el) return;
+    const left = el.offsetLeft + el.offsetWidth / 2 - st.clientWidth / 2;
+    if (smooth) st.scrollTo({ left, behavior: 'smooth' });
+    else st.scrollLeft = left;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (window.innerWidth > 768) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
-    if (deltaX < -45 && mobileDeckIndex < 2) {
-      sound.playTap();
-      setMobileDeckIndex(prev => prev + 1);
-    } else if (deltaX > 45 && mobileDeckIndex > 0) {
-      sound.playTap();
-      setMobileDeckIndex(prev => prev - 1);
-    }
+  const handleDeckScroll = () => {
+    const st = stageRef.current;
+    if (!st || window.innerWidth >= 640) return;
+    const mid = st.scrollLeft + st.clientWidth / 2;
+    let best = 0;
+    let bestDist = Infinity;
+    Array.from(st.children).forEach((c, i) => {
+      const el = c as HTMLElement;
+      const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    setMobileDeckIndex((prev) => (prev === best ? prev : best));
   };
+
+  useEffect(() => {
+    if (window.innerWidth < 640) centerDeckCard(1, false);
+  }, []);
 
   const handleCopyHash = () => {
     sound.playTap();
@@ -482,25 +492,15 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           {/* =============================================================== */}
           <div 
             ref={stageRef}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="relative w-full max-w-[1140px] mx-auto h-[420px] sm:h-[520px] [perspective:1100px] mb-4 sm:mb-8"
+            onScroll={handleDeckScroll}
+            className="relative flex items-stretch gap-3 overflow-x-auto snap-x snap-mandatory w-[calc(100%+2rem)] -mx-4 px-[8vw] pb-2 sm:w-full sm:mx-auto sm:px-0 sm:pb-0 sm:block sm:overflow-visible sm:h-[520px] sm:[perspective:1100px] mb-3 sm:mb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {/* Left Card: 1v1 Blitz */}
             <div
               ref={leftCardRef}
               onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 0
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : 'translateX(calc(-50% - 26px)) rotateY(24deg) scale(0.85) translateY(12px)')
-                  : 'rotate(-5deg) translateY(0)',
-                zIndex: mobileDeckIndex === 0 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 0 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 0 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 sm:top-11 left-1/2 sm:left-2 -translate-x-1/2 sm:translate-x-0 w-[min(90vw,340px)] p-6 glass-card-cathedral text-left transition-all duration-400 cursor-pointer"
+              style={deckStyle(0, 'rotate(-5deg) translateY(0)')}
+              className="relative shrink-0 snap-center w-[84vw] max-w-[340px] sm:absolute sm:top-11 sm:left-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer"
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-mono px-2 py-0.5 rounded flex items-center gap-1">
@@ -544,19 +544,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             <div
               ref={centerCardRef}
               onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 1
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : mobileDeckIndex === 0
-                        ? 'translateX(calc(-50% + 26px)) rotateY(-24deg) scale(0.85) translateY(12px)'
-                        : 'translateX(calc(-50% - 26px)) rotateY(24deg) scale(0.85) translateY(12px)')
-                  : 'translateX(-50%) rotateY(0deg) scale(1)',
-                zIndex: mobileDeckIndex === 1 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 1 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 1 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left transition-all duration-400 cursor-pointer"
+              style={deckStyle(1, 'translateX(-50%) rotateY(0deg) scale(1)')}
+              className="relative shrink-0 snap-center w-[88vw] max-w-[590px] sm:absolute sm:top-0 sm:left-1/2 sm:w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left sm:transition-all sm:duration-400 sm:cursor-pointer"
             >
               <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[rgba(186,215,247,0.08)]">
                 <div className="flex gap-1.5">
@@ -615,17 +604,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             <div
               ref={rightCardRef}
               onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 2
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : 'translateX(calc(-50% + 26px)) rotateY(-24deg) scale(0.85) translateY(12px)')
-                  : 'rotate(5deg) translateY(0)',
-                zIndex: mobileDeckIndex === 2 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 2 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 2 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 sm:top-11 left-1/2 sm:left-auto sm:right-2 -translate-x-1/2 sm:translate-x-0 w-[min(90vw,340px)] p-6 glass-card-cathedral text-left transition-all duration-400 cursor-pointer"
+              style={deckStyle(2, 'rotate(5deg) translateY(0)')}
+              className="relative shrink-0 snap-center w-[84vw] max-w-[340px] sm:absolute sm:top-11 sm:right-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer"
             >
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-mono text-[#c7d3ea]">READINESS TELEMETRY</span>
@@ -683,7 +663,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           {/* Mobile Deck Switcher Controls */}
           <div className="flex sm:hidden justify-center items-center gap-2 mb-4">
             <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(0); centerDeckCard(0, true); }}
               className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 0
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
@@ -693,7 +673,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               01 · 1v1 BLITZ
             </button>
             <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(1); centerDeckCard(1, true); }}
               className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 1
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
@@ -703,7 +683,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               02 · PBQ TERMINAL
             </button>
             <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(2); centerDeckCard(2, true); }}
               className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 2
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
