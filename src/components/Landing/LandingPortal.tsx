@@ -109,37 +109,44 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     };
   }, []);
 
-  // Mobile deck (< 640px): sticky stacked cards that reveal on scroll
+  // Mobile deck (< 640px): cards stacked in one spot; every few seconds the front card
+  // slides out and goes to the back, bringing the next one forward.
   const isMobileDeck = typeof window !== 'undefined' && window.innerWidth < 640;
-  const [seen, setSeen] = useState<boolean[]>([false, false, false]);
-  const deckStyle = (idx: number, desktopTransform: string): React.CSSProperties =>
-    isMobileDeck
-      ? { top: 72 + idx * 14, zIndex: 10 + idx }
-      : { transform: desktopTransform, zIndex: mobileDeckIndex === idx ? 15 : 5 };
-  const deckReveal = (idx: number) =>
-    isMobileDeck ? `transition-[opacity,transform] duration-700 ease-out ${seen[idx] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}` : '';
+  const [deckOrder, setDeckOrder] = useState<number[]>([1, 0, 2]);
+  const [deckLeaving, setDeckLeaving] = useState(false);
+  const advanceDeck = React.useCallback(() => {
+    setDeckLeaving(true);
+    setTimeout(() => {
+      setDeckOrder((o) => [...o.slice(1), o[0]]);
+      setDeckLeaving(false);
+    }, 450);
+  }, []);
+  useEffect(() => {
+    if (window.innerWidth >= 640) return;
+    const id = setInterval(advanceDeck, 4500);
+    return () => clearInterval(id);
+  }, [advanceDeck]);
+
+  const deckStyle = (idx: number, desktopTransform: string): React.CSSProperties => {
+    if (!isMobileDeck) return { transform: desktopTransform, zIndex: mobileDeckIndex === idx ? 15 : 5 };
+    const pos = deckOrder.indexOf(idx);
+    if (pos === 0 && deckLeaving) return { transform: 'translateX(58%) rotate(6deg) scale(0.97)', zIndex: 30, opacity: 0.4 };
+    return { transform: `translateY(${pos * 14}px) scale(${1 - pos * 0.05})`, zIndex: 30 - pos * 10 };
+  };
+  const isFront = (idx: number) => deckOrder[0] === idx;
   const barStyle = (pct: number, i: number): React.CSSProperties => ({
-    width: !isMobileDeck || seen[2] ? `${pct}%` : '0%',
-    transition: `width 1.1s cubic-bezier(0.16, 1, 0.3, 1) ${0.25 + i * 0.15}s`
+    width: !isMobileDeck || isFront(2) ? `${pct}%` : '0%',
+    transition: `width 1.1s cubic-bezier(0.16, 1, 0.3, 1) ${0.3 + i * 0.15}s`
   });
   const logStyle = (i: number): React.CSSProperties | undefined =>
-    isMobileDeck ? (seen[1] ? { animation: 'lineIn 0.5s ease-out both', animationDelay: `${0.35 + i * 0.55}s` } : { opacity: 0 }) : undefined;
-
-  useEffect(() => {
-    const st = stageRef.current;
-    if (!st || window.innerWidth >= 640) return;
-    if (typeof IntersectionObserver === 'undefined') { setSeen([true, true, true]); return; }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        const i = Array.from(st.children).indexOf(e.target);
-        if (i >= 0) setSeen((prev) => (prev[i] ? prev : prev.map((v, k) => (k === i ? true : v))));
-        io.unobserve(e.target);
-      });
-    }, { threshold: 0.3 });
-    Array.from(st.children).forEach((c) => io.observe(c));
-    return () => io.disconnect();
-  }, []);
+    isMobileDeck
+      ? {
+          opacity: isFront(1) ? 1 : 0,
+          transform: isFront(1) ? 'none' : 'translateX(-10px)',
+          transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+          transitionDelay: isFront(1) ? `${0.35 + i * 0.5}s` : '0s'
+        }
+      : undefined;
 
   const handleCopyHash = () => {
     sound.playTap();
@@ -496,14 +503,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           {/* =============================================================== */}
           <div 
             ref={stageRef}
-            className="relative flex flex-col gap-5 w-full max-w-[1140px] mx-auto sm:block sm:h-[520px] sm:[perspective:1100px] mb-6 sm:mb-8"
+            className="relative w-full max-w-[1140px] mx-auto max-sm:h-[455px] sm:h-[520px] sm:[perspective:1100px] mb-6 sm:mb-8"
           >
             {/* Left Card: 1v1 Blitz */}
             <div
               ref={leftCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(0); if (isMobileDeck && isFront(0)) advanceDeck(); }}
               style={deckStyle(0, 'rotate(-5deg) translateY(0)')}
-              className={`sticky w-full max-sm:min-h-[400px] sm:absolute sm:top-11 sm:left-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer ${deckReveal(0)}`}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] sm:absolute sm:top-11 sm:left-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-mono px-2 py-0.5 rounded flex items-center gap-1">
@@ -546,9 +553,9 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             {/* Center Card: PBQ Forensic Terminal Modal */}
             <div
               ref={centerCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(1); if (isMobileDeck && isFront(1)) advanceDeck(); }}
               style={deckStyle(1, 'translateX(-50%) rotateY(0deg) scale(1)')}
-              className={`sticky w-full max-sm:min-h-[400px] max-sm:flex max-sm:flex-col max-sm:justify-center sm:absolute sm:top-0 sm:left-1/2 sm:w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left sm:transition-all sm:duration-400 sm:cursor-pointer ${deckReveal(1)}`}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] max-sm:flex max-sm:flex-col max-sm:justify-center sm:absolute sm:top-0 sm:left-1/2 sm:w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left sm:transition-all sm:duration-400 sm:cursor-pointer`}
             >
               <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[rgba(186,215,247,0.08)]">
                 <div className="flex gap-1.5">
@@ -606,9 +613,9 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             {/* Right Card: Telemetry Radar */}
             <div
               ref={rightCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
+              onClick={() => { sound.playTap(); setMobileDeckIndex(2); if (isMobileDeck && isFront(2)) advanceDeck(); }}
               style={deckStyle(2, 'rotate(5deg) translateY(0)')}
-              className={`sticky w-full max-sm:min-h-[400px] sm:absolute sm:top-11 sm:right-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer ${deckReveal(2)}`}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] sm:absolute sm:top-11 sm:right-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer`}
             >
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-mono text-[#c7d3ea]">READINESS TELEMETRY</span>
