@@ -289,6 +289,33 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             height: 480px;
             perspective: 900px;
           }
+          /* Perf: no heavy blur/backdrop filters on phones */
+          .glass-card-cathedral,
+          .deep-glass-cathedral,
+          .btn-ghost-pill-cathedral {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+          .glass-card-cathedral { background: rgba(14, 18, 32, 0.92); box-shadow: inset 0 1px 1px rgba(216, 236, 248, 0.14), 0 12px 24px rgba(0, 0, 0, 0.5); }
+          .deep-glass-cathedral { box-shadow: inset 0 1px 1px rgba(216, 236, 248, 0.14), 0 12px 24px rgba(0, 0, 0, 0.5); }
+          .blueprint-grid-ambient {
+            position: absolute;
+            height: 900px;
+            bottom: auto;
+            background-size: 56px 56px;
+          }
+          .spotlight-halo-ambient {
+            width: 700px;
+            height: 420px;
+            top: -80px;
+            filter: none;
+            opacity: 0.55;
+          }
+          .btn-violet-cathedral:hover,
+          .btn-ghost-pill-cathedral:hover { transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .spotlight-halo-ambient { opacity: 0.4; }
         }
       `}</style>
 
@@ -319,14 +346,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 1. TOP NAVIGATION BAR */}
         {/* ================================================================= */}
-        <header className="sticky top-0 z-50 h-16 sm:h-[72px] flex items-center justify-between border-b border-[rgba(186,215,247,0.12)] bg-[#05060f]/80 backdrop-blur-md -mx-4 sm:-mx-6 px-4 sm:px-8 mb-8 sm:mb-10">
-          <a href="#" className="flex items-center gap-3 text-decoration-none">
+        <header className="sticky top-0 z-50 h-14 sm:h-[72px] flex items-center justify-between gap-2 border-b border-[rgba(186,215,247,0.12)] bg-[#05060f]/95 sm:bg-[#05060f]/80 sm:backdrop-blur-md -mx-4 sm:-mx-6 px-4 sm:px-8 mb-6 sm:mb-10">
+          <a href="#" className="flex items-center gap-2 sm:gap-3 text-decoration-none shrink-0">
             <div className="w-8 h-8 rounded-md bg-black border border-[rgba(186,215,247,0.15)] flex items-center justify-center shadow-[inset_0_1px_1px_rgba(216,236,248,0.2)] overflow-hidden">
               <img src="/pwnify-rounded.png" alt="Pwnify Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xl tracking-tight skywash-title">Pwnify</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[rgba(102,58,243,0.15)] text-[#b6d9fc] border border-[rgba(102,58,243,0.3)]">
+              <span className="hidden min-[400px]:inline text-[10px] font-mono px-1.5 py-0.5 rounded bg-[rgba(102,58,243,0.15)] text-[#b6d9fc] border border-[rgba(102,58,243,0.3)]">
                 v{getCachedVersionInfo().versionName}
               </span>
             </div>
@@ -352,7 +379,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           </nav>
 
           {/* Right Action Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Language Switcher */}
             <div className="flex items-center bg-[rgba(199,211,234,0.06)] border border-[rgba(186,215,247,0.12)] rounded-full p-0.5 text-[11px] font-mono">
               <button
@@ -360,7 +387,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   sound.playTap();
                   setLanguage('en');
                 }}
-                className={`px-2 py-0.5 rounded-full transition-colors ${isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
+                className={`px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded-full transition-colors ${isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
               >
                 EN
               </button>
@@ -369,7 +396,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   sound.playTap();
                   setLanguage('it');
                 }}
-                className={`px-2 py-0.5 rounded-full transition-colors ${!isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
+                className={`px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded-full transition-colors ${!isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
               >
                 IT
               </button>
@@ -381,9 +408,10 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 sound.playTap();
                 onLaunchApp();
               }}
-              className="btn-violet-cathedral px-4 py-2 text-xs sm:text-sm font-medium flex items-center gap-2 cursor-pointer"
+              className="btn-violet-cathedral px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium flex items-center gap-2 cursor-pointer whitespace-nowrap min-h-[40px]"
             >
-              <span>{isEn ? 'Launch Terminal' : 'Accedi all\'App'}</span>
+              <span className="sm:hidden">{isEn ? 'Launch' : 'Accedi'}</span>
+              <span className="hidden sm:inline">{isEn ? 'Launch Terminal' : 'Accedi all\'App'}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
@@ -392,7 +420,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 2. HERO SECTION — THE CATHEDRAL STAGE */}
         {/* ================================================================= */}
-        <section className="text-center pt-8 sm:pt-14 pb-20 sm:pb-28">
+        <section className="text-center pt-6 sm:pt-14 pb-10 sm:pb-28">
           
           {/* Eyebrow Label with Fading Rules */}
           <div className="inline-flex items-center justify-center gap-4 mb-5">
@@ -417,7 +445,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               : 'La cattedrale della cyber-readiness interattiva. Forensics su log PBQ reali, duelli terminali 1v1 contro avversari live e telemetria predittiva per CompTIA, CCNA e CEH.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 sm:mb-18">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-18">
             <button
               onClick={() => {
                 sound.playTap();
@@ -456,7 +484,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             ref={stageRef}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="relative w-full max-w-[1140px] mx-auto h-[480px] sm:h-[520px] [perspective:1100px] mb-8"
+            className="relative w-full max-w-[1140px] mx-auto h-[420px] sm:h-[520px] [perspective:1100px] mb-4 sm:mb-8"
           >
             {/* Left Card: 1v1 Blitz */}
             <div
@@ -653,10 +681,10 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           </div>
 
           {/* Mobile Deck Switcher Controls */}
-          <div className="flex sm:hidden justify-center items-center gap-2 mb-10">
+          <div className="flex sm:hidden justify-center items-center gap-2 mb-4">
             <button
               onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
+              className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 0
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
                   : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
@@ -666,7 +694,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             </button>
             <button
               onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
+              className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 1
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
                   : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
@@ -676,7 +704,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             </button>
             <button
               onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
+              className={`px-3 py-2.5 rounded-full text-[11px] font-mono transition-all min-h-[40px] ${
                 mobileDeckIndex === 2
                   ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
                   : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
@@ -690,7 +718,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 3. 6-TILE CIRCULAR FEATURE ROW */}
         {/* ================================================================= */}
-        <section className="py-12 sm:py-20 border-t border-[rgba(186,215,247,0.1)]" id="features">
+        <section className="py-10 sm:py-20 border-t border-[rgba(186,215,247,0.1)]" id="features">
           <div className="inline-flex items-center justify-center gap-4 mb-8 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal text-center">
@@ -723,7 +751,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 4. CALIBRATION SUITE (CUSTOMIZATION SHOWCASE) */}
         {/* ================================================================= */}
-        <section className="py-16 sm:py-24" id="simulations">
+        <section className="py-12 sm:py-24" id="simulations">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
@@ -860,7 +888,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 5. DISTRIBUTION HUB (APK & SANDBOX) */}
         {/* ================================================================= */}
-        <section className="py-14 sm:py-20" id="distribution">
+        <section className="py-12 sm:py-20" id="distribution">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
@@ -971,7 +999,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 6. TRANSPARENT PRICING MATRIX */}
         {/* ================================================================= */}
-        <section className="py-14 sm:py-20" id="pricing">
+        <section className="py-12 sm:py-20" id="pricing">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
