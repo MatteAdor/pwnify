@@ -72,7 +72,7 @@ describe('APK Gating & Direct Download Suite', () => {
 
     assert.strictEqual(
       calculatedHash,
-      '480319A3EE8EB21B2978D80E50B34ECFABAE1B40CF105CA601B1633098578ACA',
+      '501883D5516BA998C85C9E16A6C3686548E5E5B9EF147BA482A453E6D16FC4D8',
       'Calculated SHA-256 of pwnify.apk must match expected release hash'
     );
     assert.strictEqual(

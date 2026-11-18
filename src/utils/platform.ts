@@ -4,7 +4,7 @@ import { analytics } from './analytics.ts';
 
 export const APK_CONFIG = {
   downloadUrl: '/downloads/pwnify.apk',
-  sha256: '480319A3EE8EB21B2978D80E50B34ECFABAE1B40CF105CA601B1633098578ACA',
+  sha256: '501883D5516BA998C85C9E16A6C3686548E5E5B9EF147BA482A453E6D16FC4D8',
   size: '6.0 MB',
   fileName: 'pwnify.apk',
   versionName: '1.2.7',
