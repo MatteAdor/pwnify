@@ -45,7 +45,7 @@ public final class ZeroDaySecurityManager {
     // keytool -exportcert -alias <tuo-alias> -keystore <il-tuo-keystore.jks> | openssl sha256 -binary | openssl base64
     // =========================================================================
     public static final String EXPECTED_RELEASE_SIGNATURE_SHA256_BASE64 =
-            "yQk3pjbehW7DcBQzD7VBc0b6TXOC3X2r9H1n/b6/+cc=";
+            "c/gA/AVf7nT1aKrLqa/QYIhCaHKaG1FSvPLqNvB8dIo=";
 
     // Known trusted installer packages (Google Play Store)
     private static final List<String> TRUSTED_INSTALLERS = Arrays.asList(
