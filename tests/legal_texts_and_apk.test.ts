@@ -2,8 +2,9 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { SHOW_APK_DOWNLOAD } from '../src/utils/platform.ts';
+import { SHOW_APK_DOWNLOAD, APK_CONFIG } from '../src/utils/platform.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,33 +58,95 @@ describe('Legal Texts & Placeholders Verification Suite', () => {
   });
 });
 
-describe('APK Gating & Download Protection Suite', () => {
-  test('SHOW_APK_DOWNLOAD flag defaults to false', () => {
-    assert.strictEqual(SHOW_APK_DOWNLOAD, false, 'SHOW_APK_DOWNLOAD must default to false');
+describe('APK Gating & Direct Download Suite', () => {
+  test('SHOW_APK_DOWNLOAD flag is set to true', () => {
+    assert.strictEqual(SHOW_APK_DOWNLOAD, true, 'SHOW_APK_DOWNLOAD must be true');
   });
 
-  test('public/downloads/zeroday.apk is confirmed removed from distribution bundle', () => {
-    const apkPath = path.join(rootDir, 'public', 'downloads', 'zeroday.apk');
-    assert.strictEqual(fs.existsSync(apkPath), false, 'public/downloads/zeroday.apk must not exist in repository');
+  test('public/downloads/pwnify.apk exists and matches config SHA-256', () => {
+    const apkPath = path.join(rootDir, 'public', 'downloads', 'pwnify.apk');
+    assert.strictEqual(fs.existsSync(apkPath), true, 'public/downloads/pwnify.apk must exist in repository');
+
+    const fileBuffer = fs.readFileSync(apkPath);
+    const calculatedHash = crypto.createHash('sha256').update(fileBuffer).digest('hex').toUpperCase();
+
+    assert.strictEqual(
+      calculatedHash,
+      '480319A3EE8EB21B2978D80E50B34ECFABAE1B40CF105CA601B1633098578ACA',
+      'Calculated SHA-256 of pwnify.apk must match expected release hash'
+    );
+    assert.strictEqual(
+      APK_CONFIG.sha256,
+      calculatedHash,
+      'APK_CONFIG.sha256 must match the physical file hash'
+    );
+    assert.strictEqual(
+      APK_CONFIG.downloadUrl,
+      '/downloads/pwnify.apk',
+      'APK_CONFIG.downloadUrl must point to /downloads/pwnify.apk'
+    );
   });
 
-  test('Web code contains fallback "Android: in arrivo" indicator when SHOW_APK_DOWNLOAD is false', () => {
+  test('Web code directs APK downloads to /downloads/pwnify.apk and removes fake hash and "in arrivo" stubs', () => {
     const appTsx = fs.readFileSync(path.join(rootDir, 'src', 'App.tsx'), 'utf-8');
     const arenaView = fs.readFileSync(path.join(rootDir, 'src', 'components', 'Arena', 'ArenaWebLockedView.tsx'), 'utf-8');
     const gateModal = fs.readFileSync(path.join(rootDir, 'src', 'components', 'Gating', 'AppDownloadGateModal.tsx'), 'utf-8');
     const landing = fs.readFileSync(path.join(rootDir, 'src', 'components', 'Landing', 'LandingPortal.tsx'), 'utf-8');
 
+    const FAKE_HASH = 'e8b7f190c3a81f337b5d98418041a998bb9ffae410887e5e01c107e3cb29cf6a';
+
     for (const [name, content] of Object.entries({ appTsx, arenaView, gateModal, landing })) {
+      // Must not contain fake hash
+      assert.strictEqual(
+        content.includes(FAKE_HASH),
+        false,
+        `${name} must not contain the stale fake hash ${FAKE_HASH}`
+      );
+
+      // Must not contain "Android: in arrivo" or "Android: Coming soon" fallback labels
       assert.strictEqual(
         content.includes('Android: in arrivo'),
-        true,
-        `${name} must contain "Android: in arrivo" label when SHOW_APK_DOWNLOAD is false`
+        false,
+        `${name} must not contain "Android: in arrivo"`
       );
       assert.strictEqual(
-        content.includes('SHOW_APK_DOWNLOAD'),
+        content.includes('Android: Coming soon'),
+        false,
+        `${name} must not contain "Android: Coming soon"`
+      );
+
+      // Must reference APK_CONFIG for download URL and sha256
+      assert.strictEqual(
+        content.includes('APK_CONFIG'),
         true,
-        `${name} must respect SHOW_APK_DOWNLOAD flag`
+        `${name} must import and use APK_CONFIG`
       );
     }
+  });
+
+  test('vercel.json specifies correct package-archive and attachment headers for /downloads/(.*)', () => {
+    const vercelConfig = JSON.parse(fs.readFileSync(path.join(rootDir, 'vercel.json'), 'utf-8'));
+    const downloadHeader = vercelConfig.headers?.find(
+      (h: { source: string }) => h.source === '/downloads/(.*)'
+    );
+
+    assert.ok(downloadHeader, 'vercel.json must define headers for /downloads/(.*)');
+    const contentType = downloadHeader.headers?.find(
+      (item: { key: string }) => item.key === 'Content-Type'
+    );
+    const contentDisposition = downloadHeader.headers?.find(
+      (item: { key: string }) => item.key === 'Content-Disposition'
+    );
+
+    assert.strictEqual(
+      contentType?.value,
+      'application/vnd.android.package-archive',
+      'Content-Type must be application/vnd.android.package-archive'
+    );
+    assert.strictEqual(
+      contentDisposition?.value,
+      'attachment',
+      'Content-Disposition must be attachment'
+    );
   });
 });

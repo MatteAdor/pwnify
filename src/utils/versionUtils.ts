@@ -3,7 +3,7 @@
  * Single Source of Truth: versionCode is the definitive criteria; versionName is for UI display.
  */
 
-import { isNativeApp } from './platform.ts';
+import { isNativeApp, APK_CONFIG } from './platform.ts';
 
 export interface AppVersionInfo {
   versionName: string;
@@ -227,13 +227,9 @@ export function sanitizeApkUrl(url: string): string {
  * with fail-safe fallback to official website download section.
  */
 export function resolveApkDownloadUrl(config?: RemotePlatformConfig | null): string {
-  // 1. If in browser context (web app visitor), default to direct hosted APK on Vercel
+  // 1. If in browser context (web app visitor), always point to direct hosted APK
   if (typeof window !== 'undefined' && !isNativeApp()) {
-    if (config?.apk_download_url && config.apk_download_url.trim()) {
-      const sanitized = sanitizeApkUrl(config.apk_download_url.trim());
-      if (isAllowedDownloadUrl(sanitized)) return sanitized;
-    }
-    return DEFAULT_FALLBACK_APK_URL;
+    return APK_CONFIG.downloadUrl;
   }
 
   if (config?.apk_download_url && config.apk_download_url.trim()) {

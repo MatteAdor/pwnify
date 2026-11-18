@@ -29,7 +29,7 @@ const ViewFallback: React.FC = () => (
 import { LandingPortal } from './components/Landing/LandingPortal';
 import { AppDownloadGateModal, GateContext } from './components/Gating/AppDownloadGateModal';
 import { ArenaWebLockedView } from './components/Arena/ArenaWebLockedView';
-import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE, SHOW_APK_DOWNLOAD } from './utils/platform';
+import { isBrowserEnvironment, isNativeApp, isPlayDistribution, APK_SIZE, SHOW_APK_DOWNLOAD, APK_CONFIG } from './utils/platform';
 import { supabase, isSupabaseConfigured } from './config/supabase';
 import { syncUserProfile } from './utils/cloudSync';
 import { resolveApkDownloadUrl } from './utils/versionUtils';
@@ -1006,21 +1006,16 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                     : 'Sandbox Web Limitata · Arena 1v1 e tutti i laboratori PBQ richiedono l\'App Android'}
                 </span>
               </div>
-              {SHOW_APK_DOWNLOAD ? (
+              {SHOW_APK_DOWNLOAD && (
                 <a
-                  href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
-                  download="zeroday.apk"
+                  href={APK_CONFIG.downloadUrl}
+                  download={APK_CONFIG.fileName}
                   onClick={() => sound.playVictoryFanfare()}
                   className="ml-3 shrink-0 px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors flex items-center gap-1.5 shadow-sm"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>{isEn ? ('Get APK (' + APK_SIZE + ')') : ('Scarica APK (' + APK_SIZE + ')')}</span>
+                  <span>{isEn ? ('Get APK (' + APK_CONFIG.size + ')') : ('Scarica APK (' + APK_CONFIG.size + ')')}</span>
                 </a>
-              ) : (
-                <span className="ml-3 shrink-0 px-2.5 py-1 rounded bg-slate-800 text-slate-400 font-bold flex items-center gap-1.5 shadow-sm border border-slate-700">
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{isEn ? 'Android: Coming soon' : 'Android: in arrivo'}</span>
-                </span>
               )}
             </div>
           )}

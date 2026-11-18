@@ -14,6 +14,7 @@ import {
   getCachedVersionInfo, 
   DirectUpdate, 
   isNativeApp,
+  APK_CONFIG,
   type DistributionFlavor,
   type RuntimeVersionInfo
 } from './platform.ts';
@@ -96,8 +97,8 @@ class UpdateManager {
       errorMessage: null,
       forceMessage: null,
       storeUrl: 'https://play.google.com/store/apps/details?id=com.pwnify.app',
-      apkDownloadUrl: resolveApkDownloadUrl(),
-      apkSha256: '',
+      apkDownloadUrl: !isNativeApp() ? APK_CONFIG.downloadUrl : resolveApkDownloadUrl(),
+      apkSha256: !isNativeApp() ? APK_CONFIG.sha256 : '',
       changelog: null,
       isArenaDuelActive: false,
       needsPermission: false,
@@ -359,14 +360,11 @@ class UpdateManager {
 
       // Web environments are always live and up-to-date — never trigger APK update gates on web visitors
       if (!isNativeApp()) {
-        this.updateState({ status: 'UP_TO_DATE' });
-        return;
-      }
-
-      // On web browser environments, web clients are always up to date with deployed assets.
-      // Do not trigger native APK update gates or blocking update modals for web visitors.
-      if (!isNativeApp()) {
-        this.updateState({ status: 'UP_TO_DATE' });
+        this.updateState({ 
+          status: 'UP_TO_DATE',
+          apkDownloadUrl: APK_CONFIG.downloadUrl,
+          apkSha256: APK_CONFIG.sha256,
+        });
         return;
       }
 
