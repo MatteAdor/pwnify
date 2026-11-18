@@ -40,24 +40,24 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#05060f]/90 sm:backdrop-blur-md overflow-y-auto animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-modal-title"
     >
-      <div className="relative w-full max-w-3xl my-auto rounded-3xl p-5 sm:p-7 shadow-2xl bg-[#101726] border border-white/10 text-slate-100 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-3xl my-auto rounded-2xl p-5 sm:p-7 shadow-2xl bg-[#05060f] border border-[rgba(186,215,247,0.12)] text-[#e6eefb] flex flex-col max-h-[90vh]">
         
         {/* Header & Close */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <div className="flex items-center justify-between pb-4 border-b border-[rgba(186,215,247,0.12)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <div className="w-9 h-9 rounded-xl bg-[rgba(102,58,243,0.15)] border border-[rgba(102,58,243,0.35)] flex items-center justify-center text-[#b6d9fc]">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="legal-modal-title" className="text-base sm:text-lg font-bold text-white">
+              <h2 id="legal-modal-title" className="text-base sm:text-lg font-bold font-mono bg-gradient-to-t from-[#d8ecf8] to-[#98c0ef] bg-clip-text text-transparent">
                 {isEn ? 'Legal Notice & Privacy Compliance' : 'Informativa Legale & Conformità Normativa'}
               </h2>
-              <span className="text-[11px] font-mono text-slate-400">
+              <span className="text-[11px] font-mono text-[#9da7ba]">
                 {isEn ? 'Pwnify Academy · Legal, Privacy & Consumer Protection' : 'Pwnify Academy · Note Legali, Privacy & Tutela Consumatori'}
               </span>
             </div>
@@ -68,7 +68,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               sound.playTap();
               onClose();
             }}
-            className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+            className="p-2 rounded-full text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] cursor-pointer"
             aria-label={isEn ? 'Close legal modal' : 'Chiudi finestra note legali'}
           >
             <X className="w-5 h-5" />
@@ -76,13 +76,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 pt-4 pb-3 overflow-x-auto text-xs font-mono border-b border-white/5">
+        <div className="flex items-center gap-2 pt-4 pb-3 overflow-x-auto text-xs font-mono border-b border-[rgba(186,215,247,0.08)]">
           <button
             onClick={() => { sound.playTap(); setActiveTab('privacy'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] ${
               activeTab === 'privacy' 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[rgba(102,58,243,0.22)] text-[#d1e4fa] border border-[rgba(102,58,243,0.55)] font-bold' 
+                : 'text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)]'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -91,10 +91,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('terms'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] ${
               activeTab === 'terms' 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[rgba(102,58,243,0.22)] text-[#d1e4fa] border border-[rgba(102,58,243,0.55)] font-bold' 
+                : 'text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)]'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
@@ -103,10 +103,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('refund'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] ${
               activeTab === 'refund' 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[rgba(102,58,243,0.22)] text-[#d1e4fa] border border-[rgba(102,58,243,0.55)] font-bold' 
+                : 'text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)]'
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -115,10 +115,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
           <button
             onClick={() => { sound.playTap(); setActiveTab('cookies'); }}
-            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+            className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] ${
               activeTab === 'cookies' 
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' 
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-[rgba(102,58,243,0.22)] text-[#d1e4fa] border border-[rgba(102,58,243,0.55)] font-bold' 
+                : 'text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)]'
             }`}
           >
             <Cookie className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         </div>
 
         {/* Tab Content Body */}
-        <div className="py-4 overflow-y-auto space-y-4 text-xs text-slate-300 leading-relaxed pr-2 font-sans">
+        <div className="py-4 overflow-y-auto space-y-4 text-xs text-[#c7d3ea] leading-relaxed pr-2 font-sans">
           
           {/* TAB 1: PRIVACY POLICY */}
           {activeTab === 'privacy' && (
@@ -152,7 +152,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                     ? 'We collect only the strictly necessary information required to deliver cybersecurity training:'
                     : 'Raccogliamo esclusivamente i dati strettamente necessari per erogare i servizi di formazione:'}
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <ul className="list-disc pl-5 space-y-1 text-[#9da7ba]">
                   <li>
                     <strong>{isEn ? 'Authentication Data:' : 'Dati di autenticazione:'}</strong>{' '}
                     {isEn 
@@ -194,7 +194,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                     ? 'Pwnify relies on the following specialized technical service providers:'
                     : 'Pwnify si avvale dei seguenti fornitori tecnici di servizio:'}
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <ul className="list-disc pl-5 space-y-1 text-[#9da7ba]">
                   <li><strong>Supabase Inc.:</strong> {isEn ? 'Cloud PostgreSQL database, token auth, and Edge Functions.' : 'Database cloud PostgreSQL, autenticazione e Edge Functions.'}</li>
                   <li><strong>Vercel Inc.:</strong> {isEn ? 'Frontend hosting and Edge Content Delivery Network.' : 'Hosting frontend e rete Edge CDN.'}</li>
                   <li><strong>Lemon Squeezy LLC:</strong> {isEn ? 'Merchant of Record, billing, checkout, and VAT/tax compliance.' : 'Merchant of Record, checkout, pagamenti e adempimenti fiscali.'}</li>
@@ -288,7 +288,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   {isEn
                     ? 'To request a refund, simply send an email to '
                     : 'Per esercitare il diritto di rimborso, è sufficiente inviare un\'email a '}
-                  <a href="mailto:support@zeroday.academy" className="text-emerald-400 underline font-mono">support@zeroday.academy</a>{' '}
+                  <a href="mailto:support@zeroday.academy" className="text-[#b6d9fc] underline font-mono">support@zeroday.academy</a>{' '}
                   {isEn
                     ? 'specifying your Callsign, account email, and license key. The full refund will be processed back to your original payment method within 3 to 5 business days.'
                     : 'indicando il Callsign, l\'indirizzo email dell\'account e il codice di licenza. Il rimborso integrale dell\'importo versato verrà accreditato sullo stesso metodo di pagamento utilizzato entro 3-5 giorni lavorativi.'}
@@ -320,7 +320,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                     ? 'Pwnify enforces a strict privacy policy with zero intrusive ad trackers. We utilize only:'
                     : 'Pwnify adotta una politica rigorosa priva di tracciatori invasivi. Utilizziamo esclusivamente:'}
                 </p>
-                <ul className="list-disc pl-5 space-y-1 text-slate-400">
+                <ul className="list-disc pl-5 space-y-1 text-[#9da7ba]">
                   <li>
                     <strong>{isEn ? 'Essential Technical Cookies:' : 'Cookie Tecnici & di Sessione (Strettamente Necessari):'}</strong>{' '}
                     {isEn
@@ -357,14 +357,14 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         </div>
 
         {/* Footer with Business Details */}
-        <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-mono text-slate-400">
+        <div className="pt-4 border-t border-[rgba(186,215,247,0.12)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-mono text-[#9da7ba]">
           <div className="flex items-center gap-2">
-            <Building className="w-3.5 h-3.5 text-slate-400" />
+            <Building className="w-3.5 h-3.5 text-[#9da7ba]" />
             <span>Pwnify Cyber Academy S.r.l. · P.IVA: IT01234567890</span>
           </div>
           <div className="flex items-center gap-2">
-            <Mail className="w-3.5 h-3.5 text-slate-400" />
-            <a href="mailto:legal@zeroday.academy" className="text-emerald-400 hover:underline">
+            <Mail className="w-3.5 h-3.5 text-[#9da7ba]" />
+            <a href="mailto:legal@zeroday.academy" className="text-[#b6d9fc] hover:underline">
               legal@zeroday.academy
             </a>
           </div>

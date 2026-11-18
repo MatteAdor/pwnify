@@ -72,7 +72,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     if (!stage) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (window.innerWidth <= 768) return;
+      if (window.innerWidth < 640) return;
       const rect = stage.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
       const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -89,7 +89,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     };
 
     const handleMouseLeave = () => {
-      if (window.innerWidth <= 768) return;
+      if (window.innerWidth < 640) return;
       if (centerCardRef.current) {
         centerCardRef.current.style.transform = 'translateX(-50%) rotateY(0deg) rotateX(0deg) translateY(0)';
       }
@@ -109,27 +109,41 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     };
   }, []);
 
-  // Touch Swipe on mobile
-  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.innerWidth > 768) return;
-    touchStartRef.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
-  };
+  // Mobile deck (< 640px): cards stacked in one spot; every few seconds the front card
+  // slides out and goes to the back, bringing the next one forward.
+  const [deckOrder, setDeckOrder] = useState<number[]>([1, 0, 2]);
+  const [deckLeaving, setDeckLeaving] = useState(false);
+  const advanceDeck = React.useCallback(() => {
+    setDeckLeaving(true);
+    setTimeout(() => {
+      setDeckOrder((o) => [...o.slice(1), o[0]]);
+      setDeckLeaving(false);
+    }, 450);
+  }, []);
+  useEffect(() => {
+    if (window.innerWidth >= 640) return;
+    const id = setInterval(advanceDeck, 4500);
+    return () => clearInterval(id);
+  }, [advanceDeck]);
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (window.innerWidth > 768) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
-    if (deltaX < -45 && mobileDeckIndex < 2) {
-      sound.playTap();
-      setMobileDeckIndex(prev => prev + 1);
-    } else if (deltaX > 45 && mobileDeckIndex > 0) {
-      sound.playTap();
-      setMobileDeckIndex(prev => prev - 1);
-    }
+  // All mobile-deck visuals are driven by CSS variables + max-sm: classes (never by window width),
+  // so the prerendered HTML and the hydrated client render are identical.
+  const isFront = (idx: number) => deckOrder[0] === idx;
+  const deckVars = (idx: number): React.CSSProperties => {
+    const pos = deckOrder.indexOf(idx);
+    const leaving = pos === 0 && deckLeaving;
+    return {
+      '--tf': leaving ? 'translateX(58%) rotate(6deg) scale(0.97)' : `translateY(${pos * 14}px) scale(${1 - pos * 0.05})`,
+      '--z': leaving ? 30 : 30 - pos * 10,
+      '--op': leaving ? 0.4 : 1
+    } as React.CSSProperties;
   };
+  const deckMobileCls = 'max-sm:[transform:var(--tf)] max-sm:[z-index:var(--z)] max-sm:[opacity:var(--op)]';
+  const barStyle = (pct: number, i: number): React.CSSProperties =>
+    ({ '--w': `${pct}%`, transitionDelay: `${0.3 + i * 0.15}s` } as React.CSSProperties);
+  const barCls = `w-[var(--w)] max-sm:transition-[width] max-sm:duration-[1100ms] ${isFront(2) ? '' : 'max-sm:!w-0'}`;
+  const logStyle = (i: number): React.CSSProperties => ({ transitionDelay: isFront(1) ? `${0.35 + i * 0.5}s` : '0s' });
+  const logCls = `max-sm:transition-[opacity,transform] max-sm:duration-500 ${isFront(1) ? '' : 'max-sm:opacity-0 max-sm:-translate-x-2.5'}`;
 
   const handleCopyHash = () => {
     sound.playTap();
@@ -189,7 +203,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
   const currentScenario = tracksData[activeTrack];
 
   return (
-    <div className="relative min-h-screen bg-[#05060f] text-[#d1e4fa] font-sans selection:bg-[#663af3]/30 selection:text-[#d8ecf8] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#05060f] text-[#d1e4fa] font-sans selection:bg-[#663af3]/30 selection:text-[#d8ecf8] overflow-x-clip">
       
       {/* Dynamic Scoped CSS for AuthKit Cathedral Tokens */}
       <style>{`
@@ -289,6 +303,37 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             height: 480px;
             perspective: 900px;
           }
+          /* Perf: no heavy blur/backdrop filters on phones */
+          .glass-card-cathedral,
+          .deep-glass-cathedral,
+          .btn-ghost-pill-cathedral {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+          .glass-card-cathedral { background: #0b0f1d; box-shadow: inset 0 1px 1px rgba(216, 236, 248, 0.14), 0 12px 24px rgba(0, 0, 0, 0.5); }
+          .deep-glass-cathedral { background: #070a15; box-shadow: inset 0 1px 1px rgba(216, 236, 248, 0.14), 0 12px 24px rgba(0, 0, 0, 0.5); }
+          .blueprint-grid-ambient {
+            position: absolute;
+            height: 900px;
+            bottom: auto;
+            background-size: 56px 56px;
+          }
+          .spotlight-halo-ambient {
+            width: 700px;
+            height: 420px;
+            top: -80px;
+            filter: none;
+            opacity: 0.55;
+          }
+          .btn-violet-cathedral:hover,
+          .btn-ghost-pill-cathedral:hover { transform: none; }
+        }
+        @keyframes lineIn {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .spotlight-halo-ambient { opacity: 0.4; }
         }
       `}</style>
 
@@ -319,14 +364,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 1. TOP NAVIGATION BAR */}
         {/* ================================================================= */}
-        <header className="sticky top-0 z-50 h-16 sm:h-[72px] flex items-center justify-between border-b border-[rgba(186,215,247,0.12)] bg-[#05060f]/80 backdrop-blur-md -mx-4 sm:-mx-6 px-4 sm:px-8 mb-8 sm:mb-10">
-          <a href="#" className="flex items-center gap-3 text-decoration-none">
+        <header className="sticky top-0 z-50 h-14 sm:h-[72px] flex items-center justify-between gap-2 border-b border-[rgba(186,215,247,0.12)] bg-[#05060f]/95 sm:bg-[#05060f]/80 sm:backdrop-blur-md -mx-4 sm:-mx-6 px-4 sm:px-8 mb-6 sm:mb-10">
+          <a href="#" className="flex items-center gap-2 sm:gap-3 text-decoration-none shrink-0">
             <div className="w-8 h-8 rounded-md bg-black border border-[rgba(186,215,247,0.15)] flex items-center justify-center shadow-[inset_0_1px_1px_rgba(216,236,248,0.2)] overflow-hidden">
               <img src="/pwnify-rounded.png" alt="Pwnify Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xl tracking-tight skywash-title">Pwnify</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[rgba(102,58,243,0.15)] text-[#b6d9fc] border border-[rgba(102,58,243,0.3)]">
+              <span className="hidden min-[400px]:inline text-[10px] font-mono px-1.5 py-0.5 rounded bg-[rgba(102,58,243,0.15)] text-[#b6d9fc] border border-[rgba(102,58,243,0.3)]">
                 v{getCachedVersionInfo().versionName}
               </span>
             </div>
@@ -352,7 +397,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           </nav>
 
           {/* Right Action Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Language Switcher */}
             <div className="flex items-center bg-[rgba(199,211,234,0.06)] border border-[rgba(186,215,247,0.12)] rounded-full p-0.5 text-[11px] font-mono">
               <button
@@ -360,7 +405,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   sound.playTap();
                   setLanguage('en');
                 }}
-                className={`px-2 py-0.5 rounded-full transition-colors ${isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
+                className={`px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded-full transition-colors ${isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
               >
                 EN
               </button>
@@ -369,7 +414,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                   sound.playTap();
                   setLanguage('it');
                 }}
-                className={`px-2 py-0.5 rounded-full transition-colors ${!isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
+                className={`px-2.5 py-1.5 sm:px-2 sm:py-0.5 rounded-full transition-colors ${!isEn ? 'bg-[#663af3] text-white font-semibold' : 'text-[#9da7ba] hover:text-white'}`}
               >
                 IT
               </button>
@@ -381,9 +426,10 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 sound.playTap();
                 onLaunchApp();
               }}
-              className="btn-violet-cathedral px-4 py-2 text-xs sm:text-sm font-medium flex items-center gap-2 cursor-pointer"
+              className="btn-violet-cathedral px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium flex items-center gap-2 cursor-pointer whitespace-nowrap min-h-[40px]"
             >
-              <span>{isEn ? 'Launch Terminal' : 'Accedi all\'App'}</span>
+              <span className="sm:hidden">{isEn ? 'Launch' : 'Accedi'}</span>
+              <span className="hidden sm:inline">{isEn ? 'Launch Terminal' : 'Accedi all\'App'}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
@@ -392,7 +438,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 2. HERO SECTION — THE CATHEDRAL STAGE */}
         {/* ================================================================= */}
-        <section className="text-center pt-8 sm:pt-14 pb-20 sm:pb-28">
+        <section className="text-center pt-6 sm:pt-14 pb-10 sm:pb-28">
           
           {/* Eyebrow Label with Fading Rules */}
           <div className="inline-flex items-center justify-center gap-4 mb-5">
@@ -417,7 +463,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               : 'La cattedrale della cyber-readiness interattiva. Forensics su log PBQ reali, duelli terminali 1v1 contro avversari live e telemetria predittiva per CompTIA, CCNA e CEH.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14 sm:mb-18">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-18">
             <button
               onClick={() => {
                 sound.playTap();
@@ -454,25 +500,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
           {/* =============================================================== */}
           <div 
             ref={stageRef}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            className="relative w-full max-w-[1140px] mx-auto h-[480px] sm:h-[520px] [perspective:1100px] mb-8"
+            className="relative w-full max-w-[1140px] mx-auto max-sm:h-[455px] sm:h-[520px] sm:[perspective:1100px] mb-6 sm:mb-8"
           >
             {/* Left Card: 1v1 Blitz */}
             <div
               ref={leftCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 0
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : 'translateX(calc(-50% - 26px)) rotateY(24deg) scale(0.85) translateY(12px)')
-                  : 'rotate(-5deg) translateY(0)',
-                zIndex: mobileDeckIndex === 0 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 0 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 0 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 sm:top-11 left-1/2 sm:left-2 -translate-x-1/2 sm:translate-x-0 w-[min(90vw,340px)] p-6 glass-card-cathedral text-left transition-all duration-400 cursor-pointer"
+              onClick={() => { sound.playTap(); setMobileDeckIndex(0); if (window.innerWidth < 640 && isFront(0)) advanceDeck(); }}
+              style={deckVars(0)}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] sm:absolute sm:top-11 sm:left-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer ${deckMobileCls} sm:-rotate-[5deg] ${mobileDeckIndex === 0 ? 'sm:z-[15]' : 'sm:z-[5]'}`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="bg-red-500/15 border border-red-500/30 text-red-400 text-[11px] font-mono px-2 py-0.5 rounded flex items-center gap-1">
@@ -515,20 +550,9 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             {/* Center Card: PBQ Forensic Terminal Modal */}
             <div
               ref={centerCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 1
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : mobileDeckIndex === 0
-                        ? 'translateX(calc(-50% + 26px)) rotateY(-24deg) scale(0.85) translateY(12px)'
-                        : 'translateX(calc(-50% - 26px)) rotateY(24deg) scale(0.85) translateY(12px)')
-                  : 'translateX(-50%) rotateY(0deg) scale(1)',
-                zIndex: mobileDeckIndex === 1 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 1 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 1 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left transition-all duration-400 cursor-pointer"
+              onClick={() => { sound.playTap(); setMobileDeckIndex(1); if (window.innerWidth < 640 && isFront(1)) advanceDeck(); }}
+              style={deckVars(1)}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] max-sm:flex max-sm:flex-col max-sm:justify-center sm:absolute sm:top-0 sm:left-1/2 sm:w-[min(90vw,590px)] p-6 sm:p-7 deep-glass-cathedral text-left sm:transition-all sm:duration-400 sm:cursor-pointer ${deckMobileCls} sm:-translate-x-1/2 ${mobileDeckIndex === 1 ? 'sm:z-[15]' : 'sm:z-[5]'}`}
             >
               <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-[rgba(186,215,247,0.08)]">
                 <div className="flex gap-1.5">
@@ -545,14 +569,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <div className="bg-black/60 rounded-lg p-4 font-mono text-xs sm:text-[13px] leading-relaxed border border-[rgba(186,215,247,0.08)] mb-5 space-y-1">
-                <div className="text-[#9da7ba]"># /var/log/auth.log - forensic inspection</div>
-                <div>
+                <div className={`text-[#9da7ba] ${logCls}`} style={logStyle(0)}># /var/log/auth.log - forensic inspection</div>
+                <div className={logCls} style={logStyle(1)}>
                   <span className="text-amber-400">WARN</span> Failed password for root from <span className="text-[#b6d9fc]">192.168.1.105</span> port 42810 ssh2
                 </div>
-                <div>
+                <div className={logCls} style={logStyle(2)}>
                   <span className="text-amber-400">WARN</span> Repeated 142 times in 12s - <span className="text-[#a78bfa]">BruteForcePatternDetected</span>
                 </div>
-                <div className="text-[#10b981]">
+                <div className={`text-[#10b981] ${logCls}`} style={logStyle(3)}>
                   ✔ Security+ Objective 2.4: Identify & isolate hostile host vector
                 </div>
               </div>
@@ -586,18 +610,9 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             {/* Right Card: Telemetry Radar */}
             <div
               ref={rightCardRef}
-              onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
-              style={{
-                transform: window.innerWidth <= 768
-                  ? (mobileDeckIndex === 2
-                      ? 'translateX(-50%) rotateY(0deg) scale(1) translateY(0px)'
-                      : 'translateX(calc(-50% + 26px)) rotateY(-24deg) scale(0.85) translateY(12px)')
-                  : 'rotate(5deg) translateY(0)',
-                zIndex: mobileDeckIndex === 2 ? 15 : 5,
-                opacity: window.innerWidth <= 768 ? (mobileDeckIndex === 2 ? 1 : 0.45) : 1,
-                filter: window.innerWidth <= 768 && mobileDeckIndex !== 2 ? 'blur(1.5px)' : 'none'
-              }}
-              className="absolute top-0 sm:top-11 left-1/2 sm:left-auto sm:right-2 -translate-x-1/2 sm:translate-x-0 w-[min(90vw,340px)] p-6 glass-card-cathedral text-left transition-all duration-400 cursor-pointer"
+              onClick={() => { sound.playTap(); setMobileDeckIndex(2); if (window.innerWidth < 640 && isFront(2)) advanceDeck(); }}
+              style={deckVars(2)}
+              className={`max-sm:absolute max-sm:inset-x-0 max-sm:top-0 max-sm:h-[405px] max-sm:origin-bottom max-sm:overflow-hidden max-sm:transition-[transform,opacity] max-sm:duration-[650ms] max-sm:ease-[cubic-bezier(0.16,1,0.3,1)] sm:absolute sm:top-11 sm:right-2 sm:w-[min(90vw,340px)] p-6 glass-card-cathedral text-left max-sm:flex max-sm:flex-col max-sm:justify-center sm:transition-all sm:duration-400 sm:cursor-pointer ${deckMobileCls} sm:rotate-[5deg] ${mobileDeckIndex === 2 ? 'sm:z-[15]' : 'sm:z-[5]'}`}
             >
               <div className="flex justify-between items-center mb-4">
                 <span className="text-xs font-mono text-[#c7d3ea]">READINESS TELEMETRY</span>
@@ -611,7 +626,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     <span>94%</span>
                   </div>
                   <div className="h-1.5 bg-[rgba(186,215,247,0.08)] rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full w-[94%]" />
+                    <div className={`h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full ${barCls}`} style={barStyle(94, 0)} />
                   </div>
                 </div>
 
@@ -621,7 +636,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     <span>88%</span>
                   </div>
                   <div className="h-1.5 bg-[rgba(186,215,247,0.08)] rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full w-[88%]" />
+                    <div className={`h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full ${barCls}`} style={barStyle(88, 1)} />
                   </div>
                 </div>
 
@@ -631,7 +646,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     <span>85%</span>
                   </div>
                   <div className="h-1.5 bg-[rgba(186,215,247,0.08)] rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full w-[85%]" />
+                    <div className={`h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full ${barCls}`} style={barStyle(85, 2)} />
                   </div>
                 </div>
 
@@ -641,7 +656,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     <span>92%</span>
                   </div>
                   <div className="h-1.5 bg-[rgba(186,215,247,0.08)] rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full w-[92%]" />
+                    <div className={`h-full bg-gradient-to-r from-[#663af3] to-[#98c0ef] rounded-full ${barCls}`} style={barStyle(92, 3)} />
                   </div>
                 </div>
               </div>
@@ -652,45 +667,12 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             </div>
           </div>
 
-          {/* Mobile Deck Switcher Controls */}
-          <div className="flex sm:hidden justify-center items-center gap-2 mb-10">
-            <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(0); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
-                mobileDeckIndex === 0
-                  ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
-                  : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
-              }`}
-            >
-              01 · 1v1 BLITZ
-            </button>
-            <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(1); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
-                mobileDeckIndex === 1
-                  ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
-                  : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
-              }`}
-            >
-              02 · PBQ TERMINAL
-            </button>
-            <button
-              onClick={() => { sound.playTap(); setMobileDeckIndex(2); }}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-mono transition-all ${
-                mobileDeckIndex === 2
-                  ? 'bg-[rgba(102,58,243,0.25)] border border-[#663af3] text-white shadow-[0_0_12px_rgba(102,58,243,0.4)]'
-                  : 'bg-[rgba(199,211,234,0.05)] border border-[rgba(186,215,247,0.12)] text-[#c7d3ea]'
-              }`}
-            >
-              03 · TELEMETRY
-            </button>
-          </div>
         </section>
 
         {/* ================================================================= */}
         {/* 3. 6-TILE CIRCULAR FEATURE ROW */}
         {/* ================================================================= */}
-        <section className="py-12 sm:py-20 border-t border-[rgba(186,215,247,0.1)]" id="features">
+        <section className="py-10 sm:py-20 border-t border-[rgba(186,215,247,0.1)]" id="features">
           <div className="inline-flex items-center justify-center gap-4 mb-8 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal text-center">
@@ -723,7 +705,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 4. CALIBRATION SUITE (CUSTOMIZATION SHOWCASE) */}
         {/* ================================================================= */}
-        <section className="py-16 sm:py-24" id="simulations">
+        <section className="py-12 sm:py-24" id="simulations">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
@@ -860,7 +842,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 5. DISTRIBUTION HUB (APK & SANDBOX) */}
         {/* ================================================================= */}
-        <section className="py-14 sm:py-20" id="distribution">
+        <section className="py-12 sm:py-20" id="distribution">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
@@ -971,7 +953,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         {/* 6. TRANSPARENT PRICING MATRIX */}
         {/* ================================================================= */}
-        <section className="py-14 sm:py-20" id="pricing">
+        <section className="py-12 sm:py-20" id="pricing">
           <div className="inline-flex items-center justify-center gap-4 mb-4 w-full">
             <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
             <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
