@@ -19,10 +19,12 @@ import { updateManager } from '../../utils/updateManager';
 
 interface ArenaWebLockedViewProps {
   onBackToSkillTree: () => void;
+  onBypassPreview?: () => void;
 }
 
 export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
-  onBackToSkillTree
+  onBackToSkillTree,
+  onBypassPreview
 }) => {
   const { lang } = useLanguage();
   const isEn = lang === 'en';
@@ -127,6 +129,20 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
               <span>{isEn ? 'DOWNLOAD APK TO PLAY 1V1 DUELS' : 'SCARICA L\'APK PER GIOCARE NELL\'ARENA'}</span>
               <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_CONFIG.size}</span>
             </a>
+          )}
+
+          {onBypassPreview && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                onBypassPreview();
+              }}
+              className="w-full py-3.5 px-4 rounded-xl font-mono font-bold text-xs text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
+            >
+              <Zap className="w-4 h-4 text-emerald-400" />
+              <span>{isEn ? '⚡ PREVIEW ARENA (DEV / TEST MODE)' : '⚡ APRI ANTEPRIMA ARENA 1V1 (DEV / TEST)'}</span>
+            </button>
           )}
 
           <button

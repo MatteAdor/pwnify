@@ -9,11 +9,8 @@ import { PRICING_CONFIG } from '../../config/pricing.config';
 import { sound } from '../../utils/soundEngine';
 
 import { 
-
   X, Check, Sparkles, ArrowRight, Zap, AlertTriangle, 
-
-  KeyRound, ShieldCheck 
-
+  KeyRound, ShieldCheck, ArrowLeft 
 } from 'lucide-react';
 
 import confetti from 'canvas-confetti';
@@ -481,34 +478,40 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
 
   return (
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans text-zinc-100 select-none">
+      {/* Sticky Top Header */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="flex items-center gap-1.5 p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-xs font-mono font-bold">Indietro</span>
+        </button>
 
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto animate-fade-in font-sans">
-
-      <div className="relative w-full max-w-lg my-auto rounded-2xl p-5 sm:p-6 shadow-xl bg-[#0D121D] border border-zinc-800 text-zinc-100">
-
-        
-
-        {/* Direct Dismiss Button */}
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="w-4 h-4 text-amber-400 fill-current" />
+          <span className="font-mono font-black text-xs sm:text-sm text-white">PWNIFY PRO ACCESS</span>
+        </div>
 
         <button
-
           onClick={() => {
-
             sound.playTap();
-
             onClose();
-
           }}
-
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors z-20 cursor-pointer"
-
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
           aria-label="Close Window"
-
         >
-
           <X className="w-5 h-5" />
-
         </button>
+      </header>
+
+      <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6 pb-28 text-zinc-100">
 
 
 

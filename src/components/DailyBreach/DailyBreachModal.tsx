@@ -11,7 +11,7 @@ import { shuffleArray } from '../../utils/shuffle';
 import { sound } from '../../utils/soundEngine';
 import { 
   X, AlertTriangle, ShieldCheck, Share2, 
-  CheckCircle2, Lock, Terminal, Code, Clock 
+  CheckCircle2, Lock, Terminal, Code, Clock, ArrowLeft 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -96,37 +96,44 @@ export const DailyBreachModal: React.FC<DailyBreachModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 overflow-y-auto animate-fade-in font-sans">
-      <div className="relative w-full max-w-2xl my-auto bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-7 shadow-xl text-zinc-100">
-        {/* Header Bar */}
-        <div className="flex items-start justify-between border-b border-zinc-800 pb-4 mb-4 gap-3">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-zinc-400 font-bold uppercase tracking-wider">
-                  Daily 0xBreach #{incident.dayIndex}
-                </span>
-                <span className="text-xs font-mono text-amber-400 font-bold">
-                  {incident.cveId}
-                </span>
-              </div>
-              <h3 className="font-bold text-base sm:text-lg text-white mt-0.5">
-                {incident.title}
-              </h3>
-            </div>
-          </div>
-
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-zinc-100">
+      {/* Sticky Top Header */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
+            type="button"
             onClick={() => {
               sound.playTap();
               onClose();
             }}
-            className="p-1 rounded text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-zinc-400 font-bold uppercase tracking-wider">
+              Daily 0xBreach #{incident.dayIndex}
+            </span>
+            <span className="text-xs font-mono text-amber-400 font-bold">
+              {incident.cveId}
+            </span>
+          </div>
         </div>
+
+        <button
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </header>
+
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-4 pb-28 text-zinc-100">
 
         {/* Incident Metrics Banner */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 font-mono text-xs">

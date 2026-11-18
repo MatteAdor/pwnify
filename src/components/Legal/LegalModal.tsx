@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, FileText, RefreshCw, Cookie, Building, Mail } from 'lucide-react';
+import { X, Shield, FileText, RefreshCw, Cookie, Building, Mail, ArrowLeft } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 
@@ -40,40 +40,44 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#05060f]/90 sm:backdrop-blur-md overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-zinc-100"
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-modal-title"
     >
-      <div className="relative w-full max-w-3xl my-auto rounded-2xl p-5 sm:p-7 shadow-2xl bg-[#05060f] border border-[rgba(186,215,247,0.12)] text-[#e6eefb] flex flex-col max-h-[90vh]">
-        
-        {/* Header & Close */}
-        <div className="flex items-center justify-between pb-4 border-b border-[rgba(186,215,247,0.12)]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[rgba(102,58,243,0.15)] border border-[rgba(102,58,243,0.35)] flex items-center justify-center text-[#b6d9fc]">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 id="legal-modal-title" className="text-base sm:text-lg font-bold font-mono bg-gradient-to-t from-[#d8ecf8] to-[#98c0ef] bg-clip-text text-transparent">
-                {isEn ? 'Legal Notice & Privacy Compliance' : 'Informativa Legale & Conformità Normativa'}
-              </h2>
-              <span className="text-[11px] font-mono text-[#9da7ba]">
-                {isEn ? 'Pwnify Academy · Legal, Privacy & Consumer Protection' : 'Pwnify Academy · Note Legali, Privacy & Tutela Consumatori'}
-              </span>
-            </div>
-          </div>
-
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
+            type="button"
             onClick={() => {
               sound.playTap();
               onClose();
             }}
-            className="p-2 rounded-full text-[#9da7ba] hover:text-white hover:bg-[rgba(186,215,247,0.07)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#98c0ef] cursor-pointer"
-            aria-label={isEn ? 'Close legal modal' : 'Chiudi finestra note legali'}
+            className="p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div>
+            <h2 id="legal-modal-title" className="text-sm sm:text-base font-bold font-mono text-white">
+              {isEn ? 'Legal Notice & Compliance' : 'Informativa Legale & Privacy'}
+            </h2>
+          </div>
         </div>
+
+        <button
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
+          aria-label={isEn ? 'Close legal modal' : 'Chiudi finestra note legali'}
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </header>
+
+      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-4 flex flex-col pb-24 text-[#e6eefb]">
 
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 pt-4 pb-3 overflow-x-auto text-xs font-mono border-b border-[rgba(186,215,247,0.08)]">

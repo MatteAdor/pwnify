@@ -5,7 +5,7 @@ import { shuffleArray } from '../../utils/shuffle';
 import { sound } from '../../utils/soundEngine';
 import { 
   X, Skull, Flame, Zap, Trophy, Timer, 
-  RotateCcw, CheckCircle2, ShieldAlert
+  RotateCcw, CheckCircle2, ShieldAlert, ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -123,25 +123,39 @@ export const SurvivalModeModal: React.FC<SurvivalModeModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto animate-fade-in font-sans">
-      <div className="relative w-full max-w-xl my-auto rounded-3xl bg-[#0B0F19] border-2 border-rose-500/50 p-6 sm:p-7 shadow-2xl text-slate-100 overflow-hidden"
-        style={{ boxShadow: '0 0 45px -5px rgba(244, 63, 94, 0.3)' }}
-      >
-        {/* Background Atmosphere */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-slate-100">
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playTap();
+            setIsPlaying(false);
+            onClose();
+          }}
+          className="flex items-center gap-1.5 p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-xs font-mono font-bold">Esci</span>
+        </button>
 
-        {/* Top Close Button */}
+        <span className="text-xs font-mono font-black text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+          <Skull className="w-4 h-4" /> SURVIVAL GAUNTLET
+        </span>
+
         <button
           onClick={() => {
             sound.playTap();
             setIsPlaying(false);
             onClose();
           }}
-          className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors z-20"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
+      </header>
+
+      <div className="flex-1 max-w-xl mx-auto w-full px-4 py-6 space-y-6 pb-28 text-slate-100">
 
         {/* SCREEN 1: PRE-GAME LOBBY */}
         {!isPlaying && !gameOver && (

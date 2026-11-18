@@ -144,6 +144,7 @@ export interface UserState {
   dailyBreachStreak?: number;
   activeTheme?: string;
   customTitle?: string;
+  bio?: string;
   lastDailyBreachDate?: string;
   lastTicketResetDate?: string;
   hasSeenTrial?: boolean;
@@ -184,6 +185,7 @@ export type PaywallContext =
   | 'xp_boost_shield'
   | 'exam_simulator_lock'
   | 'bounty_crate_lock'
+  | 'pro_badge'
   | 'manual_upgrade';
 
 export interface PaywallTriggerInfo {

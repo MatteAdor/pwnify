@@ -3,7 +3,7 @@ import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { 
   X, Palette, Sparkles, Check, Lock, Terminal, 
-  Volume2, Shield, Flame, Award, Zap 
+  Volume2, Shield, Flame, Award, Zap, ArrowLeft 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -116,34 +116,47 @@ export const CyberArsenalModal: React.FC<CyberArsenalModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-xl my-auto bg-[#101726] border border-white/10 rounded-2xl p-5 sm:p-6 shadow-2xl text-slate-100 overflow-hidden shadow-neon-indigo">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-              <Palette className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] font-mono text-indigo-400 font-bold block uppercase">
-                CUSTOMIZER HUD & ARSENAL
-              </span>
-              <h3 className="font-extrabold text-base text-white">
-                Customize Your Tactical Terminal
-              </h3>
-            </div>
-          </div>
-
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none">
+      {/* Sticky Header Bar */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
+            type="button"
             onClick={() => {
               sound.playTap();
               onClose();
             }}
-            className="p-1 rounded text-slate-400 hover:text-white"
+            className="p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <Palette className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-mono text-indigo-400 font-bold block uppercase">
+              CUSTOMIZER HUD & ARSENAL
+            </span>
+            <h3 className="font-extrabold text-sm sm:text-base text-white">
+              Customize Your Tactical Terminal
+            </h3>
+          </div>
         </div>
+
+        <button
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-zinc-800/60 transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </header>
+
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 space-y-5 pb-24 text-slate-100">
 
         {/* Tab Switcher */}
         <div className="flex gap-2 p-1 bg-[#090D16] rounded-xl border border-white/5 mb-5 font-mono text-xs">

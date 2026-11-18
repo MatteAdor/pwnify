@@ -10,7 +10,8 @@ import {
   X, 
   ExternalLink,
   Zap,
-  Lock
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
@@ -87,20 +88,39 @@ export const AppDownloadGateModal: React.FC<AppDownloadGateModalProps> = ({
   const IconComponent = details.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="relative w-full max-w-lg bg-[#0C121D] border border-zinc-800 rounded-2xl p-6 shadow-2xl text-zinc-100 space-y-6">
-        
-        {/* Close Button */}
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-zinc-100">
+      {/* Sticky Header Bar */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="flex items-center gap-1.5 p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-xs font-mono font-bold">Indietro</span>
+        </button>
+
+        <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold uppercase tracking-wider ${details.badgeColor}`}>
+          {details.badge}
+        </span>
+
         <button
           onClick={() => {
             sound.playTap();
             onClose();
           }}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
           aria-label="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
+      </header>
+
+      <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6 pb-28 text-zinc-100">
 
         {/* Header with Icon and Badge */}
         <div className="space-y-3">

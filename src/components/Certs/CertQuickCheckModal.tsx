@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
-import { CheckCircle2, ArrowRight, X, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, ArrowRight, X, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { fetchQuestionsForCert } from '../../data/officialCertQuestions';
 
 interface QuickQuestion {
@@ -103,25 +103,38 @@ export const CertQuickCheckModal: React.FC<CertQuickCheckModalProps> = ({
   }, [certId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in">
-      <div className="relative w-full max-w-lg bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
-          <div>
-            <span className="text-xs font-mono text-zinc-400 font-bold block uppercase">
-              Rapid Diagnostic Drill (5 Questions)
-            </span>
-            <h3 className="font-bold text-base text-white">{certName}</h3>
-          </div>
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-zinc-100">
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
+            type="button"
             onClick={() => {
               sound.playTap();
               onClose();
             }}
-            className="p-1 rounded text-zinc-400 hover:text-white cursor-pointer"
+            className="p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <div>
+            <span className="text-[10px] font-mono text-zinc-400 font-bold block uppercase">
+              Rapid Diagnostic Drill (5 Questions)
+            </span>
+            <h3 className="font-bold text-sm sm:text-base text-white">{certName}</h3>
+          </div>
         </div>
+        <button
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </header>
+      <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-5 pb-28 text-zinc-100">
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-3">

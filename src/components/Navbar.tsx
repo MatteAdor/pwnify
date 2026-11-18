@@ -58,6 +58,10 @@ interface NavbarProps {
 
   currentTitle?: string;
 
+  onOpenSettings?: () => void;
+
+  onNavigateProfile?: () => void;
+
 }
 
 
@@ -86,7 +90,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   onOpenPortal,
 
-  currentTitle
+  currentTitle,
+
+  onOpenSettings,
+
+  onNavigateProfile
 
 }) => {
 
@@ -559,13 +567,25 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 sound.playTap();
 
-                setUsernameInput(userState.username);
+                if (onOpenSettings) {
 
-                setUsernameError(null);
+                  onOpenSettings();
 
-                setUsernameSuccess(null);
+                } else if (onNavigateProfile) {
 
-                setIsSettingsOpen(true);
+                  onNavigateProfile();
+
+                } else {
+
+                  setUsernameInput(userState.username);
+
+                  setUsernameError(null);
+
+                  setUsernameSuccess(null);
+
+                  setIsSettingsOpen(true);
+
+                }
 
               }}
 

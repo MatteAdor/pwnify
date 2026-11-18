@@ -6,7 +6,7 @@ import { getLessonBriefing } from '../../data/lessonBriefings';
 import { 
   X, CheckCircle2, AlertTriangle, Lock, Sparkles, Terminal, 
   ArrowRight, Cpu, Code, CornerDownLeft, Play, BookOpen, 
-  Shield, Award, Check, RotateCcw, ChevronRight 
+  Shield, Award, Check, RotateCcw, ChevronRight, ArrowLeft 
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { executeVirtualCommand } from '../../utils/terminalEngine';
@@ -171,9 +171,9 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 overflow-hidden animate-fade-in font-sans">
-      <div className={`relative w-full max-w-2xl bg-[#0D121D] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl text-zinc-100 max-h-[92vh] flex flex-col overflow-hidden transition-transform ${
-        shouldShake ? 'animate-shake border-red-500/60' : ''
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-hidden animate-fade-in font-sans select-none text-zinc-100">
+      <div className={`relative w-full max-w-2xl mx-auto h-full flex flex-col overflow-hidden p-3.5 sm:p-5 transition-transform ${
+        shouldShake ? 'animate-shake' : ''
       }`}>
 
         {/* ================================================================= */}

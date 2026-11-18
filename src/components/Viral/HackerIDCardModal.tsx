@@ -7,11 +7,8 @@ import { getRankFromElo } from '../../data/ranks';
 import { sound } from '../../utils/soundEngine';
 
 import { 
-
   X, Shield, Flame, Check, 
-
-  Cpu, Zap, Edit3, Download 
-
+  Cpu, Zap, Edit3, Download, ArrowLeft, Share2 
 } from 'lucide-react';
 
 import confetti from 'canvas-confetti';
@@ -139,30 +136,39 @@ export const HackerIDCardModal: React.FC<HackerIDCardModalProps> = ({
 
 
   return (
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-slate-100">
+      {/* Sticky Header Bar */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="flex items-center gap-1.5 p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-xs font-mono font-bold">Chiudi</span>
+        </button>
 
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 overflow-y-auto animate-fade-in">
-
-      <div className="relative w-full max-w-sm my-auto text-slate-100 flex flex-col items-center">
-
-        {/* Close Button */}
+        <h3 className="font-bold text-sm sm:text-base text-white font-mono">
+          Scheda Hacker ID (9:16)
+        </h3>
 
         <button
-
           onClick={() => {
-
             sound.playTap();
-
             onClose();
-
           }}
-
-          className="absolute -top-10 right-0 p-1.5 rounded-full text-slate-400 hover:text-white bg-zinc-900 border border-zinc-800"
-
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-zinc-800/60 transition-colors"
+          aria-label="Close"
         >
-
           <X className="w-5 h-5" />
-
         </button>
+      </header>
+
+      <div className="flex-1 max-w-sm mx-auto w-full px-4 py-6 flex flex-col items-center pb-24">
 
 
 

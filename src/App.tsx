@@ -5,6 +5,8 @@ import { Navbar } from './components/Navbar';
 import { BottomNav, ActiveTab } from './components/BottomNav';
 import { MissionsTab } from './components/Missions/MissionsTab';
 import { ReadinessRadar } from './components/Analytics/ReadinessRadar';
+import { ProfileTab } from './components/Profile/ProfileTab';
+import { SettingsPage } from './components/Settings/SettingsPage';
 import { HackerIDCardModal } from './components/Viral/HackerIDCardModal';
 import { DailyBreachModal } from './components/DailyBreach/DailyBreachModal';
 import { CyberArsenalModal, TerminalThemeId } from './components/Arsenal/CyberArsenalModal';
@@ -144,10 +146,18 @@ export const App: React.FC = () => {
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [legalTab, setLegalTab] = useState<LegalTabType>('privacy');
   const [forceCookieBanner, setForceCookieBanner] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
-  // Navigation State
+  // Bypass web lock in dev or test preview
+  const [bypassArenaWebLock, setBypassArenaWebLock] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const search = window.location.search;
+    return search.includes('view=app') || search.includes('preview=arena') || search.includes('arena=1') || Boolean(import.meta.env?.DEV);
+  });
+
+  // Navigation State (Left to right: tree -> quests -> arena -> certs -> profile)
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
-  const MAIN_TABS: ActiveTab[] = ['tree', 'arena', 'missions', 'radar', 'certs'];
+  const MAIN_TABS: ActiveTab[] = ['tree', 'quests', 'arena', 'certs', 'profile'];
 
   // Horizontal Swipe Gestures for Seamless Tab Navigation
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -710,6 +720,14 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     setActiveTab('tree');
   };
 
+  const handleUpdateBio = (newBio: string) => {
+    setUserState(prev => ({
+      ...prev,
+      bio: newBio.trim().slice(0, 90)
+    }));
+    return { success: true };
+  };
+
   // Onboarding Complete Handler
   const handleOnboardingComplete = (data: {
     goal: string;
@@ -1032,6 +1050,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             onOpenAuth={() => setIsAuthOpen(true)}
             onUpdateUsername={handleUpdateUsername}
             onUpdateLanguage={(l) => setUserState(prev => ({ ...prev, language: l }))}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onNavigateProfile={() => setActiveTab('profile')}
             onOpenPortal={() => {
               sound.playTap();
               setViewMode('portal');
@@ -1123,9 +1143,22 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               />
             )}
 
+            {(activeTab === 'quests' || activeTab === 'missions') && (
+              <MissionsTab
+                userState={userState}
+                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                onOpenPaywallContext={triggerPaywall}
+                onClaimFreeBounty={handleClaimFreeBounty}
+                onClaimProBounty={handleClaimProBounty}
+              />
+            )}
+
             {activeTab === 'arena' && (
-              isBrowserEnvironment() ? (
-                <ArenaWebLockedView onBackToSkillTree={() => setActiveTab('tree')} />
+              isBrowserEnvironment() && !bypassArenaWebLock ? (
+                <ArenaWebLockedView 
+                  onBackToSkillTree={() => setActiveTab('tree')} 
+                  onBypassPreview={() => setBypassArenaWebLock(true)}
+                />
               ) : (
                 <ArenaPvP
                   userState={userState}
@@ -1141,30 +1174,24 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               )
             )}
 
-            {activeTab === 'missions' && (
-              <MissionsTab
-                userState={userState}
-                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
-                onOpenPaywallContext={triggerPaywall}
-                onClaimFreeBounty={handleClaimFreeBounty}
-                onClaimProBounty={handleClaimProBounty}
-              />
-            )}
-
-            {activeTab === 'radar' && (
-              <ReadinessRadar
-                userState={userState}
-                onOpenPaywall={(ctx) => triggerPaywall(ctx)}
-                onOpenHackerCard={() => setIsHackerCardOpen(true)}
-              />
-            )}
-
             {activeTab === 'certs' && (
               <CertPrepTab
                 userState={userState}
                 onOpenPaywallContext={triggerPaywall}
                 onCompletePbq={handleCompletePbq}
                 onPassCert={handlePassCert}
+              />
+            )}
+
+            {(activeTab === 'profile' || activeTab === 'radar') && (
+              <ProfileTab
+                userState={userState}
+                onOpenPaywall={triggerPaywall}
+                onOpenHackerCard={() => setIsHackerCardOpen(true)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onNavigateToCerts={() => setActiveTab('certs')}
+                currentTheme={currentTheme}
+                currentTitle={userState.customTitle}
               />
             )}
             </React.Suspense>
@@ -1204,6 +1231,27 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             }}
             onOpenCookiePrefs={() => setForceCookieBanner(true)}
             currentTitle={currentTitle}
+          />
+
+          {/* Dedicated Full-Screen Settings Page */}
+          <SettingsPage
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            userState={userState}
+            onUpdateUsername={handleUpdateUsername}
+            onUpdateBio={handleUpdateBio}
+            onOpenPaywall={() => triggerPaywall('manual_upgrade')}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenArsenal={() => setIsArsenalOpen(true)}
+            onOpenLegal={(tab) => {
+              setLegalTab(tab);
+              setIsLegalModalOpen(true);
+            }}
+            onOpenCookiePrefs={() => setForceCookieBanner(true)}
+            onResetData={handleResetData}
+            currentTheme={currentTheme}
+            onSelectTheme={handleSelectTheme}
+            currentTitle={userState.customTitle}
           />
 
           {/* Pwnify PRO Paywall Modal (Stripe Bridge & License Key Restore) */}

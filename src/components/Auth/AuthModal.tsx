@@ -14,7 +14,7 @@ import {
 import { 
   X, Lock, Mail, User, ShieldCheck, 
   ArrowRight, LogIn, UserPlus, LogOut, CheckCircle2, Trash2,
-  Terminal, Radio, Crosshair, ShieldAlert, Zap, Award
+  Terminal, Radio, Crosshair, ShieldAlert, Zap, Award, ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -139,20 +139,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
-      <div 
-        className="relative w-full max-w-md my-auto rounded-2xl bg-[#0D121D] border border-zinc-800 p-5 sm:p-6 shadow-xl text-zinc-100"
-      >
-        {/* Close Button */}
+    <div className="fixed inset-0 z-50 bg-[#090D16] flex flex-col w-full h-full overflow-y-auto animate-fade-in font-sans select-none text-zinc-100">
+      {/* Sticky Header Bar */}
+      <header className="sticky top-0 z-20 bg-[#090D16]/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playTap();
+            onClose();
+          }}
+          className="flex items-center gap-1.5 p-1.5 -ml-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition-colors cursor-pointer"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-xs font-mono font-bold">Indietro</span>
+        </button>
+
+        <h3 className="font-mono font-bold text-xs sm:text-sm text-white uppercase">
+          {mode === 'login' ? 'Accesso Operatore' : 'Registrazione Operatore'}
+        </h3>
+
         <button
           onClick={() => {
             sound.playTap();
             onClose();
           }}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors z-20 cursor-pointer"
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-colors cursor-pointer"
+          aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
+      </header>
+
+      <div className="flex-1 max-w-md mx-auto w-full px-4 py-6 space-y-5 pb-28 text-zinc-100">
 
         {/* Header */}
         <div className="mb-4 text-center">
