@@ -2,8 +2,19 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import { App } from '@capacitor/app';
 import { analytics } from './analytics.ts';
 
-export const APK_SIZE = '12.0 MB';
-export const SHOW_APK_DOWNLOAD = false;
+export const APK_CONFIG = {
+  downloadUrl: '/downloads/pwnify.apk',
+  sha256: '480319A3EE8EB21B2978D80E50B34ECFABAE1B40CF105CA601B1633098578ACA',
+  size: '6.0 MB',
+  fileName: 'pwnify.apk',
+  versionName: '1.2.7',
+  versionCode: 7,
+} as const;
+
+export const APK_DOWNLOAD_URL = APK_CONFIG.downloadUrl;
+export const APK_SHA256 = APK_CONFIG.sha256;
+export const APK_SIZE = APK_CONFIG.size;
+export const SHOW_APK_DOWNLOAD = true;
 
 export type DistributionFlavor = 'play' | 'direct';
 

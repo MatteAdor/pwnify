@@ -3,7 +3,7 @@ import { useLanguage } from '../../utils/language';
 import { PRICING_CONFIG } from '../../config/pricing.config';
 import { sound } from '../../utils/soundEngine';
 import { isSafeRedirectUrl } from '../../utils/security';
-import { getCachedVersionInfo, SHOW_APK_DOWNLOAD } from '../../utils/platform';
+import { getCachedVersionInfo, SHOW_APK_DOWNLOAD, APK_CONFIG } from '../../utils/platform';
 import { updateManager } from '../../utils/updateManager';
 import { resolveApkDownloadUrl } from '../../utils/versionUtils';
 
@@ -26,8 +26,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
   useEffect(() => {
     return updateManager.subscribe(setUpdateState);
   }, []);
-  const activeSha256 = updateState.apkSha256 || 'e8b7f190c3a81f337b5d98418041a998bb9ffae410887e5e01c107e3cb29cf6a';
-  const apkDownloadUrl = updateState.apkDownloadUrl || resolveApkDownloadUrl();
+  const activeSha256 = APK_CONFIG.sha256;
+  const apkDownloadUrl = APK_CONFIG.downloadUrl;
 
   const [copiedHash, setCopiedHash] = useState(false);
   const [remediationDeployed, setRemediationDeployed] = useState(false);
@@ -475,18 +475,14 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
 
-            {SHOW_APK_DOWNLOAD ? (
+            {SHOW_APK_DOWNLOAD && (
               <a
                 href="#distribution"
                 className="btn-ghost-pill-cathedral w-full sm:w-auto px-5 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
               >
                 <span>{isEn ? 'Get APK Direct' : 'Scarica APK Diretto'}</span>
-                <span className="text-[11px] opacity-60 font-mono">v{getCachedVersionInfo().versionName}</span>
+                <span className="text-[11px] opacity-60 font-mono">v{APK_CONFIG.versionName}</span>
               </a>
-            ) : (
-              <div className="btn-ghost-pill-cathedral opacity-70 w-full sm:w-auto px-5 py-2.5 text-sm font-medium flex items-center justify-center gap-2 cursor-default">
-                <span>{isEn ? 'Android: Coming soon' : 'Android: in arrivo'}</span>
-              </div>
             )}
 
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono bg-[rgba(199,211,234,0.06)] border border-[rgba(186,215,247,0.12)] text-[#d1e4fa]">
@@ -891,23 +887,17 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
-                {SHOW_APK_DOWNLOAD ? (
+                {SHOW_APK_DOWNLOAD && (
                   <a
                     href={apkDownloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    download={APK_CONFIG.fileName}
                     className="btn-violet-cathedral px-5 py-2.5 text-xs sm:text-sm font-medium flex items-center gap-2"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     <span>{isEn ? 'Download Direct APK' : 'Scarica APK Diretto'}</span>
                   </a>
-                ) : (
-                  <div className="btn-violet-cathedral opacity-60 px-5 py-2.5 text-xs sm:text-sm font-medium flex items-center gap-2 cursor-default">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    <span>{isEn ? 'Android: Coming soon' : 'Android: in arrivo'}</span>
-                  </div>
                 )}
-                <span className="text-xs text-[#9da7ba] font-mono">v{getCachedVersionInfo().versionName}</span>
+                <span className="text-xs text-[#9da7ba] font-mono">v{APK_CONFIG.versionName} ({APK_CONFIG.size})</span>
               </div>
             </div>
 

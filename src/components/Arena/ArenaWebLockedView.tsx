@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
-import { APK_SIZE, getCachedVersionInfo, SHOW_APK_DOWNLOAD } from '../../utils/platform';
+import { APK_SIZE, getCachedVersionInfo, SHOW_APK_DOWNLOAD, APK_CONFIG } from '../../utils/platform';
 import { resolveApkDownloadUrl } from '../../utils/versionUtils';
 import { updateManager } from '../../utils/updateManager';
 
@@ -27,7 +27,7 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
   const { lang } = useLanguage();
   const isEn = lang === 'en';
   const [copiedHash, setCopiedHash] = useState(false);
-  const activeSha256 = updateManager.getState().apkSha256;
+  const activeSha256 = APK_CONFIG.sha256;
 
   const handleCopyHash = () => {
     sound.playTap();
@@ -103,37 +103,30 @@ export const ArenaWebLockedView: React.FC<ArenaWebLockedViewProps> = ({
         {/* SHA-256 Checksum Box */}
         <div className="bg-[#070B12] p-3 rounded-lg border border-zinc-800 text-[10px] font-mono flex items-center justify-between">
           <div className="truncate text-zinc-400 mr-2">
-            SHA-256: <span className="text-zinc-300">{activeSha256 ? `${activeSha256.slice(0, 16)}...${activeSha256.slice(-8)}` : (isEn ? 'Verified on release' : 'Verificato al rilascio')}</span>
+            SHA-256: <span className="text-zinc-300 font-mono">{activeSha256.slice(0, 16)}...{activeSha256.slice(-8)}</span>
           </div>
-          {activeSha256 && (
-            <button
-              onClick={handleCopyHash}
-              className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 font-bold"
-            >
-              {copiedHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              <span>{copiedHash ? 'COPIED' : 'COPY HASH'}</span>
-            </button>
-          )}
+          <button
+            onClick={handleCopyHash}
+            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 font-bold"
+          >
+            {copiedHash ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            <span>{copiedHash ? 'COPIED' : 'COPY HASH'}</span>
+          </button>
         </div>
 
         {/* Primary Download CTA */}
         <div className="space-y-2 pt-2">
-          {SHOW_APK_DOWNLOAD ? (
+          {SHOW_APK_DOWNLOAD && (
             <a
-              href={updateManager.getState().apkDownloadUrl || resolveApkDownloadUrl()}
-              download="zeroday.apk"
+              href={APK_CONFIG.downloadUrl}
+              download={APK_CONFIG.fileName}
               onClick={() => sound.playVictoryFanfare()}
               className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/10 cursor-pointer"
             >
               <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm" />
               <span>{isEn ? 'DOWNLOAD APK TO PLAY 1V1 DUELS' : 'SCARICA L\'APK PER GIOCARE NELL\'ARENA'}</span>
-              <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_SIZE}</span>
+              <span className="text-[10px] bg-slate-950/20 px-2 py-0.5 rounded font-mono">{APK_CONFIG.size}</span>
             </a>
-          ) : (
-            <div className="w-full py-4 px-4 rounded-xl font-mono font-bold text-sm text-slate-400 bg-slate-800 border border-slate-700 flex items-center justify-center gap-2.5 shadow-sm cursor-default">
-              <img src="/pwnify-rounded.png" alt="Pwnify" className="w-5 h-5 rounded object-cover shadow-sm grayscale opacity-60" />
-              <span>{isEn ? 'Android: Coming soon' : 'Android: in arrivo'}</span>
-            </div>
           )}
 
           <button

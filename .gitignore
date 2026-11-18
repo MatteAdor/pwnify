@@ -33,6 +33,7 @@ supabase/*.enc
 *.sln
 *.sw?
 *.apk
+!public/downloads/pwnify.apk
 *.aab
 *.jks
 *.keystore
