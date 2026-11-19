@@ -2,14 +2,22 @@ import React, { useState } from 'react';
 import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../../utils/language';
-import { getCachedVersionInfo } from '../../utils/platform';
+import { getCachedVersionInfo, isNativeApp } from '../../utils/platform';
+import { 
+  isStreakRemindersEnabled, 
+  setStreakRemindersEnabled, 
+  rescheduleStreakReminders, 
+  cancelAllStreakReminders, 
+  requestNotificationPermissionOnce, 
+  hasNotificationPermissionBeenRequested 
+} from '../../utils/streakReminders';
 import { updateManager } from '../../utils/updateManager';
 import { TerminalThemeId, ARSENAL_THEMES, ArsenalTheme } from '../Arsenal/CyberArsenalModal';
 import { 
   ArrowLeft, Edit3, Check, Lock, Shield, Sparkles, 
   Volume2, VolumeX, Palette, Globe, RefreshCw, Trash2, 
   LogOut, LogIn, ExternalLink, ShieldCheck, Key, FileText,
-  Cookie, AlertCircle, Play
+  Cookie, AlertCircle, Play, Bell
 } from 'lucide-react';
 
 interface SettingsPageProps {
@@ -55,6 +63,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [bioSuccess, setBioSuccess] = useState<string | null>(null);
 
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
+  const [remindersEnabled, setRemindersEnabled] = useState<boolean>(() => isStreakRemindersEnabled());
+  const [remindersFeedback, setRemindersFeedback] = useState<string | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
   const [updateFeedback, setUpdateFeedback] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
@@ -106,6 +116,46 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const handleTestSound = () => {
     if (!isMuted) {
       sound.playVictoryFanfare();
+    }
+  };
+
+  const handleToggleReminders = async () => {
+    sound.playTap();
+    const next = !remindersEnabled;
+    if (next) {
+      if (isNativeApp()) {
+        const granted = await requestNotificationPermissionOnce();
+        if (!granted && hasNotificationPermissionBeenRequested()) {
+          setRemindersFeedback(
+            isEn
+              ? 'Notification permission is blocked. Enable it in device Settings.'
+              : 'Permesso notifiche bloccato. Abilitalo nelle Impostazioni del telefono.'
+          );
+          setTimeout(() => setRemindersFeedback(null), 4000);
+          return;
+        }
+      }
+      setStreakRemindersEnabled(true);
+      setRemindersEnabled(true);
+      if (isNativeApp()) {
+        await rescheduleStreakReminders(userState, { lang });
+      }
+      setRemindersFeedback(
+        isEn
+          ? 'Streak reminders active (19:00 & 21:30)'
+          : 'Promemoria streak attivi (19:00 & 21:30)'
+      );
+      setTimeout(() => setRemindersFeedback(null), 3000);
+    } else {
+      setStreakRemindersEnabled(false);
+      setRemindersEnabled(false);
+      if (isNativeApp()) {
+        await cancelAllStreakReminders();
+      }
+      setRemindersFeedback(
+        isEn ? 'Streak reminders disabled' : 'Promemoria streak disattivati'
+      );
+      setTimeout(() => setRemindersFeedback(null), 3000);
     }
   };
 
@@ -405,7 +455,57 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </section>
 
-        {/* SECTION 4: LANGUAGE & LOCALE */}
+        {/* SECTION 4: STREAK NOTIFICATIONS & REMINDERS */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-400 uppercase tracking-wider">
+            <Bell className="w-4 h-4" />
+            <span>{isEn ? 'STREAK NOTIFICATIONS' : 'NOTIFICHE & PROMEMORIA STREAK'}</span>
+          </div>
+
+          <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-4 sm:p-5 space-y-4 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5 pr-3">
+                <span className="text-xs font-mono font-bold text-white block">
+                  {isEn ? 'Daily Training Reminders' : 'Promemoria Giornalieri'}
+                </span>
+                <span className="text-[11px] text-zinc-400 font-sans block">
+                  {isEn
+                    ? 'Receive reminders at 19:00 and an urgent alert at 21:30 if your streak is at risk.'
+                    : 'Ricevi un promemoria alle 19:00 e un avviso alle 21:30 se la tua serie di studio è a rischio.'}
+                </span>
+                {!isNativeApp() && (
+                  <span className="text-[10px] text-zinc-500 font-mono block pt-0.5">
+                    {isEn ? '(Available on Android native app)' : '(Disponibile sull\'App nativa Android)'}
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleReminders}
+                className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                  remindersEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+                }`}
+                aria-label="Toggle Streak Reminders"
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white transition-transform duration-150 absolute top-1 ${
+                    remindersEnabled ? 'left-6' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {remindersFeedback && (
+              <div className="text-[11px] font-mono text-emerald-400 animate-fade-in flex items-center gap-1.5 pt-2 border-t border-zinc-800/80">
+                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{remindersFeedback}</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION 5: LANGUAGE & LOCALE */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">
             <Globe className="w-4 h-4" />
