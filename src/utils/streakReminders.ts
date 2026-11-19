@@ -17,6 +17,7 @@ export const ALL_STREAK_NOTIFICATION_IDS = [
 ];
 
 export const STREAK_REMINDERS_PREF_KEY = 'pwnify_streak_reminders_enabled';
+export const STREAK_NOTIF_EXPLICITLY_DENIED_KEY = 'pwnify_streak_notif_explicitly_denied';
 export const STREAK_NOTIF_PERMISSION_ASKED_KEY = 'pwnify_streak_notif_permission_asked';
 
 export interface StreakReminderState {
@@ -284,7 +285,35 @@ export function setStreakRemindersEnabled(enabled: boolean): void {
 }
 
 /**
- * Checks whether permission has already been requested once.
+ * Checks whether the user has explicitly denied notification permissions.
+ */
+export function isPermissionExplicitlyDenied(): boolean {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    return window.localStorage.getItem(STREAK_NOTIF_EXPLICITLY_DENIED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sets whether the user has explicitly denied notification permissions.
+ */
+export function setPermissionExplicitlyDenied(denied: boolean): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (denied) {
+        window.localStorage.setItem(STREAK_NOTIF_EXPLICITLY_DENIED_KEY, 'true');
+      } else {
+        window.localStorage.removeItem(STREAK_NOTIF_EXPLICITLY_DENIED_KEY);
+      }
+    }
+  } catch {}
+}
+
+/**
+ * Checks whether permission has already been requested at least once.
+ * Note: An existing requested flag does not block prompting if the OS state is still 'prompt'.
  */
 export function hasNotificationPermissionBeenRequested(): boolean {
   try {
@@ -296,7 +325,7 @@ export function hasNotificationPermissionBeenRequested(): boolean {
 }
 
 /**
- * Marks that permission has been asked, ensuring it will never be asked again if denied.
+ * Marks that permission has been asked.
  */
 export function markNotificationPermissionRequested(): void {
   try {
@@ -304,6 +333,65 @@ export function markNotificationPermissionRequested(): void {
       window.localStorage.setItem(STREAK_NOTIF_PERMISSION_ASKED_KEY, 'true');
     }
   } catch {}
+}
+
+/**
+ * Checks system notification permission status via Capacitor.
+ */
+export async function getNotificationPermissionStatus(): Promise<'prompt' | 'granted' | 'denied' | 'unknown'> {
+  if (!Capacitor.isNativePlatform()) return 'granted';
+  try {
+    const status = await LocalNotifications.checkPermissions();
+    if (status.display === 'granted') {
+      setPermissionExplicitlyDenied(false);
+      return 'granted';
+    }
+    if (status.display === 'denied') {
+      return 'denied';
+    }
+    return 'prompt';
+  } catch (err) {
+    console.warn('[StreakReminders] checkPermissions failed:', err);
+    return 'unknown';
+  }
+}
+
+/**
+ * Directly requests notification permission from the system.
+ * Returns true if granted. If denied, records explicit denial so future activities do not badger the user.
+ */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    markNotificationPermissionRequested();
+    const res = await LocalNotifications.requestPermissions();
+    const granted = res.display === 'granted';
+    if (granted) {
+      setPermissionExplicitlyDenied(false);
+    } else {
+      setPermissionExplicitlyDenied(true);
+    }
+    return granted;
+  } catch (err) {
+    console.warn('[StreakReminders] requestPermissions failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Requests notification permission if the OS is in 'prompt' state and the user hasn't explicitly denied.
+ * A previous 'asked' flag will NOT block as long as the OS status is still 'prompt'.
+ */
+export async function requestNotificationPermissionOnce(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    const status = await getNotificationPermissionStatus();
+    if (status === 'granted') return true;
+    if (status === 'denied' || isPermissionExplicitlyDenied()) return false;
+    return requestNotificationPermission();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -341,31 +429,6 @@ export async function cancelAllStreakReminders(): Promise<void> {
     }
   } catch (err) {
     console.warn('[StreakReminders] Failed to cancel notifications:', err);
-  }
-}
-
-/**
- * Requests notification permission exactly once.
- * If already asked previously, does not ask again and returns whether it is currently granted.
- */
-export async function requestNotificationPermissionOnce(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) return false;
-  try {
-    const current = await LocalNotifications.checkPermissions();
-    if (current.display === 'granted') {
-      return true;
-    }
-
-    if (hasNotificationPermissionBeenRequested()) {
-      return false; // Already prompted before, do not re-prompt
-    }
-
-    markNotificationPermissionRequested();
-    const req = await LocalNotifications.requestPermissions();
-    return req.display === 'granted';
-  } catch (err) {
-    console.warn('[StreakReminders] Permission request failed:', err);
-    return false;
   }
 }
 
@@ -409,21 +472,37 @@ export async function rescheduleStreakReminders(
 
 /**
  * Triggered after every completed learning activity.
- * Requests notification permission once after the first activity (never at startup),
- * and reschedules reminders if enabled.
+ * Prompts for notification permission ONLY if checkPermissions() is 'prompt'
+ * and the user has not explicitly denied notifications.
+ * Never blocked by previous data or account history.
  */
 export async function onActivityCompletedForReminders(
   state: StreakReminderState | null | undefined,
   lang: string = 'it'
 ): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
+  if (!isStreakRemindersEnabled()) return;
 
-  if (!hasNotificationPermissionBeenRequested()) {
-    const granted = await requestNotificationPermissionOnce();
-    if (!granted) return;
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    const isGranted = perm.display === 'granted';
+    const isPrompt = perm.display === 'prompt' || perm.display === 'prompt-with-rationale';
+
+    if (isGranted) {
+      setPermissionExplicitlyDenied(false);
+      await rescheduleStreakReminders(state, { lang });
+      return;
+    }
+
+    if (isPrompt && !isPermissionExplicitlyDenied()) {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        await rescheduleStreakReminders(state, { lang });
+      }
+    }
+  } catch (err) {
+    console.warn('[StreakReminders] onActivityCompletedForReminders failed:', err);
   }
-
-  await rescheduleStreakReminders(state, { lang });
 }
 
 /**
@@ -438,8 +517,11 @@ export async function initStreakRemindersOnStartup(
 
   try {
     const perm = await LocalNotifications.checkPermissions();
-    if (perm.display === 'granted' && isStreakRemindersEnabled()) {
-      await rescheduleStreakReminders(state, { lang });
+    if (perm.display === 'granted') {
+      setPermissionExplicitlyDenied(false);
+      if (isStreakRemindersEnabled()) {
+        await rescheduleStreakReminders(state, { lang });
+      }
     }
   } catch {}
 }

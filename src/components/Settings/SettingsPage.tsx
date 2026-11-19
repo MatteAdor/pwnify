@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage, saveLanguage } from '../../utils/language';
-import { getCachedVersionInfo, isNativeApp } from '../../utils/platform';
+import { getCachedVersionInfo, isNativeApp, openAppNotificationSettings } from '../../utils/platform';
 import { 
   isStreakRemindersEnabled, 
   setStreakRemindersEnabled, 
   rescheduleStreakReminders, 
   cancelAllStreakReminders, 
-  requestNotificationPermissionOnce, 
-  hasNotificationPermissionBeenRequested 
+  getNotificationPermissionStatus,
+  requestNotificationPermission
 } from '../../utils/streakReminders';
 import { updateManager } from '../../utils/updateManager';
 import { TerminalThemeId, ARSENAL_THEMES, ArsenalTheme } from '../Arsenal/CyberArsenalModal';
@@ -64,10 +64,37 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const [isMuted, setIsMuted] = useState<boolean>(sound.getMuted());
   const [remindersEnabled, setRemindersEnabled] = useState<boolean>(() => isStreakRemindersEnabled());
+  const [systemPermState, setSystemPermState] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('unknown');
   const [remindersFeedback, setRemindersFeedback] = useState<string | null>(null);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(false);
   const [updateFeedback, setUpdateFeedback] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isOpen || !isNativeApp()) return;
+    let isSubscribed = true;
+
+    const updateStatus = async () => {
+      const status = await getNotificationPermissionStatus();
+      if (isSubscribed) {
+        setSystemPermState(status);
+        if (status === 'denied') {
+          setRemindersEnabled(false);
+        }
+      }
+    };
+
+    updateStatus();
+
+    const handleFocus = () => {
+      updateStatus();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -121,42 +148,76 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleToggleReminders = async () => {
     sound.playTap();
-    const next = !remindersEnabled;
-    if (next) {
-      if (isNativeApp()) {
-        const granted = await requestNotificationPermissionOnce();
-        if (!granted && hasNotificationPermissionBeenRequested()) {
-          setRemindersFeedback(
-            isEn
-              ? 'Notification permission is blocked. Enable it in device Settings.'
-              : 'Permesso notifiche bloccato. Abilitalo nelle Impostazioni del telefono.'
-          );
-          setTimeout(() => setRemindersFeedback(null), 4000);
-          return;
+
+    if (isNativeApp()) {
+      const currentStatus = await getNotificationPermissionStatus();
+      setSystemPermState(currentStatus);
+
+      // Requirement 3: If permission is denied by system, open app settings directly without repetitive prompt
+      if (currentStatus === 'denied') {
+        setRemindersFeedback(
+          isEn
+            ? 'Notifications blocked by system. Opening App Settings...'
+            : 'Notifiche disattivate dal sistema. Apertura impostazioni...'
+        );
+        setTimeout(() => setRemindersFeedback(null), 4000);
+        await openAppNotificationSettings();
+        return;
+      }
+
+      // If user wants to turn reminders ON
+      if (!remindersEnabled) {
+        if (currentStatus === 'prompt') {
+          // Requirement 2 (a): request permission when user activates toggle in settings
+          const granted = await requestNotificationPermission();
+          if (!granted) {
+            setSystemPermState('denied');
+            setStreakRemindersEnabled(false);
+            setRemindersEnabled(false);
+            setRemindersFeedback(
+              isEn
+                ? 'Permission denied. You can enable it in device Settings.'
+                : 'Permesso negato. Puoi abilitarlo nelle Impostazioni del telefono.'
+            );
+            setTimeout(() => setRemindersFeedback(null), 4000);
+            return;
+          }
+          setSystemPermState('granted');
         }
-      }
-      setStreakRemindersEnabled(true);
-      setRemindersEnabled(true);
-      if (isNativeApp()) {
+
+        setStreakRemindersEnabled(true);
+        setRemindersEnabled(true);
         await rescheduleStreakReminders(userState, { lang });
-      }
-      setRemindersFeedback(
-        isEn
-          ? 'Streak reminders active (19:00 & 21:30)'
-          : 'Promemoria streak attivi (19:00 & 21:30)'
-      );
-      setTimeout(() => setRemindersFeedback(null), 3000);
-    } else {
-      setStreakRemindersEnabled(false);
-      setRemindersEnabled(false);
-      if (isNativeApp()) {
+        setRemindersFeedback(
+          isEn
+            ? 'Streak reminders active (19:00 & 21:30)'
+            : 'Promemoria streak attivi (19:00 & 21:30)'
+        );
+        setTimeout(() => setRemindersFeedback(null), 3000);
+        return;
+      } else {
+        // Disabling reminders
+        setStreakRemindersEnabled(false);
+        setRemindersEnabled(false);
         await cancelAllStreakReminders();
+        setRemindersFeedback(
+          isEn ? 'Streak reminders disabled' : 'Promemoria streak disattivati'
+        );
+        setTimeout(() => setRemindersFeedback(null), 3000);
+        return;
       }
-      setRemindersFeedback(
-        isEn ? 'Streak reminders disabled' : 'Promemoria streak disattivati'
-      );
-      setTimeout(() => setRemindersFeedback(null), 3000);
     }
+
+    // Web fallback
+    const next = !remindersEnabled;
+    setStreakRemindersEnabled(next);
+    setRemindersEnabled(next);
+    setRemindersFeedback(
+      next
+        ? (isEn ? 'Streak reminders active (19:00 & 21:30)' : 'Promemoria streak attivi (19:00 & 21:30)')
+        : (isEn ? 'Streak reminders disabled' : 'Promemoria streak disattivati')
+    );
+    setTimeout(() => setRemindersFeedback(null), 3000);
   };
 
   const handleCheckUpdate = async () => {
@@ -465,32 +526,57 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <div className="rounded-2xl bg-[#0D121D] border border-zinc-800 p-4 sm:p-5 space-y-4 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5 pr-3">
-                <span className="text-xs font-mono font-bold text-white block">
-                  {isEn ? 'Daily Training Reminders' : 'Promemoria Giornalieri'}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono font-bold text-white block">
+                    {isEn ? 'Daily Training Reminders' : 'Promemoria Giornalieri'}
+                  </span>
+                  {isNativeApp() && systemPermState === 'denied' && (
+                    <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800/60 rounded">
+                      {isEn ? 'DISABLED BY SYSTEM' : 'DISATTIVATE DAL SISTEMA'}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[11px] text-zinc-400 font-sans block">
                   {isEn
                     ? 'Receive reminders at 19:00 and an urgent alert at 21:30 if your streak is at risk.'
                     : 'Ricevi un promemoria alle 19:00 e un avviso alle 21:30 se la tua serie di studio è a rischio.'}
                 </span>
-                {!isNativeApp() && (
+                {isNativeApp() && systemPermState === 'denied' ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      sound.playTap();
+                      await openAppNotificationSettings();
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono text-amber-400 hover:text-amber-300 underline pt-1 cursor-pointer"
+                  >
+                    <span>{isEn ? 'Open App Settings to enable' : 'Apri Impostazioni app per abilitarle'}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                ) : !isNativeApp() ? (
                   <span className="text-[10px] text-zinc-500 font-mono block pt-0.5">
                     {isEn ? '(Available on Android native app)' : '(Disponibile sull\'App nativa Android)'}
                   </span>
-                )}
+                ) : null}
               </div>
 
               <button
                 type="button"
                 onClick={handleToggleReminders}
-                className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                  remindersEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+                className={`w-12 h-7 rounded-full transition-colors relative shrink-0 cursor-pointer ${
+                  isNativeApp() && systemPermState === 'denied'
+                    ? 'bg-zinc-800 border border-zinc-700'
+                    : remindersEnabled && (!isNativeApp() || systemPermState === 'granted')
+                    ? 'bg-emerald-500'
+                    : 'bg-zinc-700'
                 }`}
                 aria-label="Toggle Streak Reminders"
               >
                 <div
                   className={`w-5 h-5 rounded-full bg-white transition-transform duration-150 absolute top-1 ${
-                    remindersEnabled ? 'left-6' : 'left-1'
+                    remindersEnabled && (!isNativeApp() || systemPermState === 'granted')
+                      ? 'left-6'
+                      : 'left-1'
                   }`}
                 />
               </button>

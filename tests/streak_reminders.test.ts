@@ -7,7 +7,14 @@ import {
   NOTIF_ID_TODAY_RISK,
   NOTIF_ID_TOMORROW_REMINDER,
   NOTIF_ID_TOMORROW_RISK,
-  STREAK_CHANNEL_ID
+  STREAK_CHANNEL_ID,
+  isStreakRemindersEnabled,
+  setStreakRemindersEnabled,
+  isPermissionExplicitlyDenied,
+  setPermissionExplicitlyDenied,
+  markNotificationPermissionRequested,
+  hasNotificationPermissionBeenRequested,
+  STREAK_NOTIF_PERMISSION_ASKED_KEY
 } from '../src/utils/streakReminders.ts';
 
 describe('Streak Reminders Pure Logic Suite (computeReminders)', () => {
@@ -208,5 +215,36 @@ describe('Streak Reminders Pure Logic Suite (computeReminders)', () => {
 
     assert.ok(itRisk?.title.includes('a rischio'), 'Italian title must include "a rischio"');
     assert.ok(enRisk?.title.includes('at risk'), 'English title must include "at risk"');
+  });
+
+  test('Case 11: Explicit denial tracking & preference storage', () => {
+    // Mock minimal localStorage in node environment
+    const storage: Record<string, string> = {};
+    (globalThis as any).window = {
+      localStorage: {
+        getItem: (k: string) => storage[k] ?? null,
+        setItem: (k: string, v: string) => { storage[k] = v; },
+        removeItem: (k: string) => { delete storage[k]; },
+      }
+    };
+
+    // Default preference is true
+    assert.strictEqual(isStreakRemindersEnabled(), true);
+    setStreakRemindersEnabled(false);
+    assert.strictEqual(isStreakRemindersEnabled(), false);
+    setStreakRemindersEnabled(true);
+    assert.strictEqual(isStreakRemindersEnabled(), true);
+
+    // Denial starts false
+    assert.strictEqual(isPermissionExplicitlyDenied(), false);
+    setPermissionExplicitlyDenied(true);
+    assert.strictEqual(isPermissionExplicitlyDenied(), true);
+    setPermissionExplicitlyDenied(false);
+    assert.strictEqual(isPermissionExplicitlyDenied(), false);
+
+    // Legacy flag: even if marked requested, explicit denial is separate
+    markNotificationPermissionRequested();
+    assert.strictEqual(hasNotificationPermissionBeenRequested(), true);
+    assert.strictEqual(isPermissionExplicitlyDenied(), false);
   });
 });
