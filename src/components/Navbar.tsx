@@ -557,50 +557,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             </div>
 
-
-
-            {/* Settings & Account Gear Button (Always pinned and visible) */}
-
-            <button
-
-              onClick={() => {
-
-                sound.playTap();
-
-                if (onOpenSettings) {
-
-                  onOpenSettings();
-
-                } else if (onNavigateProfile) {
-
-                  onNavigateProfile();
-
-                } else {
-
-                  setUsernameInput(userState.username);
-
-                  setUsernameError(null);
-
-                  setUsernameSuccess(null);
-
-                  setIsSettingsOpen(true);
-
-                }
-
-              }}
-
-              className="flex items-center justify-center p-2 min-h-[38px] min-w-[38px] rounded-xl bg-zinc-900 border border-zinc-700/80 hover:border-emerald-500/50 text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
-
-              title="Impostazioni & Account"
-
-              aria-label="Settings and Profile"
-
-            >
-
-              <Settings className="w-4 h-4 text-zinc-200" />
-
-            </button>
-
           </div>
 
         </div>
