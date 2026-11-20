@@ -47,6 +47,10 @@ import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { recordLearningActivity, StreakState } from './utils/streakEngine';
 import { syncAuthoritativeActivity, applyLearningActivity } from './utils/streakSync';
 import { 
+  initStreakRemindersOnStartup, 
+  onActivityCompletedForReminders 
+} from './utils/streakReminders';
+import { 
   createDefaultGuestState, 
   getCachedGuestState,
   purgeLegacyStorage, 
@@ -205,6 +209,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isNativeApp()) {
       updateManager.initialize();
+      initStreakRemindersOnStartup(userState, lang);
+      import('@capacitor/local-notifications').then(({ LocalNotifications }) => {
+        LocalNotifications.addListener('localNotificationActionPerformed', () => {
+          setActiveTab('tree');
+        });
+      }).catch(() => {});
     }
     const unsubscribe = updateManager.subscribe((st) => setUpdateState(st));
     return () => unsubscribe();
@@ -617,6 +627,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         readinessScore: Math.min(100, prev.readinessScore + 5)
       };
       persistActiveAccountState(nextState);
+      onActivityCompletedForReminders(nextState, lang);
       return nextState;
     });
   };
@@ -625,6 +636,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
     setUserState(prev => {
       const nextState = recordCertPassed(prev, certId, scorePercent);
       persistActiveAccountState(nextState);
+      onActivityCompletedForReminders(nextState, lang);
       return nextState;
     });
 
@@ -810,6 +822,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         dailyBounties: updatedBounties
       };
       persistActiveAccountState(nextState);
+      onActivityCompletedForReminders(nextState, lang);
       return nextState;
     });
 
@@ -863,6 +876,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         dailyBounties: updatedBounties
       };
       persistActiveAccountState(nextState);
+      onActivityCompletedForReminders(nextState, lang);
       return nextState;
     });
   };
@@ -939,6 +953,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           : [...(updated.completedPbqIds || []), pbqId]
       };
       persistActiveAccountState(nextState);
+      onActivityCompletedForReminders(nextState, lang);
       return nextState;
     });
 
