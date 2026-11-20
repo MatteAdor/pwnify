@@ -70,6 +70,26 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
     return currentQ?.commandChips ? shuffleArray(currentQ.commandChips) : [];
   }, [currentQ?.id]);
 
+  // Reset quiz states whenever node changes
+  useEffect(() => {
+    setViewPhase('briefing');
+    setIsBriefingDrawerOpen(false);
+    setCurrentQuestionIndex(0);
+    setSelectedOptionId(null);
+    setSelectedLineNum(null);
+    setTerminalInputText('');
+    setTerminalStdout(null);
+    setHasSubmitted(false);
+    setIsCorrect(false);
+    setShouldShake(false);
+    setCorrectCount(0);
+    hasClaimedRewardRef.current = false;
+  }, [node?.id]);
+
+  const sequentialResult = useMemo(() => {
+    return getNextSequentialNode(curriculum || SKILL_MODULES, node?.id || '');
+  }, [curriculum, node?.id]);
+
   if (!isOpen || !node?.questions || node.questions.length === 0) return null;
 
   const handleChipClick = (chip: string) => {
@@ -162,26 +182,6 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
       });
     }
   };
-
-  // Reset quiz states whenever node changes
-  useEffect(() => {
-    setViewPhase('briefing');
-    setIsBriefingDrawerOpen(false);
-    setCurrentQuestionIndex(0);
-    setSelectedOptionId(null);
-    setSelectedLineNum(null);
-    setTerminalInputText('');
-    setTerminalStdout(null);
-    setHasSubmitted(false);
-    setIsCorrect(false);
-    setShouldShake(false);
-    setCorrectCount(0);
-    hasClaimedRewardRef.current = false;
-  }, [node?.id]);
-
-  const sequentialResult = useMemo(() => {
-    return getNextSequentialNode(curriculum || SKILL_MODULES, node?.id || '');
-  }, [curriculum, node?.id]);
 
   const claimRewardOnce = () => {
     if (!hasClaimedRewardRef.current && node) {
