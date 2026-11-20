@@ -1140,6 +1140,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
                 onSelectNode={handleSelectNode}
                 onOpenPaywall={() => triggerPaywall('manual_upgrade')}
                 onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                onOpenExamLabs={() => setActiveTab('certs')}
               />
             )}
 
@@ -1208,13 +1209,18 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           {selectedNode && (
             <React.Suspense fallback={null}>
               <InteractiveQuizModal
-              node={selectedNode}
-              isOpen={isQuizModalOpen}
-              onClose={() => setIsQuizModalOpen(false)}
-              isPro={userState.isPro}
-              onOpenPaywall={() => triggerPaywall('blurred_breakdown')}
-              onCompleteNode={handleCompleteNode}
-            />
+                key={selectedNode.id}
+                node={selectedNode}
+                isOpen={isQuizModalOpen}
+                onClose={() => setIsQuizModalOpen(false)}
+                isPro={userState.isPro}
+                onOpenPaywall={() => triggerPaywall('blurred_breakdown')}
+                onCompleteNode={handleCompleteNode}
+                onNavigateToNode={(nextNode) => {
+                  setSelectedNode(nextNode);
+                  setIsQuizModalOpen(true);
+                }}
+              />
             </React.Suspense>
           )}
 
