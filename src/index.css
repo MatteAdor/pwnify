@@ -226,3 +226,44 @@ code, pre, .font-mono, .terminal-text {
 .safe-top {
   padding-top: max(8px, env(safe-area-inset-top, 8px));
 }
+
+/* Tab Navigation Swipe & Slide Transitions (~250ms, respects prefers-reduced-motion) */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tabSlideInRight {
+    0% {
+      opacity: 0.65;
+      transform: translateX(28px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes tabSlideInLeft {
+    0% {
+      opacity: 0.65;
+      transform: translateX(-28px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  .animate-tab-slide-in-right {
+    animation: tabSlideInRight 250ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    will-change: transform, opacity;
+  }
+  .animate-tab-slide-in-left {
+    animation: tabSlideInLeft 250ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    will-change: transform, opacity;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-tab-slide-in-right,
+  .animate-tab-slide-in-left {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

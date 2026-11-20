@@ -232,7 +232,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
       )}
 
       {/* Leaderboard Table */}
-      <div className="bg-[#0D121D] border border-zinc-800 rounded-2xl overflow-hidden shadow-md">
+      <div className="bg-[#0D121D] border border-zinc-800 rounded-2xl overflow-hidden shadow-md mb-6">
         {/* Table Legend */}
         <div className="bg-zinc-950 px-3.5 py-2 border-b border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-400">
           <span className="flex items-center gap-1.5">
