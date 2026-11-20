@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserState } from '../../types';
 import { 
   send2FACode, 
@@ -11,6 +11,7 @@ import {
   syncDatabaseWithBackend,
   isUsernameAvailable,
   getCurrentSession,
+  persistActiveAccountState,
   UserAccount 
 } from '../../utils/userDatabase';
 import { supabase, isSupabaseConfigured } from '../../config/supabase';
@@ -50,7 +51,7 @@ import {
   Lock, Mail, KeyRound, User, 
   ArrowRight, CheckCircle2, AlertTriangle, 
   Sparkles, Terminal, Check, X,
-  ShieldCheck, Globe
+  ShieldCheck, Globe, RefreshCw, Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -164,6 +165,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [simulatedRelayCode, setSimulatedRelayCode] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [profileFetchLoading, setProfileFetchLoading] = useState<boolean>(false);
+  const [profileFetchError, setProfileFetchError] = useState<string | null>(null);
+  const [pendingOAuthUser, setPendingOAuthUser] = useState<any>(null);
+  const handleSupabaseUserRef = useRef<((user: any) => Promise<void>) | null>(null);
 
   // Load registered accounts on mount, sync with disk database/logins.json, and parse OAuth redirects
   useEffect(() => {
@@ -182,7 +187,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       // 3. Listen for Supabase OAuth login events (Google & GitHub)
       if (isSupabaseConfigured) {
-        const handleSupabaseUser = (user: any) => {
+        const handleSupabaseUser = async (user: any) => {
+          setPendingOAuthUser(user);
+          setProfileFetchLoading(true);
+          setProfileFetchError(null);
+          setErrorMsg(null);
+
           const provider = (user.app_metadata?.provider as 'google' | 'github') || 'google';
           const rawEmail = (user.email as string) || (user.user_metadata?.email as string) || '';
           const gitHandle = (user.user_metadata?.user_name as string) || 
@@ -195,23 +205,61 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                            gitHandle || 
                            (effectiveEmail ? effectiveEmail.split('@')[0] : 'Operator');
 
-          const accounts = getRegisteredAccounts();
-          const existing = accounts.find(a => 
-            (effectiveEmail && a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
-            (provider === 'github' && gitHandle && a.username && a.username.toLowerCase() === gitHandle.toLowerCase())
-          );
+          // Strict invariant: verify profile in Supabase for auth.uid() (user.id).
+          // If error/timeout/session not ready occurs -> show retry, NEVER show onboarding!
+          try {
+            const { data: profile, error: profileErr } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle();
 
-          if (existing) {
-            const res = loginWithOAuth(provider, { 
-              name: metaName, 
-              email: effectiveEmail,
-              customUsername: existing.username 
-            }, currentUserState);
-            sound.playVictoryFanfare();
-            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-            onLoginSuccess(res.account);
-          } else {
-            // Brand new OAuth registration: allow user to select and confirm callsign
+            if (profileErr) {
+              console.warn('[Auth] Remote profile query failed for auth.uid():', profileErr);
+              setProfileFetchLoading(false);
+              setProfileFetchError(
+                isEn
+                  ? 'Error loading operator profile from network. Please tap Retry.'
+                  : 'Errore durante il caricamento del profilo da rete. Tocca Riprova per riconnetterti.'
+              );
+              return;
+            }
+
+            // Case A: Profile row exists for this auth.uid()
+            if (profile && profile.nick) {
+              setProfileFetchLoading(false);
+              const accounts = getRegisteredAccounts();
+              let existing = accounts.find(a => 
+                (effectiveEmail && a.email && a.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
+                (a.username && a.username.toLowerCase() === profile.nick.toLowerCase())
+              );
+
+              const res = loginWithOAuth(provider, { 
+                name: profile.nick, 
+                email: effectiveEmail,
+                customUsername: profile.nick 
+              }, currentUserState);
+
+              // Existing profile: restore authoritative server data and mark onboarding as complete!
+              if (res.account.userState) {
+                res.account.userState.onboardingCompleted = true;
+                res.account.userState.isLoggedIn = true;
+                res.account.userState.username = profile.nick;
+                if (typeof profile.elo === 'number') res.account.userState.elo = profile.elo;
+                if (typeof profile.xp === 'number') res.account.userState.xp = profile.xp;
+                if (typeof profile.is_pro === 'boolean') res.account.userState.isPro = profile.is_pro;
+                if (profile.profession) res.account.userState.profession = profile.profession;
+              }
+              persistActiveAccountState(res.account.userState);
+              sound.playVictoryFanfare();
+              confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+              onLoginSuccess(res.account);
+              return;
+            }
+
+            // Case B: Profile fetch succeeded and returned 0 rows for auth.uid()
+            // Only now is this user genuinely new and requires callsign selection / onboarding.
+            setProfileFetchLoading(false);
             if (provider === 'google') {
               setGoogleInputEmail(effectiveEmail);
               const suggested = metaName.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '') || effectiveEmail.split('@')[0];
@@ -224,8 +272,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               setGithubVerifiedEmail(effectiveEmail);
               setIsGitHubModalOpen(true);
             }
+          } catch (fetchException: any) {
+            console.error('[Auth] Profile fetch exception:', fetchException);
+            setProfileFetchLoading(false);
+            setProfileFetchError(
+              isEn
+                ? 'Network exception while verifying profile. Tap retry.'
+                : 'Errore di connessione durante la verifica del profilo. Tocca riprova.'
+            );
           }
         };
+
+        handleSupabaseUserRef.current = handleSupabaseUser;
 
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'SIGNED_IN' && session?.user) {
@@ -581,8 +639,43 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         sound.playPayloadBlocked();
         return;
       }
-    } catch {
-      // Continue if network check fails
+
+      if (isSupabaseConfigured && pendingOAuthUser?.id) {
+        const { error: rpcErr } = await (supabase.rpc as any)('update_my_profile_preferences', {
+          p_nick: cleanCallsign
+        });
+        if (rpcErr) {
+          if (rpcErr.code === '23505' || rpcErr.message?.includes('already taken') || rpcErr.message?.includes('unique constraint')) {
+            setIsProcessing(false);
+            setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+            sound.playPayloadBlocked();
+            return;
+          }
+          // Non-destructive insert fallback if profile row was not yet created
+          const { error: insertErr } = await supabase.from('profiles').insert({
+            id: pendingOAuthUser.id,
+            nick: cleanCallsign,
+            elo: 100,
+            rank: 'Script Kiddie',
+            xp: 0
+          });
+          if (insertErr) {
+            if (insertErr.code === '23505' || insertErr.message?.includes('already taken') || insertErr.message?.includes('unique constraint')) {
+              setIsProcessing(false);
+              setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+              sound.playPayloadBlocked();
+              return;
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.message?.includes('already taken')) {
+        setIsProcessing(false);
+        setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+        sound.playPayloadBlocked();
+        return;
+      }
     }
 
     setTimeout(() => {
@@ -687,8 +780,42 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         sound.playPayloadBlocked();
         return;
       }
-    } catch {
-      // Continue if network check fails
+
+      if (isSupabaseConfigured && pendingOAuthUser?.id) {
+        const { error: rpcErr } = await (supabase.rpc as any)('update_my_profile_preferences', {
+          p_nick: cleanCallsign
+        });
+        if (rpcErr) {
+          if (rpcErr.code === '23505' || rpcErr.message?.includes('already taken') || rpcErr.message?.includes('unique constraint')) {
+            setIsProcessing(false);
+            setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+            sound.playPayloadBlocked();
+            return;
+          }
+          const { error: insertErr } = await supabase.from('profiles').insert({
+            id: pendingOAuthUser.id,
+            nick: cleanCallsign,
+            elo: 100,
+            rank: 'Script Kiddie',
+            xp: 0
+          });
+          if (insertErr) {
+            if (insertErr.code === '23505' || insertErr.message?.includes('already taken') || insertErr.message?.includes('unique constraint')) {
+              setIsProcessing(false);
+              setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+              sound.playPayloadBlocked();
+              return;
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.code === '23505' || err?.message?.includes('already taken')) {
+        setIsProcessing(false);
+        setErrorMsg(isEn ? 'This username is already taken. Please choose another.' : 'Questo nome utente è già in uso. Scegline un altro.');
+        sound.playPayloadBlocked();
+        return;
+      }
     }
 
     setTimeout(() => {
@@ -887,7 +1014,36 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
         )}
 
-        {/* Global Notifications */}
+        {/* Profile Verification Loading */}
+        {profileFetchLoading && (
+          <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-center gap-2.5 text-xs font-mono text-zinc-300">
+            <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+            <span>{isEn ? 'Verifying operator profile...' : 'Verifica profilo operatore in corso...'}</span>
+          </div>
+        )}
+
+        {/* Profile Fetch Error & Retry UI */}
+        {profileFetchError && (
+          <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-200 text-xs font-mono space-y-2.5">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span className="flex-1">{profileFetchError}</span>
+            </div>
+            {pendingOAuthUser && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playTap();
+                  handleSupabaseUserRef.current?.(pendingOAuthUser);
+                }}
+                className="w-full py-2 px-3 rounded-lg bg-rose-900/60 hover:bg-rose-800/80 border border-rose-700/60 text-white font-mono font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Retry Profile Verification' : 'Riprova Verifica Profilo'}</span>
+              </button>
+            )}
+          </div>
+        )}
         {errorMsg && (
           <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />

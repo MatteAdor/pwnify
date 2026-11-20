@@ -673,7 +673,7 @@ export const ArenaPvP: React.FC<ArenaPvPProps> = ({
   const currentRankedChallenge = rankedQuestions[currentQuestionIndex];
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-4 font-sans">
+    <div className="w-full max-w-xl mx-auto space-y-4 font-sans px-3.5 sm:px-4 py-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       {/* PHASE 1: IDLE / LOBBY */}
       {phase === 'idle' && (
         <div className="space-y-4">

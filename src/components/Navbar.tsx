@@ -353,29 +353,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2.5">
 
-          {/* Brand Logo — non-clickable, purely decorative identity mark */}
+          {/* Brand Identity — Name and Status */}
 
           <div 
 
-            className="flex items-center gap-2.5 select-none shrink-0"
+            className="flex items-center gap-1.5 select-none shrink-0"
 
           >
 
-            <img 
-              src="/pwnify-rounded.png"
-              alt="Pwnify" 
+            <span className="font-mono font-black text-base sm:text-lg tracking-tight text-white">
 
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-contain shadow-sm" 
+              Pwn<span className="text-emerald-400">ify</span>
 
-            />
-
-            <div className="flex items-center gap-1.5">
-
-              <span className="font-mono font-black text-base sm:text-lg tracking-tight text-white">
-
-                Pwn<span className="text-emerald-400">ify</span>
-
-              </span>
+            </span>
 
               {/* PRO badge if user has PRO */}
 
@@ -388,8 +378,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
 
               )}
-
-            </div>
 
           </div>
 
