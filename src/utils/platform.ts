@@ -22,12 +22,28 @@ export interface DirectUpdatePlugin {
   getDistributionFlavor(): Promise<{ flavor: DistributionFlavor }>;
   canRequestPackageInstalls(): Promise<{ canInstall: boolean }>;
   openInstallPermissionSettings(): Promise<void>;
+  openAppSettings?(): Promise<void>;
   downloadAndInstallApk(options: { url: string; expectedSha256: string; autoInstall?: boolean }): Promise<{ success: boolean; filePath: string; sha256: string }>;
   installLocalApk(options: { filePath: string; expectedSha256: string }): Promise<{ success: boolean }>;
   addListener(eventName: 'downloadProgress', listenerFunc: (progress: { progress: number; bytesDownloaded: number; totalBytes: number }) => void): Promise<PluginListenerHandle>;
 }
 
 export const DirectUpdate = registerPlugin<DirectUpdatePlugin>('DirectUpdate');
+
+/**
+ * Directs the user to the device's application notification / details settings on Android.
+ */
+export async function openAppNotificationSettings(): Promise<void> {
+  if (isNativeApp()) {
+    try {
+      if (DirectUpdate.openAppSettings) {
+        await DirectUpdate.openAppSettings();
+      }
+    } catch (err) {
+      console.warn('[Platform] openAppSettings failed:', err);
+    }
+  }
+}
 
 export interface RuntimeVersionInfo {
   versionName: string;
