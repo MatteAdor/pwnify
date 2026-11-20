@@ -36,6 +36,8 @@ export interface ScheduledStreakReminder extends LocalNotificationSchema {
     allowWhileIdle?: boolean;
   };
   channelId: string;
+  isExactNotification?: boolean;
+  isExactMandatory?: boolean;
   extra?: {
     type: 'reminder' | 'at_risk';
     targetDate: string;
@@ -177,9 +179,11 @@ export function computeReminders(
         body: texts.body,
         schedule: {
           at: today1900,
-          allowWhileIdle: true,
+          allowWhileIdle: false,
         },
         channelId: STREAK_CHANNEL_ID,
+        isExactNotification: false,
+        isExactMandatory: false,
         extra: {
           type: 'reminder',
           targetDate: todayStr,
@@ -198,9 +202,11 @@ export function computeReminders(
           body: riskTexts.body,
           schedule: {
             at: today2130,
-            allowWhileIdle: true,
+            allowWhileIdle: false,
           },
           channelId: STREAK_CHANNEL_ID,
+          isExactNotification: false,
+          isExactMandatory: false,
           extra: {
             type: 'at_risk',
             targetDate: todayStr,
@@ -224,9 +230,11 @@ export function computeReminders(
       body: tmTexts.body,
       schedule: {
         at: tm1900,
-        allowWhileIdle: true,
+        allowWhileIdle: false,
       },
       channelId: STREAK_CHANNEL_ID,
+      isExactNotification: false,
+      isExactMandatory: false,
       extra: {
         type: 'reminder',
         targetDate: tmStr,
@@ -245,9 +253,11 @@ export function computeReminders(
         body: tmRiskTexts.body,
         schedule: {
           at: tm2130,
-          allowWhileIdle: true,
+          allowWhileIdle: false,
         },
         channelId: STREAK_CHANNEL_ID,
+        isExactNotification: false,
+        isExactMandatory: false,
         extra: {
           type: 'at_risk',
           targetDate: tmStr,

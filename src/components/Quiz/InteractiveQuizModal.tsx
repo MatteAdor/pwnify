@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { SkillNode } from '../../types';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { SkillModule, SkillNode } from '../../types';
+import { SKILL_MODULES } from '../../data/curriculum';
 import { sound } from '../../utils/soundEngine';
 import { shuffleArray } from '../../utils/shuffle';
 import { getLessonBriefing } from '../../data/lessonBriefings';
+import { getNextSequentialNode } from '../../utils/curriculumProgression';
+import { useLanguage } from '../../utils/language';
 import { 
   X, CheckCircle2, AlertTriangle, Lock, Sparkles, Terminal, 
   ArrowRight, Cpu, Code, CornerDownLeft, Play, BookOpen, 
@@ -18,6 +21,8 @@ interface InteractiveQuizModalProps {
   isPro: boolean;
   onOpenPaywall: () => void;
   onCompleteNode: (nodeId: string, gainedXp: number, gainedElo: number) => void;
+  onNavigateToNode?: (node: SkillNode) => void;
+  curriculum?: SkillModule[];
 }
 
 export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
@@ -26,8 +31,14 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   onClose,
   isPro,
   onOpenPaywall,
-  onCompleteNode
+  onCompleteNode,
+  onNavigateToNode,
+  curriculum = SKILL_MODULES
 }) => {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
+
+  const hasClaimedRewardRef = useRef<boolean>(false);
   // Lesson view phases: 'briefing' -> 'quiz' -> 'completed'
   const [viewPhase, setViewPhase] = useState<'briefing' | 'quiz' | 'completed'>('briefing');
   const [isBriefingDrawerOpen, setIsBriefingDrawerOpen] = useState<boolean>(false);
@@ -58,6 +69,26 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
   const shuffledChips = useMemo(() => {
     return currentQ?.commandChips ? shuffleArray(currentQ.commandChips) : [];
   }, [currentQ?.id]);
+
+  // Reset quiz states whenever node changes
+  useEffect(() => {
+    setViewPhase('briefing');
+    setIsBriefingDrawerOpen(false);
+    setCurrentQuestionIndex(0);
+    setSelectedOptionId(null);
+    setSelectedLineNum(null);
+    setTerminalInputText('');
+    setTerminalStdout(null);
+    setHasSubmitted(false);
+    setIsCorrect(false);
+    setShouldShake(false);
+    setCorrectCount(0);
+    hasClaimedRewardRef.current = false;
+  }, [node?.id]);
+
+  const sequentialResult = useMemo(() => {
+    return getNextSequentialNode(curriculum || SKILL_MODULES, node?.id || '');
+  }, [curriculum, node?.id]);
 
   if (!isOpen || !node?.questions || node.questions.length === 0) return null;
 
@@ -152,9 +183,26 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
     }
   };
 
-  const handleFinalClaim = () => {
+  const claimRewardOnce = () => {
+    if (!hasClaimedRewardRef.current && node) {
+      hasClaimedRewardRef.current = true;
+      onCompleteNode(node.id, node.xpReward, node.eloReward);
+    }
+  };
+
+  const handlePrimaryNext = () => {
     sound.playTap();
-    onCompleteNode(node.id, node.xpReward, node.eloReward);
+    claimRewardOnce();
+    if (sequentialResult.node && onNavigateToNode) {
+      onNavigateToNode(sequentialResult.node);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleClose = () => {
+    sound.playTap();
+    claimRewardOnce();
     onClose();
   };
 
@@ -766,18 +814,36 @@ export const InteractiveQuizModal: React.FC<InteractiveQuizModalProps> = ({
               <button
                 type="button"
                 onClick={handleResetLesson}
-                className="py-3 px-4 min-h-[50px] rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white font-mono text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                className="py-3 px-3.5 min-h-[50px] rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 font-mono text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
               >
-                <RotateCcw className="w-4 h-4" />
-                <span>Rivedi</span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Review' : 'Rivedi'}</span>
               </button>
               <button
                 type="button"
-                onClick={handleFinalClaim}
-                className="flex-1 py-3 px-5 min-h-[50px] rounded-xl font-mono font-black text-sm sm:text-base text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98"
+                onClick={handleClose}
+                className="py-3 px-3.5 min-h-[50px] rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 font-mono text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
               >
-                <Check className="w-4 h-4" />
-                <span>SALVA E RISCATTA</span>
+                <X className="w-3.5 h-3.5" />
+                <span>{isEn ? 'Close' : 'Chiudi'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrimaryNext}
+                className="flex-1 py-3 px-4 min-h-[50px] rounded-xl font-mono font-black text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-950/40 active:scale-98"
+              >
+                <span>
+                  {sequentialResult.isCurriculumComplete || !sequentialResult.node
+                    ? (isEn ? 'BACK TO HOME' : 'TORNA ALLA HOME')
+                    : sequentialResult.isNextModule
+                    ? (isEn ? 'NEXT MODULE' : 'PROSSIMO MODULO')
+                    : (isEn ? 'NEXT LESSON' : 'PROSSIMA LEZIONE')}
+                </span>
+                {sequentialResult.isCurriculumComplete || !sequentialResult.node ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>

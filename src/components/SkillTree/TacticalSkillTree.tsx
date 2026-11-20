@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SKILL_MODULES } from '../../data/curriculum';
 import { SkillModule, SkillNode, UserState } from '../../types';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
+import { getNextPendingNode } from '../../utils/curriculumProgression';
 import { 
   Terminal, Globe, Key, Shield, Server, Network, Cpu, Lock, 
   ArrowLeft, Check, AlertTriangle, Zap, 
   BookOpen, ChevronRight, Copy, ChevronDown,
-  Flame, ShieldCheck, Activity, Snowflake
+  Flame, ShieldCheck, Activity, Snowflake, Play
 } from 'lucide-react';
 
 interface TacticalSkillTreeProps {
@@ -15,6 +16,7 @@ interface TacticalSkillTreeProps {
   onSelectNode: (node: SkillNode) => void;
   onOpenPaywall: () => void;
   onOpenDailyBreach?: () => void;
+  onOpenExamLabs?: () => void;
 }
 
 // Icon mapping for the 8 core missions
@@ -131,10 +133,16 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   userState,
   onSelectNode,
   onOpenPaywall,
-  onOpenDailyBreach
+  onOpenDailyBreach,
+  onOpenExamLabs
 }) => {
   const { lang, t } = useLanguage();
   const isEn = lang === 'en';
+
+  // Compute first pending node in curriculum order
+  const pendingNodeResult = useMemo(() => {
+    return getNextPendingNode(SKILL_MODULES, userState.completedNodeIds);
+  }, [userState.completedNodeIds]);
 
   // State: currently active mission container for drill-down view (null = main missions overview)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
@@ -155,6 +163,21 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
     setTimeout(() => setCopiedIndex(null), 1800);
   };
 
+  const handlePrimaryAction = () => {
+    sound.playTap();
+    if (pendingNodeResult?.node) {
+      onSelectNode(pendingNodeResult.node);
+    } else {
+      if (!isBreachSolvedToday && onOpenDailyBreach) {
+        onOpenDailyBreach();
+      } else if (onOpenExamLabs) {
+        onOpenExamLabs();
+      } else if (onOpenDailyBreach) {
+        onOpenDailyBreach();
+      }
+    }
+  };
+
   // Find currently active drill-down module
   const activeModule = SKILL_MODULES.find(m => m.id === selectedModuleId);
 
@@ -165,7 +188,7 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
   ).length;
 
   return (
-    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-24 space-y-4 font-sans">
+    <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 py-4 pb-36 space-y-4 font-sans">
       
       {/* ========================================================================= */}
       {/* VIEW A: MISSION DRILL-DOWN (LIST OF LESSONS INSIDE CLICKED MISSION)       */}
@@ -597,6 +620,36 @@ export const TacticalSkillTree: React.FC<TacticalSkillTreeProps> = ({
           </div>
         </>
       )}
+
+      {/* Sticky Primary Action in Thumb Zone (above BottomNav and safe-area) */}
+      <div 
+        className="fixed inset-x-0 z-30 pointer-events-none"
+        style={{ bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="w-full max-w-xl mx-auto px-3.5 sm:px-4 pointer-events-auto">
+          <button
+            type="button"
+            onClick={handlePrimaryAction}
+            className="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] transition-all text-zinc-950 font-mono font-black text-xs sm:text-sm flex items-center justify-between shadow-[0_4px_24px_rgba(16,185,129,0.35)] border border-emerald-300/60 cursor-pointer backdrop-blur-sm"
+          >
+            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+              <Play className="w-4 h-4 shrink-0 fill-current" />
+              <span className="shrink-0 tracking-wider">
+                {pendingNodeResult ? (isEn ? 'CONTINUE TRAINING' : 'CONTINUA ADDESTRAMENTO') : (isEn ? 'CURRICULUM COMPLETED' : 'PERCORSO COMPLETATO')}
+              </span>
+              {pendingNodeResult && (
+                <>
+                  <span className="opacity-50 shrink-0">·</span>
+                  <span className="truncate font-sans font-bold text-xs opacity-90">
+                    {pendingNodeResult.nodeTitle}
+                  </span>
+                </>
+              )}
+            </div>
+            <ChevronRight className="w-4 h-4 shrink-0 ml-2" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

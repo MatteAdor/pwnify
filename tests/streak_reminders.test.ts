@@ -247,4 +247,28 @@ describe('Streak Reminders Pure Logic Suite (computeReminders)', () => {
     assert.strictEqual(hasNotificationPermissionBeenRequested(), true);
     assert.strictEqual(isPermissionExplicitlyDenied(), false);
   });
+
+  test('Case 12: Inexact alarms verification (no allowWhileIdle, no exact alarm prompts)', () => {
+    const now = new Date('2026-11-19T09:00:00.000Z');
+    const reminders = computeReminders({ streakDays: 3, lastActiveDate: '2026-11-18' }, now, TZ_ROME, 'it');
+
+    assert.strictEqual(reminders.length, 4);
+    for (const r of reminders) {
+      assert.strictEqual(
+        r.isExactNotification,
+        false,
+        `Notification ${r.id} must explicitly set isExactNotification to false to prevent ACTION_REQUEST_SCHEDULE_EXACT_ALARM`
+      );
+      assert.strictEqual(
+        r.isExactMandatory,
+        false,
+        `Notification ${r.id} must set isExactMandatory to false`
+      );
+      assert.strictEqual(
+        r.schedule.allowWhileIdle,
+        false,
+        `Notification ${r.id} must use standard inexact alarm without allowWhileIdle`
+      );
+    }
+  });
 });

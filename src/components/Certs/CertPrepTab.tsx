@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useMemo } from 'react';
 import { UserState, PbqLab } from '../../types';
 import { OFFICIAL_PBQ_LABS } from '../../data/bountiesAndPbq';
 import { sound } from '../../utils/soundEngine';
@@ -6,7 +6,7 @@ import { useLanguage } from '../../utils/language';
 import { 
   ShieldCheck, Lock, Terminal, 
   CheckCircle2, AlertTriangle, Play,
-  Award, Compass, Sparkles, X
+  Award, Compass, Sparkles, X, ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -47,6 +47,22 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
   const [pbqConfigState, setPbqConfigState] = useState<{ [ruleId: string]: 'ALLOW' | 'DENY' }>({});
   const [pbqSubmitted, setPbqSubmitted] = useState<boolean>(false);
   const [pbqSuccess, setPbqSuccess] = useState<boolean>(false);
+
+  // Find next uncompleted PBQ of same certification
+  const nextPbqForCert = useMemo(() => {
+    if (!activePbq) return null;
+    const sameCertLabs = OFFICIAL_PBQ_LABS.filter(p => p.certification === activePbq.certification);
+    const currentIdx = sameCertLabs.findIndex(p => p.id === activePbq.id);
+    const uncompleted = sameCertLabs.filter(
+      p => p.id !== activePbq.id && !userState.completedPbqIds?.includes(p.id)
+    );
+    if (uncompleted.length === 0) return null;
+    const afterCurrent = uncompleted.find(p => {
+      const idx = sameCertLabs.findIndex(s => s.id === p.id);
+      return idx > currentIdx;
+    });
+    return afterCurrent || uncompleted[0];
+  }, [activePbq, userState.completedPbqIds]);
 
   // Post-Exam Success Celebration modal
   const [passedExamCandidate, setPassedExamCandidate] = useState<{
@@ -489,21 +505,40 @@ export const CertPrepTab: React.FC<CertPrepTabProps> = ({
             {/* Actions */}
             {!pbqSubmitted ? (
               <button
+                type="button"
                 onClick={handleSubmitPbq}
                 className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer"
               >
                 APPLY ACL & VERIFY PBQ COMPLIANCE
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  sound.playTap();
-                  setActivePbq(null);
-                }}
-                className="w-full py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer"
-              >
-                CLOSE EXAM LAB
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playTap();
+                    setActivePbq(null);
+                  }}
+                  className={`py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white transition-colors cursor-pointer ${
+                    nextPbqForCert ? '' : 'w-full'
+                  }`}
+                >
+                  CLOSE EXAM LAB
+                </button>
+                {nextPbqForCert && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playTap();
+                      handleStartPbq(nextPbqForCert.id);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>{isEn ? 'NEXT LAB' : 'PROSSIMO LAB'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

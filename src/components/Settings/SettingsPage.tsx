@@ -531,9 +531,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {isEn ? 'Daily Training Reminders' : 'Promemoria Giornalieri'}
                   </span>
                   {isNativeApp() && systemPermState === 'denied' && (
-                    <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-rose-950/80 text-rose-300 border border-rose-800/60 rounded">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        sound.playTap();
+                        await openAppNotificationSettings();
+                      }}
+                      className="px-1.5 py-0.5 text-[9px] font-mono font-bold bg-rose-950/80 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded cursor-pointer transition-colors"
+                      title={isEn ? 'Open App Settings' : 'Apri Impostazioni app'}
+                    >
                       {isEn ? 'DISABLED BY SYSTEM' : 'DISATTIVATE DAL SISTEMA'}
-                    </span>
+                    </button>
                   )}
                 </div>
                 <span className="text-[11px] text-zinc-400 font-sans block">
