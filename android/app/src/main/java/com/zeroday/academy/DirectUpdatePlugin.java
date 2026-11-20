@@ -108,19 +108,33 @@ public class DirectUpdatePlugin extends Plugin {
 
     @PluginMethod
     public void openAppSettings(PluginCall call) {
-        String packageName = getContext().getPackageName();
+        String packageName = "com.pwnify.app";
         try {
+            Context ctx = getContext();
+            if (ctx != null && ctx.getPackageName() != null) {
+                packageName = ctx.getPackageName();
+            }
             Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
             intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName);
+            intent.putExtra("android.provider.extra.APP_PACKAGE", packageName);
+            intent.putExtra("app_package", packageName);
+            if (ctx != null && ctx.getApplicationInfo() != null) {
+                intent.putExtra("app_uid", ctx.getApplicationInfo().uid);
+            }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(intent);
+            if (ctx != null) {
+                ctx.startActivity(intent);
+            }
             call.resolve();
         } catch (Exception e) {
             try {
+                Context ctx = getContext();
                 Intent fallback = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                 fallback.setData(Uri.parse("package:" + packageName));
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(fallback);
+                if (ctx != null) {
+                    ctx.startActivity(fallback);
+                }
                 call.resolve();
             } catch (Exception fallbackError) {
                 call.reject("Failed to open app settings: " + fallbackError.getMessage());
