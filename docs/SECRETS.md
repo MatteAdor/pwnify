@@ -55,10 +55,10 @@ Configure these secrets in Supabase via Dashboard (**Project Settings → Edge F
 
 ```bash
 # Set on Staging (CLI will prompt or read from secure environment)
-supabase secrets set --project-ref <STAGING_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET
+supabase secrets set --project-ref <STAGING_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET LEMONSQUEEZY_STORE_ID LEMONSQUEEZY_PRODUCT_IDS
 
 # Set on Production
-supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET
+supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET LEMONSQUEEZY_STORE_ID LEMONSQUEEZY_PRODUCT_IDS
 ```
 
 | Secret Name | Component | Purpose |
@@ -66,6 +66,8 @@ supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN LEM
 | `METERED_API_KEY` | `get_turn_credentials` | Metered.ca API secret for generating ephemeral HMAC TURN tokens. |
 | `METERED_DOMAIN` | `get_turn_credentials` | Metered TURN domain endpoint. |
 | `LEMONSQUEEZY_WEBHOOK_SECRET` | `lemonsqueezy_webhook` | HMAC-SHA256 signature validation secret for order events. |
+| `LEMONSQUEEZY_STORE_ID` | `validate_license`, `lemonsqueezy_webhook` | **Required** by `validate_license` (fails closed with HTTP 500 if unset): the public License API accepts keys from any store, so keys are accepted only when `meta.store_id` matches. The webhook ignores events from other stores when set. **Set it before deploying the functions.** |
+| `LEMONSQUEEZY_PRODUCT_IDS` | `validate_license`, `lemonsqueezy_webhook` | Optional comma-separated allowlist of Pwnify PRO product IDs (e.g. `12345,67890`). When set, licenses/events for other products are rejected/ignored. |
 | `TURN_SECRET_KEY` | `get_turn_credentials` | (Alternative coturn) Shared HMAC secret for coturn if self-hosting TURN. |
 | `TURN_REALM` | `get_turn_credentials` | (Alternative coturn) Realm domain for coturn. |
 

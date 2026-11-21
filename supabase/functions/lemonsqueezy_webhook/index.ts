@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { classifyWebhookEvent, isUuid, parseIdList } from "../_shared/lemonLicense.ts";
 
 /**
  * Constant-time string equality comparison to defend against timing attacks.
@@ -107,12 +108,16 @@ serve(async (req: Request) => {
     const eventName = event.meta?.event_name;
     const customData = event.meta?.custom_data || {};
     const attributes = event.data?.attributes || {};
-    const customerEmail = attributes.user_email || attributes.customer_email || "";
+    const customerEmail = String(attributes.user_email || attributes.customer_email || "").trim().toLowerCase();
 
-    console.log(`[lemonsqueezy_webhook] Verified event: ${eventName} (customer: ${customerEmail})`);
+    // No PII in logs: event name and Lemon Squeezy object id only.
+    console.log(`[lemonsqueezy_webhook] Verified event: ${eventName} (object: ${event.data?.id ?? "n/a"})`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    // Defense in depth on top of the HMAC: only act on events for our store/products.
+    const expectedStoreId = (Deno.env.get("LEMONSQUEEZY_STORE_ID") || "").trim();
+    const allowedProductIds = parseIdList(Deno.env.get("LEMONSQUEEZY_PRODUCT_IDS"));
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error("[lemonsqueezy_webhook] Missing Supabase database credentials");
@@ -122,16 +127,25 @@ serve(async (req: Request) => {
       );
     }
 
+    // 5. Decide what the event means before touching the database
+    const action = classifyWebhookEvent(eventName, attributes, expectedStoreId, allowedProductIds);
+    if (action === "ignore") {
+      return new Response(
+        JSON.stringify({ received: true, event: eventName, ignored: true }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
     });
 
-    // 5. Resolve target user UUID: priority to custom_data.user_id, fallback to customerEmail
+    // 6. Resolve target user UUID: priority to custom_data.user_id, fallback to the buyer's email
+    //    in auth.users (never to profiles.nick).
     let targetUserId: string | null = null;
-    const candidateUserId = customData.user_id ? String(customData.user_id).trim() : null;
-    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const candidateUserId = isUuid(customData.user_id) ? String(customData.user_id).trim() : null;
 
-    if (candidateUserId && UUID_REGEX.test(candidateUserId)) {
+    if (candidateUserId) {
       const { data: profileCheck } = await adminSupabase
         .from("profiles")
         .select("id")
@@ -144,28 +158,26 @@ serve(async (req: Request) => {
     }
 
     if (!targetUserId && customerEmail) {
-      const { data: userData, error: userSearchError } = await adminSupabase
-        .from("profiles")
-        .select("id")
-        .eq("nick", customerEmail) // If nick matches email or check auth users
-        .maybeSingle();
-
-      if (userData?.id) {
-        targetUserId = userData.id;
-      } else {
-        // Query auth.users via RPC or admin API
-        const { data: authList } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
-        const matched = authList?.users?.find(
-          (u) => u.email?.toLowerCase() === customerEmail.toLowerCase()
-        );
+      // Page through auth.users instead of only reading the first 1000 accounts.
+      const PER_PAGE = 1000;
+      const MAX_PAGES = 100;
+      for (let page = 1; page <= MAX_PAGES && !targetUserId; page++) {
+        const { data: authList, error: listError } = await adminSupabase.auth.admin.listUsers({ page, perPage: PER_PAGE });
+        if (listError) {
+          console.error("[lemonsqueezy_webhook] listUsers error:", listError.message);
+          break;
+        }
+        const users = authList?.users || [];
+        const matched = users.find((u) => (u.email || "").toLowerCase() === customerEmail);
         if (matched?.id) {
           targetUserId = matched.id;
         }
+        if (users.length < PER_PAGE) break;
       }
     }
 
     if (!targetUserId) {
-      console.warn(`[lemonsqueezy_webhook] No matching user found for email ${customerEmail}`);
+      console.warn(`[lemonsqueezy_webhook] No matching user for event ${eventName} (object: ${event.data?.id ?? "n/a"})`);
       // Acknowledge receipt to Lemon Squeezy to avoid infinite webhook retry
       return new Response(
         JSON.stringify({ received: true, warning: "User not identified in database" }),
@@ -173,26 +185,12 @@ serve(async (req: Request) => {
       );
     }
 
-    // 6. State Machine: Determine Pro Status based on Event Type
-    const PRO_ACTIVATION_EVENTS = [
-      "order_created",
-      "subscription_created",
-      "subscription_resumed",
-      "subscription_unpaused",
-    ];
-
-    const PRO_REVOCATION_EVENTS = [
-      "subscription_cancelled",
-      "subscription_expired",
-      "order_refunded",
-    ];
-
     const orderId = attributes.order_id ? String(attributes.order_id) : (event.data?.id ? String(event.data.id) : null);
     const subscriptionId = attributes.subscription_id ? String(attributes.subscription_id) : null;
     const customerId = attributes.customer_id ? String(attributes.customer_id) : null;
     const expiresAt = attributes.ends_at || attributes.renews_at || null;
 
-    if (PRO_ACTIVATION_EVENTS.includes(eventName)) {
+    if (action === "activate") {
       const { error: rpcError } = await adminSupabase.rpc("set_profile_pro_status", {
         p_user_id: targetUserId,
         p_is_pro: true,
@@ -212,8 +210,8 @@ serve(async (req: Request) => {
         });
       }
 
-      console.log(`[lemonsqueezy_webhook] User ${targetUserId} upgraded to PRO via ${eventName}`);
-    } else if (PRO_REVOCATION_EVENTS.includes(eventName)) {
+      console.log(`[lemonsqueezy_webhook] PRO activated via ${eventName}`);
+    } else if (action === "revoke") {
       const { error: rpcError } = await adminSupabase.rpc("set_profile_pro_status", {
         p_user_id: targetUserId,
         p_is_pro: false,
@@ -233,7 +231,7 @@ serve(async (req: Request) => {
         });
       }
 
-      console.log(`[lemonsqueezy_webhook] User ${targetUserId} PRO status revoked via ${eventName}`);
+      console.log(`[lemonsqueezy_webhook] PRO revoked via ${eventName}`);
     }
 
     return new Response(

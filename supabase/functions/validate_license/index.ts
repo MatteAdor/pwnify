@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { isLicenseFromOurStore, parseIdList } from "../_shared/lemonLicense.ts";
 
 export const DEFAULT_ALLOWED_ORIGINS = [
   "https://pwnify.xyz",
@@ -100,10 +101,13 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    // The License API accepts keys from ANY Lemon Squeezy store: bind to ours (fail closed).
+    const expectedStoreId = (Deno.env.get("LEMONSQUEEZY_STORE_ID") || "").trim();
+    const allowedProductIds = parseIdList(Deno.env.get("LEMONSQUEEZY_PRODUCT_IDS"));
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceKey || !expectedStoreId) {
       return new Response(
-        JSON.stringify({ error: "Server configuration error: missing Supabase credentials" }),
+        JSON.stringify({ error: "Server configuration error: missing Supabase or Lemon Squeezy store configuration" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -133,8 +137,23 @@ serve(async (req: Request) => {
       );
     }
 
+    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+    const keyHash = await sha256Hex(rawLicenseKey);
+
     // Instance binding: bind this activation strictly to the caller's auth.uid()
     const instanceName = user.id;
+
+    const rejectLicense = () =>
+      new Response(
+        JSON.stringify({
+          valid: false,
+          is_pro: false,
+          error: "License verification failed or license is not active.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
 
     // 4. Contact Lemon Squeezy License API
     // Attempt license activation first
@@ -159,55 +178,79 @@ serve(async (req: Request) => {
     let expiresAt: string | null = null;
 
     if (activateData.activated === true) {
+      instanceId = activateData.instance?.id || "";
+
+      if (!isLicenseFromOurStore(activateData.meta, expectedStoreId, allowedProductIds)) {
+        // Foreign store/product: release the activation we just consumed (best effort) and reject.
+        if (instanceId) {
+          await fetch("https://api.lemonsqueezy.com/v1/licenses/deactivate", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ license_key: rawLicenseKey, instance_id: instanceId }),
+          }).catch(() => {});
+        }
+        console.warn("[validate_license] Rejected license from another store/product");
+        return rejectLicense();
+      }
+
       isValid = true;
       licenseStatus = activateData.license_key?.status || "active";
-      instanceId = activateData.instance?.id || "";
       orderId = activateData.meta?.order_id ? String(activateData.meta.order_id) : null;
       customerId = activateData.meta?.customer_id ? String(activateData.meta.customer_id) : null;
       expiresAt = activateData.license_key?.expires_at || null;
     } else {
-      // If activation failed because instance already activated or at limit, attempt validate
-      const validateRes = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          license_key: rawLicenseKey,
-          instance_id: instanceName,
-        }),
-      });
+      // Activation failed (e.g. activation limit reached). Re-validate ONLY an instance this
+      // same user activated before: Lemon Squeezy expects the instance ID returned by
+      // `activate`, which set_profile_pro_status stored in user_licenses.
+      const { data: existingLicense } = await adminSupabase
+        .from("user_licenses")
+        .select("instance_id")
+        .eq("user_id", user.id)
+        .eq("license_key_hash", keyHash)
+        .not("instance_id", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      const validateData = await validateRes.json().catch(() => ({}));
-      if (validateData.valid === true) {
-        isValid = true;
-        licenseStatus = validateData.license_key?.status || "active";
-        instanceId = validateData.instance?.id || instanceName;
-        orderId = validateData.meta?.order_id ? String(validateData.meta.order_id) : null;
-        customerId = validateData.meta?.customer_id ? String(validateData.meta.customer_id) : null;
-        expiresAt = validateData.license_key?.expires_at || null;
+      const storedInstanceId = typeof existingLicense?.instance_id === "string" ? existingLicense.instance_id : "";
+
+      if (storedInstanceId) {
+        const validateRes = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            license_key: rawLicenseKey,
+            instance_id: storedInstanceId,
+          }),
+        });
+
+        const validateData = await validateRes.json().catch(() => ({}));
+        if (
+          validateData.valid === true &&
+          validateData.instance?.id === storedInstanceId &&
+          isLicenseFromOurStore(validateData.meta, expectedStoreId, allowedProductIds)
+        ) {
+          isValid = true;
+          licenseStatus = validateData.license_key?.status || "active";
+          instanceId = storedInstanceId;
+          orderId = validateData.meta?.order_id ? String(validateData.meta.order_id) : null;
+          customerId = validateData.meta?.customer_id ? String(validateData.meta.customer_id) : null;
+          expiresAt = validateData.license_key?.expires_at || null;
+        }
       }
     }
 
     if (!isValid || licenseStatus !== "active") {
-      return new Response(
-        JSON.stringify({
-          valid: false,
-          is_pro: false,
-          error: activateData.error || "License verification failed or license is not active.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return rejectLicense();
     }
 
     // 5. Authoritatively update public.profiles.is_pro and record license via Service Role
-    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false },
-    });
-
-    const keyHash = await sha256Hex(rawLicenseKey);
-
     const { error: rpcError } = await adminSupabase.rpc("set_profile_pro_status", {
       p_user_id: user.id,
       p_is_pro: true,
