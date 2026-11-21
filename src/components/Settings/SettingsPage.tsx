@@ -793,6 +793,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <Cookie className="w-3.5 h-3.5 text-zinc-500" />
             </button>
           </div>
+
+          <p className="text-[11px] text-zinc-500 font-sans leading-relaxed px-1">
+            {isEn
+              ? 'Pwnify is not affiliated with or endorsed by CompTIA, Cisco, EC-Council or any other certification body. All trademarks belong to their respective owners.'
+              : 'Pwnify non è affiliato né approvato da CompTIA, Cisco, EC-Council o altri enti di certificazione. I marchi appartengono ai rispettivi proprietari.'}
+          </p>
         </section>
 
         {/* SECTION 8: DANGER ZONE & DATA MANAGEMENT */}

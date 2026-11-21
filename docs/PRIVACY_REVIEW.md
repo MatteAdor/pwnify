@@ -6,8 +6,9 @@
 ---
 
 ## 1. Titolare del Trattamento e Canali di Contatto
-- **Titolare dichiarato:** Pwnify Cyber Academy
-- **Contatto primario per l'esercizio dei diritti (DPO / Privacy):** Per richieste sui dati personali apri una segnalazione sul repository github.com/MatteAdor/pwnify/issues indicando solo che si tratta di una richiesta privacy, senza dati personali: ti risponderemo per un contatto riservato.
+- **Titolare dichiarato:** Matteo Adorni, persona fisica (nessuna sede postale pubblicata)
+- **Contatto primario per l'esercizio dei diritti (Privacy / GDPR):** `privacy@pwnify.xyz`
+- **Assistenza, rimborsi e contatti generali:** `support@pwnify.xyz`
 - **Dominio web principale:** `pwnify.xyz` (con redirect da `www.pwnify.xyz`)
 - **Package Android:** `com.pwnify.app` (versionCode 7, versionName 1.2.7)
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, FileText, RefreshCw, Cookie, Building, Mail, ArrowLeft } from 'lucide-react';
+import { X, Shield, FileText, RefreshCw, Cookie, User, Mail, ArrowLeft } from 'lucide-react';
 import { sound } from '../../utils/soundEngine';
 import { useLanguage } from '../../utils/language';
 
@@ -142,8 +142,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn 
-                    ? 'The Data Controller is Pwnify Cyber Academy S.r.l., registered office in Via Giovanni Spadolini 7, 20141 Milan (MI), Italy. For privacy requests or to contact our Data Protection Officer (DPO), please open an issue at github.com/MatteAdor/pwnify/issues indicating only that it is a privacy request, without personal data: we will follow up for a private contact.'
-                    : 'Il Titolare del trattamento dei dati è Pwnify Cyber Academy S.r.l., con sede legale in Via Giovanni Spadolini 7, 20141 Milano (MI), Italia. Per richieste sui dati personali apri una segnalazione sul repository github.com/MatteAdor/pwnify/issues indicando solo che si tratta di una richiesta privacy, senza dati personali: ti risponderemo per un contatto riservato.'}
+                    ? 'The Data Controller is Matteo Adorni, natural person (persona fisica). For privacy and GDPR requests write to privacy@pwnify.xyz. For support, refunds and general enquiries write to support@pwnify.xyz.'
+                    : 'Il Titolare del trattamento dei dati è Matteo Adorni, persona fisica. Per privacy e richieste GDPR scrivi a privacy@pwnify.xyz. Per assistenza, rimborsi e contatti generali scrivi a support@pwnify.xyz.'}
                 </p>
               </section>
 
@@ -160,8 +160,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <li>
                     <strong>{isEn ? 'Authentication Data:' : 'Dati di autenticazione:'}</strong>{' '}
                     {isEn 
-                      ? 'Email address and user-selected Callsign for account management and two-factor authentication (2FA).'
-                      : 'Indirizzo email e Callsign scelto dall\'utente per la gestione dell\'account e l\'autenticazione a due fattori (2FA).'}
+                      ? 'Email address, provider account ID and profile name received via Google or GitHub sign-in (OAuth), plus the Callsign you choose. Guest sessions are stored only on your device.'
+                      : 'Indirizzo email, ID account e nome profilo ricevuti tramite accesso con Google o GitHub (OAuth), oltre al Callsign scelto dall\'utente. Le sessioni ospite restano salvate solo sul dispositivo.'}
                   </li>
                   <li>
                     <strong>{isEn ? 'Learning Progress Telemetry:' : 'Dati di progressione operativa:'}</strong>{' '}
@@ -200,8 +200,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-[#9da7ba]">
                   <li><strong>Supabase Inc.:</strong> {isEn ? 'Cloud PostgreSQL database, token auth, and Edge Functions.' : 'Database cloud PostgreSQL, autenticazione e Edge Functions.'}</li>
-                  <li><strong>Vercel Inc.:</strong> {isEn ? 'Frontend hosting and Edge Content Delivery Network.' : 'Hosting frontend e rete Edge CDN.'}</li>
-                  <li><strong>Lemon Squeezy LLC:</strong> {isEn ? 'Merchant of Record, billing, checkout, and VAT/tax compliance.' : 'Merchant of Record, checkout, pagamenti e adempimenti fiscali.'}</li>
+                  <li><strong>Vercel Inc.:</strong> {isEn ? 'Web app hosting.' : 'Hosting dell\'applicazione web.'}</li>
+                  <li><strong>Google LLC / GitHub Inc.:</strong> {isEn ? 'Sign-in via OAuth.' : 'Accesso tramite OAuth.'}</li>
+                  <li><strong>Lemon Squeezy LLC:</strong> {isEn ? 'Merchant of Record for checkout, payments, tax handling and PRO licenses.' : 'Merchant of Record per checkout, pagamenti, adempimenti fiscali e licenze PRO.'}</li>
                   <li><strong>Metered Video:</strong> {isEn ? 'TURN relay infrastructure credentials for WebRTC traversal.' : 'Infrastruttura relay TURN per instradamento WebRTC.'}</li>
                   <li><strong>Google LLC:</strong> {isEn ? 'Public STUN resolution (stun:stun.l.google.com:19302) for NAT traversal.' : 'Risoluzione STUN pubblica (stun:stun.l.google.com:19302) per NAT.'}</li>
                   <li><strong>PeerJS Cloud:</strong> {isEn ? 'Signaling cloud (0.peerjs.com) for WebRTC session handshake.' : 'Server cloud di segnalazione (0.peerjs.com) per handshake WebRTC.'}</li>
@@ -214,8 +215,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </h3>
                 <p>
                   {isEn
-                    ? 'Users hold the right to access their personal data, request rectification, data portability, and permanent deletion of their account and all stored history directly from their user profile with a single click.'
-                    : 'Gli utenti godono del diritto di accedere ai propri dati personali, chiederne la rettifica, la portabilità e la cancellazione definitiva del proprio account e di tutti i progressi direttamente dal menu profilo utente con 1 clic.'}
+                    ? 'Under the GDPR (arts. 15-22) you have the right to access your personal data and get a copy, to rectification, to erasure, to restriction of or objection to processing, and to data portability. To exercise any of these rights, email privacy@pwnify.xyz from the address linked to your account: we reply within 30 days. You may also lodge a complaint with the Italian Data Protection Authority (Garante per la protezione dei dati personali).'
+                    : 'Ai sensi del GDPR (artt. 15-22) hai diritto di accedere ai tuoi dati personali e riceverne copia, di chiederne la rettifica, la cancellazione, la limitazione o di opporti al trattamento, e alla portabilità dei dati. Per esercitare questi diritti scrivi a privacy@pwnify.xyz dall\'indirizzo email associato all\'account: rispondiamo entro 30 giorni. Hai inoltre diritto di proporre reclamo al Garante per la protezione dei dati personali.'}
                 </p>
               </section>
 
@@ -292,7 +293,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   {isEn
                     ? 'To request a refund, simply send an email to '
                     : 'Per esercitare il diritto di rimborso, è sufficiente inviare un\'email a '}
-                  <a href="mailto:support@zeroday.academy" className="text-[#b6d9fc] underline font-mono">support@zeroday.academy</a>{' '}
+                  <a href="mailto:support@pwnify.xyz" className="text-[#b6d9fc] underline font-mono">support@pwnify.xyz</a>{' '}
                   {isEn
                     ? 'specifying your Callsign, account email, and license key. The full refund will be processed back to your original payment method within 3 to 5 business days.'
                     : 'indicando il Callsign, l\'indirizzo email dell\'account e il codice di licenza. Il rimborso integrale dell\'importo versato verrà accreditato sullo stesso metodo di pagamento utilizzato entro 3-5 giorni lavorativi.'}
@@ -360,17 +361,21 @@ export const LegalModal: React.FC<LegalModalProps> = ({
           )}
         </div>
 
-        {/* Footer with Business Details */}
+        {/* Footer with Controller & Contacts */}
         <div className="pt-4 border-t border-[rgba(186,215,247,0.12)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-mono text-[#9da7ba]">
           <div className="flex items-center gap-2">
-            <Building className="w-3.5 h-3.5 text-[#9da7ba]" />
-            <span>Pwnify Cyber Academy S.r.l. · P.IVA: IT01234567890</span>
+            <User className="w-3.5 h-3.5 text-[#9da7ba]" />
+            <span>{isEn ? 'Matteo Adorni (natural person) · Last updated: 21 Nov 2026' : 'Matteo Adorni, persona fisica · Ultimo aggiornamento: 21/11/2026'}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Mail className="w-3.5 h-3.5 text-[#9da7ba]" />
-            <a href="mailto:legal@zeroday.academy" className="text-[#b6d9fc] hover:underline">
-              legal@zeroday.academy
-            </a>
+          <div className="flex flex-col sm:items-end gap-1">
+            <div className="flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-[#9da7ba]" />
+              <a href="mailto:privacy@pwnify.xyz" className="text-[#b6d9fc] hover:underline">privacy@pwnify.xyz</a>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="w-3.5 h-3.5 text-[#9da7ba]" />
+              <a href="mailto:support@pwnify.xyz" className="text-[#b6d9fc] hover:underline">support@pwnify.xyz</a>
+            </div>
           </div>
         </div>
 
