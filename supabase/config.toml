@@ -418,8 +418,9 @@ enabled = true
 [functions.get_turn_credentials]
 verify_jwt = true
 
-[functions.validate_license]
+[functions.create_checkout]
 verify_jwt = true
 
-[functions.lemonsqueezy_webhook]
+# Polar sends no Supabase JWT: the Standard Webhooks signature is the authentication.
+[functions.polar_webhook]
 verify_jwt = false

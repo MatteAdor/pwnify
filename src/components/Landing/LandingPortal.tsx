@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../utils/language';
 import { PRICING_CONFIG } from '../../config/pricing.config';
 import { sound } from '../../utils/soundEngine';
-import { isSafeRedirectUrl } from '../../utils/security';
 import { getCachedVersionInfo, SHOW_APK_DOWNLOAD, APK_CONFIG } from '../../utils/platform';
 import { updateManager } from '../../utils/updateManager';
 import { resolveApkDownloadUrl } from '../../utils/versionUtils';
@@ -149,13 +148,10 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
     setTimeout(() => setRemediationDeployed(false), 2500);
   };
 
-  const handleCheckoutRedirect = (url: string) => {
+  // PRO checkout runs inside the app (after sign-in) via the create_checkout Edge Function.
+  const handleUpgradeClick = () => {
     sound.playTap();
-    if (url && isSafeRedirectUrl(url)) {
-      window.location.href = url;
-    } else {
-      onLaunchApp();
-    }
+    onLaunchApp();
   };
 
   // Scenario data
@@ -986,7 +982,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <button
-                onClick={() => handleCheckoutRedirect('https://buy.stripe.com/test_pro')}
+                onClick={handleUpgradeClick}
                 className="btn-violet-cathedral w-full py-2.5 text-xs sm:text-sm font-medium cursor-pointer"
               >
                 {isEn ? 'Unlock Pro Access' : 'Sblocca Accesso Pro'}

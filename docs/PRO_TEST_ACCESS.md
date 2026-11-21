@@ -7,7 +7,7 @@
 Il client non concede più PRO in nessun caso: niente liste di contributori (email/callsign),
 niente chiavi dev, niente chiavi generate o verificate nel browser, niente fallback offline.
 `isPro` dipende solo da `profiles.is_pro`, che un trigger lascia scrivere solo a `service_role`
-(webhook Lemon Squeezy e Edge Function `validate_license`). Il client lo rilegge con `cloudSync`.
+(Edge Function `polar_webhook`). Il client lo rilegge con `cloudSync`.
 
 Per dare PRO a un account di test (o a un contributore) basta impostare quel flag lato server.
 

@@ -36,9 +36,10 @@ gh secret set SUPABASE_PROD_PROJECT_ID
 | `BACKUP_BUCKET_NAME` | Production | S3/R2 private bucket name for database backup archives (e.g. `zeroday-encrypted-backups`). | Immutable |
 | `BACKUP_S3_ACCESS_KEY_ID` | Production | S3/R2 Access Key ID for backup upload. | 180 days |
 | `BACKUP_S3_SECRET_ACCESS_KEY` | Production | S3/R2 Secret Access Key for backup upload. | 180 days |
-| `LEMONSQUEEZY_API_KEY` | Production | Lemon Squeezy API token for license verification and store management. | 180 days |
-| `LEMONSQUEEZY_STORE_ID` | Production | Numeric Lemon Squeezy Store ID. | Immutable per store |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | Production | HMAC signing secret used by Edge Functions to verify Lemon Squeezy webhooks. | Rotate on leak |
+| `POLAR_ACCESS_TOKEN` | Production / Sandbox | Polar organization access token, scopes `checkouts:write` (`create_checkout`) and `subscriptions:read` (`polar_webhook` re-reads the live subscription). Separate token per environment. | 180 days or on leak |
+| `POLAR_WEBHOOK_SECRET` | Production / Sandbox | Standard Webhooks signing secret of the Polar webhook endpoint, used by `polar_webhook`. | Rotate on leak |
+| `POLAR_PRODUCT_ID` | Production / Sandbox | Pwnify PRO product id (comma-separated list accepted by `polar_webhook`). | On catalog change |
+| `POLAR_SERVER` | Production / Sandbox | `sandbox` or `production` (anything else falls back to sandbox). | Per environment |
 | `FRONTEND_DEPLOY_HOOK_URL` | Production | Webhook URL for triggering automated production build on Vercel or Cloudflare Pages. | On compromise |
 | `ANDROID_KEYSTORE_BASE64` | Android CI | Base64-encoded release keystore (`.jks` / `.keystore`) file. | 25 years (Play Store lifetime) |
 | `ANDROID_KEY_ALIAS` | Android CI | Alias name for the key inside the Android keystore. | Matches keystore |
@@ -55,19 +56,22 @@ Configure these secrets in Supabase via Dashboard (**Project Settings → Edge F
 
 ```bash
 # Set on Staging (CLI will prompt or read from secure environment)
-supabase secrets set --project-ref <STAGING_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET LEMONSQUEEZY_STORE_ID LEMONSQUEEZY_PRODUCT_IDS
+supabase secrets set --project-ref <STAGING_REF> METERED_API_KEY METERED_DOMAIN POLAR_ACCESS_TOKEN POLAR_WEBHOOK_SECRET POLAR_PRODUCT_ID POLAR_SERVER
 
 # Set on Production
-supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN LEMONSQUEEZY_WEBHOOK_SECRET LEMONSQUEEZY_STORE_ID LEMONSQUEEZY_PRODUCT_IDS
+supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN POLAR_ACCESS_TOKEN POLAR_WEBHOOK_SECRET POLAR_PRODUCT_ID POLAR_SERVER
 ```
 
 | Secret Name | Component | Purpose |
 |---|---|---|
 | `METERED_API_KEY` | `get_turn_credentials` | Metered.ca API secret for generating ephemeral HMAC TURN tokens. |
 | `METERED_DOMAIN` | `get_turn_credentials` | Metered TURN domain endpoint. |
-| `LEMONSQUEEZY_WEBHOOK_SECRET` | `lemonsqueezy_webhook` | HMAC-SHA256 signature validation secret for order events. |
-| `LEMONSQUEEZY_STORE_ID` | `validate_license`, `lemonsqueezy_webhook` | **Required** by `validate_license` (fails closed with HTTP 500 if unset): the public License API accepts keys from any store, so keys are accepted only when `meta.store_id` matches. The webhook ignores events from other stores when set. **Set it before deploying the functions.** |
-| `LEMONSQUEEZY_PRODUCT_IDS` | `validate_license`, `lemonsqueezy_webhook` | Optional comma-separated allowlist of Pwnify PRO product IDs (e.g. `12345,67890`). When set, licenses/events for other products are rejected/ignored. |
+| `POLAR_ACCESS_TOKEN` | `create_checkout`, `polar_webhook` | Creates checkout sessions server-side and re-reads `GET /v1/subscriptions/{id}` before changing `is_pro` (out-of-order protection). Never exposed to the client. |
+| `POLAR_PRODUCT_ID` | `create_checkout`, `polar_webhook` | Product sold at checkout; webhook events for other products are ignored. |
+| `POLAR_SERVER` | `create_checkout`, `polar_webhook` | `sandbox` → `sandbox-api.polar.sh`, `production` → `api.polar.sh`. |
+| `POLAR_WEBHOOK_SECRET` | `polar_webhook` | Standard Webhooks signature secret (raw body, timing-safe, 5-minute timestamp tolerance). |
+| `POLAR_ORGANIZATION_ID` | `polar_webhook` | Optional: ignore events whose product/customer belongs to another organization. |
+| `POLAR_SUCCESS_URL` / `POLAR_RETURN_URL` | `create_checkout` | Optional overrides of the post-checkout and back URLs (default `https://pwnify.xyz/?checkout=success&checkout_id={CHECKOUT_ID}` and `https://pwnify.xyz/`). |
 | `TURN_SECRET_KEY` | `get_turn_credentials` | (Alternative coturn) Shared HMAC secret for coturn if self-hosting TURN. |
 | `TURN_REALM` | `get_turn_credentials` | (Alternative coturn) Realm domain for coturn. |
 
@@ -99,7 +103,7 @@ PEER_CONCURRENT_LIMIT=1000
 |---|---|---|---|
 | **GitHub** (`MatteAdor/zeroday_app`) | Source code, Actions, Releases | FIDO2 / 2FA Authenticator + Recovery Codes | 2FA Recovery codes stored in offline password vault |
 | **Supabase (Pro Plan)** | Auth, Postgres, RPCs, Edge Functions | SSO / Email 2FA | Emergency DB password stored in password vault |
-| **Lemon Squeezy** | Merchant of Record, Payments & Subscriptions | 2FA Authenticator | Account recovery codes in password vault |
+| **Polar** (org `pwnify`) | Merchant of Record, Payments & Subscriptions | 2FA Authenticator | Account recovery codes in password vault |
 | **Metered.ca** | STUN/TURN ephemeral relay servers | Email 2FA | API key regeneration in Metered Dashboard |
 | **Cloudflare / Vercel** | Frontend web hosting & DNS | FIDO2 / 2FA | Direct git-based deployment trigger |
 | **Cloudflare R2 / AWS S3** | Offsite encrypted backups & encrypted bank | API Key / IAM 2FA | Root account MFA recovery keys |

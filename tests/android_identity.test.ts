@@ -131,10 +131,10 @@ describe('Android Identity & Deep Link Cross-Consistency Suite', () => {
     );
   });
 
-  it('verifies get_turn_credentials and validate_license CORS strictly exclude zeroday.gg and allow authorized domains', () => {
+  it('verifies get_turn_credentials and create_checkout CORS strictly exclude zeroday.gg and allow authorized domains', () => {
     const files = [
       'supabase/functions/get_turn_credentials/index.ts',
-      'supabase/functions/validate_license/index.ts'
+      'supabase/functions/create_checkout/index.ts'
     ];
 
     for (const relPath of files) {

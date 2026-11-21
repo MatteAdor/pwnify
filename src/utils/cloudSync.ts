@@ -123,7 +123,7 @@ export function clearCachedProfileV2(): void {
 
 /**
  * Extracts strictly cosmetic data from legacy UserState.
- * Explicitly excludes license keys, PRO purchase flags, emails, and passwords.
+ * Explicitly excludes PRO purchase flags, emails, and passwords.
  */
 export function extractLegacyCosmetics(localState?: Partial<UserState> | null): Record<string, unknown> {
   if (!localState) return {};

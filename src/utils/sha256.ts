@@ -1,10 +1,4 @@
-// Pwnify license helpers (client side).
-//
-// SECURITY: the client never decides Pro entitlements. Pro status comes only from
-// server-authoritative data: `profiles.is_pro` (written by service_role via the
-// Lemon Squeezy webhook / validate_license Edge Function) read through cloudSync,
-// or a `validate_license` response confirming `is_pro`. There are no contributor,
-// developer or offline bypasses here by design.
+// Synchronous pure-JS SHA-256 (used to hash local identifiers without exposing plaintext).
 
 /**
  * Standard pure-JS synchronous SHA-256 implementation to hash strings without exposing plaintext PII.
@@ -87,15 +81,4 @@ export function sha256Hex(asciiInput: string): string {
     }
   }
   return result;
-}
-
-/**
- * Cheap syntactic pre-check before sending a key to the `validate_license` Edge
- * Function (avoids pointless requests for empty/garbage input). It grants nothing:
- * only the server response can unlock Pro.
- */
-export function isPlausibleLicenseKey(rawKey: unknown): rawKey is string {
-  if (typeof rawKey !== 'string') return false;
-  const key = rawKey.trim();
-  return key.length >= 8 && key.length <= 128 && /^[A-Za-z0-9-]+$/.test(key);
 }

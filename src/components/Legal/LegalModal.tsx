@@ -172,8 +172,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <li>
                     <strong>{isEn ? 'Checkout & Billing Data:' : 'Dati di Checkout & Fatturazione:'}</strong>{' '}
                     {isEn
-                      ? 'When upgrading to PRO, user email, operator account ID, and callsign are transmitted to Lemon Squeezy LLC, acting as Merchant of Record for payment processing, tax compliance, and license fulfillment. No credit card or banking details are stored on Pwnify servers.'
-                      : 'Durante il passaggio a PRO, email utente, ID account operatore e callsign vengono trasmessi a Lemon Squeezy LLC, che agisce quale Merchant of Record indipendente per pagamenti, imposte e rilascio licenze. Nessun dato di carta o bancario è trattato o salvato sui server di Pwnify.'}
+                      ? 'When upgrading to PRO, your email and account ID are sent to Polar Software, Inc. (polar.sh), acting as Merchant of Record for payment processing, invoicing and taxes, to link the subscription to your account. Polar tells us the subscription status so PRO can be switched on or off. No card or banking details reach Pwnify servers.'
+                      : 'Durante il passaggio a PRO, email e ID account vengono trasmessi a Polar Software, Inc. (polar.sh), che agisce come Merchant of Record per pagamenti, fatturazione e imposte, per collegare l\'abbonamento al tuo account. Polar ci comunica lo stato dell\'abbonamento per attivare o disattivare PRO. Nessun dato di carta o bancario arriva ai server di Pwnify.'}
                   </li>
                 </ul>
               </section>
@@ -202,7 +202,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <li><strong>Supabase Inc.:</strong> {isEn ? 'Cloud PostgreSQL database, token auth, and Edge Functions.' : 'Database cloud PostgreSQL, autenticazione e Edge Functions.'}</li>
                   <li><strong>Vercel Inc.:</strong> {isEn ? 'Web app hosting.' : 'Hosting dell\'applicazione web.'}</li>
                   <li><strong>Google LLC / GitHub Inc.:</strong> {isEn ? 'Sign-in via OAuth.' : 'Accesso tramite OAuth.'}</li>
-                  <li><strong>Lemon Squeezy LLC:</strong> {isEn ? 'Merchant of Record for checkout, payments, tax handling and PRO licenses.' : 'Merchant of Record per checkout, pagamenti, adempimenti fiscali e licenze PRO.'}</li>
+                  <li><strong>Polar Software, Inc.:</strong> {isEn ? 'Merchant of Record for checkout, payments, invoicing, taxes and the PRO subscription.' : 'Merchant of Record per checkout, pagamenti, fatturazione, imposte e abbonamento PRO.'}</li>
                   <li><strong>Metered Video:</strong> {isEn ? 'TURN relay infrastructure credentials for WebRTC traversal.' : 'Infrastruttura relay TURN per instradamento WebRTC.'}</li>
                   <li><strong>Google LLC:</strong> {isEn ? 'Public STUN resolution (stun:stun.l.google.com:19302) for NAT traversal.' : 'Risoluzione STUN pubblica (stun:stun.l.google.com:19302) per NAT.'}</li>
                   <li><strong>PeerJS Cloud:</strong> {isEn ? 'Signaling cloud (0.peerjs.com) for WebRTC session handshake.' : 'Server cloud di segnalazione (0.peerjs.com) per handshake WebRTC.'}</li>
@@ -260,12 +260,12 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
               <section className="space-y-1.5">
                 <h3 className="text-sm font-bold text-white font-mono">
-                  {isEn ? '3. Account & Cryptographic Licenses' : '3. Account & Licenze Crittografiche'}
+                  {isEn ? '3. Account & PRO Subscription' : '3. Account & Abbonamento PRO'}
                 </h3>
                 <p>
                   {isEn
-                    ? 'Each Pwnify PRO license key (e.g. 0xPRO-...) is strictly personal and non-transferable without prior authorization.'
-                    : 'Ogni account e licenza crittografica Pwnify PRO (formato 0xPRO-...) è strettamente personale e non trasferibile a terzi senza previa autorizzazione scritta.'}
+                    ? 'The Pwnify PRO subscription is tied to your account, is personal and non-transferable. You can manage or cancel it at any time from the Polar customer portal.'
+                    : 'L\'abbonamento Pwnify PRO è legato al tuo account, è personale e non cedibile. Puoi gestirlo o annullarlo in qualsiasi momento dal portale clienti Polar.'}
                 </p>
               </section>
             </div>
@@ -295,8 +295,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                     : 'Per esercitare il diritto di rimborso, è sufficiente inviare un\'email a '}
                   <a href="mailto:support@pwnify.xyz" className="text-[#b6d9fc] underline font-mono">support@pwnify.xyz</a>{' '}
                   {isEn
-                    ? 'specifying your Callsign, account email, and license key. The full refund will be processed back to your original payment method within 3 to 5 business days.'
-                    : 'indicando il Callsign, l\'indirizzo email dell\'account e il codice di licenza. Il rimborso integrale dell\'importo versato verrà accreditato sullo stesso metodo di pagamento utilizzato entro 3-5 giorni lavorativi.'}
+                    ? 'from the email linked to your account. Refunds are issued by Polar, our Merchant of Record, to your original payment method.'
+                    : 'dall\'indirizzo email associato al tuo account. Il rimborso viene emesso da Polar, nostro Merchant of Record, sullo stesso metodo di pagamento utilizzato.'}
                 </p>
               </section>
 

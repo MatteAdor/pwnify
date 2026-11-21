@@ -38,14 +38,15 @@
 ## 3. Checkout e Gestione Pagamenti (Merchant of Record)
 
 Pwnify **non elabora né memorizza** numeri di carta di credito, scadenze, codici CVV o IBAN.
-- **Fornitore incaricato:** **Lemon Squeezy LLC** (opera come *Merchant of Record* indipendente).
-- **Parametri passati nell'URL di checkout:**
-  - `checkout[email]`: email dell'operatore connesso
-  - `checkout[custom][user_id]`: ID univoco dell'account utente
-  - `checkout[custom][username]`: Callsign dell'operatore
-- **Ricezione e attivazione licenza:**
-  - Webhook HTTPS firmato crittograficamente con HMAC-SHA256 (`/functions/v1/lemonsqueezy_webhook`).
-  - L'Edge Function verifica la firma dell'evento e aggiorna lo stato licenza (`isPro: true`, `licenseKey`) sul database associato a `user_id`.
+- **Fornitore incaricato:** **Polar Software, Inc.** (polar.sh, opera come *Merchant of Record* indipendente).
+- **Dati inviati alla creazione del checkout (lato server, Edge Function `create_checkout`):**
+  - `external_customer_id` / `metadata.supabase_user_id`: ID univoco dell'account (dal JWT, mai dal client)
+  - `customer_email`: email dell'account, per precompilare il checkout
+  - Il Callsign **non** viene più inviato.
+- **Ricezione e attivazione PRO:**
+  - Webhook HTTPS firmato (Standard Webhooks) verso `/functions/v1/polar_webhook`.
+  - L'Edge Function verifica firma e timestamp, deduplica per `webhook-id` e aggiorna `profiles.is_pro` via `set_profile_pro_status` (service_role). Nessuna chiave di licenza.
+  - Nei log non vengono scritti email né identificativi utente.
 
 ---
 
@@ -66,9 +67,9 @@ Le partite multigiocatore 1v1 utilizzano lo stack WebRTC (libreria PeerJS):
 2. **Vercel Inc. (USA / Globale):**
    - Servizi: Hosting statico frontend, serverless rendering, Edge CDN.
    - Dati: Log di richiesta HTTP, indirizzo IP client, User-Agent.
-3. **Lemon Squeezy LLC (USA):**
-   - Servizi: Merchant of Record, elaborazione checkout, gestione imposte e ricevute.
-   - Dati: Email, user_id, callsign, dettagli di fatturazione del cliente.
+3. **Polar Software, Inc. (USA):**
+   - Servizi: Merchant of Record, elaborazione checkout, gestione imposte, ricevute e portale clienti.
+   - Dati: Email, user_id (come external_customer_id), dettagli di fatturazione del cliente.
 4. **Metered Video (Giappone / Globale):**
    - Servizi: Fornitura credenziali TURN temporanee e relay dati WebRTC.
    - Dati: Indirizzo IP client durante le sessioni duello con relay.

@@ -14,12 +14,12 @@ Questo documento stabilisce l'ordine operativo rigoroso per il completamento del
 
 ### Passo 1: Pubblicazione Edge Functions Supabase
 - **Azione**:
-  Eseguire il deploy delle due funzioni approvate (`get_turn_credentials` e `validate_license`) tramite il workflow `deploy-prod.yml` (`deploy_functions=true`, `confirm_prod_deploy="DEPLOY-PRODUCTION"`) oppure via Supabase CLI autorizzata:
+  Eseguire il deploy delle due funzioni approvate (`get_turn_credentials` e `create_checkout`) tramite il workflow `deploy-prod.yml` (`deploy_functions=true`, `confirm_prod_deploy="DEPLOY-PRODUCTION"`) oppure via Supabase CLI autorizzata:
   ```bash
   supabase functions deploy get_turn_credentials --project-ref $SUPABASE_PROD_PROJECT_ID
-  supabase functions deploy validate_license --project-ref $SUPABASE_PROD_PROJECT_ID
+  supabase functions deploy create_checkout --project-ref $SUPABASE_PROD_PROJECT_ID
   ```
-  *(Nota: `lemonsqueezy_webhook` NON deve essere pubblicata con JWT attivo).*
+  *(Nota: `polar_webhook` va pubblicata con `--no-verify-jwt`: Polar non invia un JWT Supabase, l'autenticazione è la firma).*
 - **Cosa verificare**:
   1. **Preflight CORS**: Richiesta `OPTIONS` con `Origin: https://pwnify.xyz` risponde `200 OK` con header `Access-Control-Allow-Origin: https://pwnify.xyz`.
   2. **Origini non ammesse**: Richiesta con `Origin: https://evil.example` o `https://zeroday.gg` risponde `403 Forbidden`.

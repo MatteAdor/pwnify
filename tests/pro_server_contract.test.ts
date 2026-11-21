@@ -27,8 +27,8 @@ describe('Server PRO & profiles contract (static checks)', () => {
     assert.match(contract, /CREATE TRIGGER trg_protect_profiles_privileged_columns/);
   });
 
-  test('license edge functions accept no dev keys, prefixes or client checksums', () => {
-    for (const rel of ['supabase/functions/validate_license/index.ts', 'supabase/functions/lemonsqueezy_webhook/index.ts']) {
+  test('billing edge functions accept no dev keys, license prefixes or client checksums', () => {
+    for (const rel of ['supabase/functions/create_checkout/index.ts', 'supabase/functions/polar_webhook/index.ts']) {
       const src = read(rel);
       for (const forbidden of [/0xPRO/i, /0xDEV/i, /CONTRIBUTOR/i, /checksum/i, /DEV-(MATTEO|GIACOMO|CORE)/i]) {
         assert.equal(forbidden.test(src), false, `${rel} must not contain ${forbidden}`);

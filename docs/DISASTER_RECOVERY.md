@@ -16,7 +16,7 @@ All master credentials and one-time backup recovery codes must be stored in a se
 1. **GitHub (`@MatteAdor`)**: Use your GitHub Emergency Recovery Codes (or hardware security key) if your phone's authenticator is lost.
 2. **Supabase**: Access dashboard via email SSO or authenticated session; retrieve emergency database connection strings.
 3. **Cloudflare / Vercel**: Hosting and DNS authority for `zeroday.gg` and `peer.zeroday.gg`.
-4. **Lemon Squeezy**: Merchant of Record portal for customer subscriptions and webhook secret management.
+4. **Polar** (org `pwnify`): Merchant of Record portal for customer subscriptions, access tokens and webhook secret management.
 5. **Metered.ca**: STUN/TURN ephemeral relay dashboard.
 6. **VPS Provider (Hetzner / DigitalOcean / AWS)**: Cloud console access to spin up or re-image virtual machines.
 7. **Cloudflare R2 / AWS S3**: Object storage holding encrypted question banks and offsite database backups.
@@ -189,16 +189,22 @@ No Android Studio or local Android SDK is required:
 
 ---
 
-## Phase 5: Payment & Monetization Architecture (Lemon Squeezy)
+## Phase 5: Payment & Monetization Architecture (Polar)
 
-ZeroDay uses **Lemon Squeezy** as its Merchant of Record (PCI-DSS compliant).
-- Checkout URLs are configured in `src/config/monetization.ts`.
-- **Server-Side License Verification**:
+Pwnify uses **Polar** (polar.sh) as its Merchant of Record. There are no license keys.
+- The client asks the `create_checkout` Edge Function for a hosted checkout URL; the session is
+  created server-side with `external_customer_id` = the caller's Supabase user id (from the JWT).
+- **Server-side entitlement only**:
   1. The client never sets or updates `is_pro` directly in the database.
-  2. Legacy migration (`migrate_my_legacy_progress`) explicitly filters out and rejects `isPro` or `licenseKey` from user localStorage inventories.
-  3. Ranked PvP duels require verified email auth, but do not require PRO.
-  4. Offline PRO capabilities are validated client-side via cryptographic checksum validation (`0xPRO-XXXX-XXXX-XXXX`).
-  5. Authoritative server-side PRO entitlement is designed around Lemon Squeezy webhook events (`order_created`, `subscription_cancelled`) validated with `LEMONSQUEEZY_WEBHOOK_SECRET` via Supabase Edge Function (`lemonsqueezy_webhook`).
+  2. Legacy migration (`migrate_my_legacy_progress`) explicitly filters out `isPro` from user localStorage inventories.
+  3. Ranked PvP duels require verified auth, but do not require PRO.
+  4. `polar_webhook` verifies the Standard Webhooks signature (`POLAR_WEBHOOK_SECRET`), deduplicates on
+     `webhook-id` (`polar_webhook_events`, see `supabase/contract/20261122000001_contract_polar_webhook_events.sql`)
+     re-reads the subscription from the Polar API and decides on its live state (ignoring states older than the
+     last applied `modified_at`), then calls `set_profile_pro_status` with `service_role` for
+     `subscription.active/updated/canceled/revoked` and `order.paid`. If the re-read fails it answers 503 so Polar retries.
+- Recovery: re-create the webhook endpoint in Polar, store the new secret with `supabase secrets set`,
+  then redeploy `polar_webhook` with `--no-verify-jwt`.
 
 ---
 
