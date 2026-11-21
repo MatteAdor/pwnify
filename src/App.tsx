@@ -163,13 +163,38 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('tree');
   const MAIN_TABS: ActiveTab[] = ['tree', 'quests', 'arena', 'certs', 'profile'];
 
-  // Horizontal Swipe Gestures for Seamless Tab Navigation
+  // Horizontal Swipe Gestures with fluid finger tracking & ~250ms slide/fade transition
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [isSwiping, setIsSwiping] = useState<boolean>(false);
+  const [tabSlideDirection, setTabSlideDirection] = useState<'left' | 'right' | null>(null);
+
+  const changeTabWithTransition = (nextTab: ActiveTab, explicitDir?: 'left' | 'right') => {
+    if (nextTab === activeTab) return;
+    const currentIndex = MAIN_TABS.indexOf(activeTab);
+    const nextIndex = MAIN_TABS.indexOf(nextTab);
+    const dir = explicitDir || (nextIndex > currentIndex ? 'left' : 'right');
+
+    const prefersReducedMotion = typeof window !== 'undefined' && 
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+    if (prefersReducedMotion) {
+      setActiveTab(nextTab);
+      return;
+    }
+
+    setTabSlideDirection(dir);
+    setActiveTab(nextTab);
+
+    setTimeout(() => {
+      setTabSlideDirection(null);
+    }, 260);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     const target = e.target as HTMLElement | null;
-    if (target?.closest('input, textarea, select, [data-prevent-swipe="true"]')) return;
+    if (target?.closest('input, textarea, select, button, [data-prevent-swipe="true"]')) return;
     touchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
@@ -177,30 +202,49 @@ export const App: React.FC = () => {
     };
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.touches.length !== 1) return;
+    const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+
+    // Follow finger if horizontal movement dominates
+    if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      setIsSwiping(true);
+      const rubberBand = Math.sign(deltaX) * Math.min(Math.abs(deltaX) * 0.7, 90);
+      setSwipeOffset(rubberBand);
+    }
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
+    if (!touchStartRef.current || e.changedTouches.length !== 1) {
+      setIsSwiping(false);
+      setSwipeOffset(0);
+      return;
+    }
     const start = touchStartRef.current;
     touchStartRef.current = null;
+    setIsSwiping(false);
 
     const deltaX = e.changedTouches[0].clientX - start.x;
     const deltaY = e.changedTouches[0].clientY - start.y;
     const deltaTime = Date.now() - start.time;
 
-    // Minimum swipe distance 55px, horizontal dominance (> 1.4x vertical), max duration 650ms
-    if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4 && deltaTime < 650) {
+    // Minimum swipe distance 45px, horizontal dominance (> 1.3x vertical), max duration 650ms
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3 && deltaTime < 650) {
       const currentIndex = MAIN_TABS.indexOf(activeTab);
-      if (currentIndex === -1) return;
-
-      if (deltaX < 0 && currentIndex < MAIN_TABS.length - 1) {
-        // Swiped Left -> Move to Next Tab
-        sound.playTap();
-        setActiveTab(MAIN_TABS[currentIndex + 1]);
-      } else if (deltaX > 0 && currentIndex > 0) {
-        // Swiped Right -> Move to Previous Tab
-        sound.playTap();
-        setActiveTab(MAIN_TABS[currentIndex - 1]);
+      if (currentIndex !== -1) {
+        if (deltaX < 0 && currentIndex < MAIN_TABS.length - 1) {
+          // Swiped Left -> Move to Next Tab
+          sound.playTap();
+          changeTabWithTransition(MAIN_TABS[currentIndex + 1], 'left');
+        } else if (deltaX > 0 && currentIndex > 0) {
+          // Swiped Right -> Move to Previous Tab
+          sound.playTap();
+          changeTabWithTransition(MAIN_TABS[currentIndex - 1], 'right');
+        }
       }
     }
+    setSwipeOffset(0);
   };
 
   // In-App Update Engine State & Active Lifecycle
@@ -1145,78 +1189,91 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
           {/* Main Content Area */}
           <main 
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className="flex-1 overflow-y-auto"
+            className="flex-1 overflow-y-auto overflow-x-hidden relative"
           >
-            <React.Suspense fallback={<ViewFallback />}>
-            {activeTab === 'tree' && (
-              <TacticalSkillTree
-                userState={userState}
-                onSelectNode={handleSelectNode}
-                onOpenPaywall={() => triggerPaywall('manual_upgrade')}
-                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
-                onOpenExamLabs={() => setActiveTab('certs')}
-              />
-            )}
-
-            {(activeTab === 'quests' || activeTab === 'missions') && (
-              <MissionsTab
-                userState={userState}
-                onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
-                onOpenPaywallContext={triggerPaywall}
-                onClaimFreeBounty={handleClaimFreeBounty}
-                onClaimProBounty={handleClaimProBounty}
-              />
-            )}
-
-            {activeTab === 'arena' && (
-              isBrowserEnvironment() && !bypassArenaWebLock ? (
-                <ArenaWebLockedView 
-                  onBackToSkillTree={() => setActiveTab('tree')} 
-                  onBypassPreview={() => setBypassArenaWebLock(true)}
-                />
-              ) : (
-                <ArenaPvP
+            <div 
+              style={{
+                transform: isSwiping && swipeOffset !== 0 ? `translateX(${swipeOffset}px)` : undefined,
+                transition: isSwiping ? 'none' : 'transform 250ms cubic-bezier(0.25, 1, 0.5, 1), opacity 250ms ease-out',
+                opacity: isSwiping ? Math.max(0.7, 1 - Math.abs(swipeOffset) / 320) : 1
+              }}
+              className={`w-full min-h-full ${
+                tabSlideDirection === 'left' ? 'animate-tab-slide-in-right' :
+                tabSlideDirection === 'right' ? 'animate-tab-slide-in-left' : ''
+              }`}
+            >
+              <React.Suspense fallback={<ViewFallback />}>
+              {activeTab === 'tree' && (
+                <TacticalSkillTree
                   userState={userState}
-                  onConsumeTicket={handleConsumeTicket}
-                  onWinMatch={handleWinMatch}
-                  onLossMatch={handleLossMatch}
-                  onOpenPaywall={(ctx) => triggerPaywall(ctx)}
-                  onOpenHackerCard={() => setIsHackerCardOpen(true)}
-                  initialDuelChallenge={activeDuelForArena}
-                  onClearInitialDuel={() => setActiveDuelForArena(null)}
-                  onUpdateSurvivalScore={handleUpdateSurvivalScore}
+                  onSelectNode={handleSelectNode}
+                  onOpenPaywall={() => triggerPaywall('manual_upgrade')}
+                  onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                  onOpenExamLabs={() => changeTabWithTransition('certs')}
                 />
-              )
-            )}
+              )}
 
-            {activeTab === 'certs' && (
-              <CertPrepTab
-                userState={userState}
-                onOpenPaywallContext={triggerPaywall}
-                onCompletePbq={handleCompletePbq}
-                onPassCert={handlePassCert}
-              />
-            )}
+              {(activeTab === 'quests' || activeTab === 'missions') && (
+                <MissionsTab
+                  userState={userState}
+                  onOpenDailyBreach={() => setIsDailyBreachOpen(true)}
+                  onOpenPaywallContext={triggerPaywall}
+                  onClaimFreeBounty={handleClaimFreeBounty}
+                  onClaimProBounty={handleClaimProBounty}
+                />
+              )}
 
-            {(activeTab === 'profile' || activeTab === 'radar') && (
-              <ProfileTab
-                userState={userState}
-                onOpenPaywall={triggerPaywall}
-                onOpenHackerCard={() => setIsHackerCardOpen(true)}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onNavigateToCerts={() => setActiveTab('certs')}
-                currentTheme={currentTheme}
-                currentTitle={userState.customTitle}
-              />
-            )}
-            </React.Suspense>
+              {activeTab === 'arena' && (
+                isBrowserEnvironment() && !bypassArenaWebLock ? (
+                  <ArenaWebLockedView 
+                    onBackToSkillTree={() => changeTabWithTransition('tree')} 
+                    onBypassPreview={() => setBypassArenaWebLock(true)}
+                  />
+                ) : (
+                  <ArenaPvP
+                    userState={userState}
+                    onConsumeTicket={handleConsumeTicket}
+                    onWinMatch={handleWinMatch}
+                    onLossMatch={handleLossMatch}
+                    onOpenPaywall={(ctx) => triggerPaywall(ctx)}
+                    onOpenHackerCard={() => setIsHackerCardOpen(true)}
+                    initialDuelChallenge={activeDuelForArena}
+                    onClearInitialDuel={() => setActiveDuelForArena(null)}
+                    onUpdateSurvivalScore={handleUpdateSurvivalScore}
+                  />
+                )
+              )}
+
+              {activeTab === 'certs' && (
+                <CertPrepTab
+                  userState={userState}
+                  onOpenPaywallContext={triggerPaywall}
+                  onCompletePbq={handleCompletePbq}
+                  onPassCert={handlePassCert}
+                />
+              )}
+
+              {(activeTab === 'profile' || activeTab === 'radar') && (
+                <ProfileTab
+                  userState={userState}
+                  onOpenPaywall={triggerPaywall}
+                  onOpenHackerCard={() => setIsHackerCardOpen(true)}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  onNavigateToCerts={() => changeTabWithTransition('certs')}
+                  currentTheme={currentTheme}
+                  currentTitle={userState.customTitle}
+                />
+              )}
+              </React.Suspense>
+            </div>
           </main>
 
           {/* Bottom Persistent Navigation */}
           <BottomNav
             activeTab={activeTab}
-            onSelectTab={setActiveTab}
+            onSelectTab={changeTabWithTransition}
             winStreak={userState.winStreak}
           />
 
