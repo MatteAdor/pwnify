@@ -2,7 +2,7 @@ import { UserState, EloRankTier } from '../types';
 import { INITIAL_DAILY_BOUNTIES } from '../data/bountiesAndPbq';
 import { calculateDynamicTelemetry } from './readinessEngine';
 import { sanitizeCallsign } from './security';
-import { sha256Hex } from './licenseEngine';
+import { sha256Hex } from './sha256';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
@@ -145,7 +145,7 @@ export function saveCachedGuestState(state: UserState): void {
 
 /**
  * Merges base account state with active session/guest progress, ensuring that
- * completed lessons, PBQs, XP, ELO, streak, paid PRO status, and license keys
+ * completed lessons, PBQs, XP, ELO, streak, and cached paid PRO status
  * are never lost when logging in or registering.
  */
 export function mergeUserStates(base: UserState, incoming?: UserState | null): UserState {
@@ -153,7 +153,6 @@ export function mergeUserStates(base: UserState, incoming?: UserState | null): U
 
   // Local cache only: the authoritative value is re-synced from profiles.is_pro.
   const isPro = Boolean(base.isPro || incoming.isPro);
-  const licenseKey = base.licenseKey || incoming.licenseKey;
 
   const mergedNodes = Array.from(new Set([
     ...(base.completedNodeIds || []),
@@ -182,7 +181,6 @@ export function mergeUserStates(base: UserState, incoming?: UserState | null): U
     userEmail: base.userEmail || incoming.userEmail,
     isLoggedIn: true,
     isPro,
-    licenseKey,
     streakShieldActive: isPro || base.streakShieldActive || incoming.streakShieldActive,
     completedNodeIds: mergedNodes,
     completedPbqIds: mergedPbqs,
@@ -236,7 +234,6 @@ export function createCleanAccountState(
     userEmail: cleanEmail,
     isLoggedIn,
     isPro: false,
-    licenseKey: undefined,
     streakDays: 0,
     streakShieldActive: false,
     elo: 100,

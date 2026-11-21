@@ -42,7 +42,6 @@ import { UpdateProgressModal } from './components/Update/UpdateProgressModal';
 import { WhatsNewModal } from './components/Update/WhatsNewModal';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
-import { isPlausibleLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { recordLearningActivity, StreakState } from './utils/streakEngine';
 import { syncAuthoritativeActivity, applyLearningActivity } from './utils/streakSync';
@@ -70,7 +69,7 @@ import {
   sanitizeAlphanumeric, 
   clampNumber 
 } from './utils/security';
-import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck } from 'lucide-react';
+import { Swords, Zap, Download } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const THEME_BG_MAP: Record<TerminalThemeId, string> = {
@@ -420,9 +419,7 @@ export const App: React.FC = () => {
   const [incomingDuel, setIncomingDuel] = useState<DuelChallengeData | null>(null);
   const [activeDuelForArena, setActiveDuelForArena] = useState<DuelChallengeData | null>(null);
 
-  // Post-Checkout Stripe / LemonSqueezy Verified State
-  const [verifiedCheckoutLicense, setVerifiedCheckoutLicense] = useState<string | null>(null);
-  const [licenseCopied, setLicenseCopied] = useState<boolean>(false);
+  // Post-checkout: PRO is read back from profiles.is_pro (see refreshProFromServer)
 
   // Daily 0xBreach CVE Triage State
   const [isDailyBreachOpen, setIsDailyBreachOpen] = useState<boolean>(false);
@@ -452,41 +449,15 @@ export const App: React.FC = () => {
       // Check 1: Post-checkout return verification (Defends against URL paywall bypass)
       // Play flavor policy: block external checkout return & external license bypass
       if (!isPlayDistribution()) {
-        const incomingLicense = params.get('license');
-        const hasCheckoutReturn = params.has('checkout') || params.has('session_id') || params.has('signature') || params.has('sig');
-
-        if (incomingLicense && isPlausibleLicenseKey(incomingLicense)) {
-          // Server-authoritative activation only: Pro is granted solely when the
-          // validate_license Edge Function confirms it (and writes profiles.is_pro).
-          import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
-            if (!isSupabaseConfigured) return;
-            supabase.functions.invoke('validate_license', {
-              body: { license_key: incomingLicense }
-            }).then(({ data, error }) => {
-              if (!error && data?.valid && data?.is_pro) {
-                setUserState(prev => {
-                  const updated = {
-                    ...prev,
-                    isPro: true,
-                    streakShieldActive: true,
-                    licenseKey: incomingLicense
-                  };
-                  persistActiveAccountState(updated);
-                  return updated;
-                });
-                setVerifiedCheckoutLicense(incomingLicense);
-                sound.playVictoryFanfare();
-                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-              }
-            }).catch(() => {});
-          }).catch(() => {});
-        }
-
-        if (incomingLicense || hasCheckoutReturn) {
-          // A checkout return never grants Pro client-side: the Lemon Squeezy webhook
-          // writes profiles.is_pro and the background profile sync reads it back.
+        const hasCheckoutReturn = params.get('checkout') === 'success' || params.has('checkout_id');
+        if (hasCheckoutReturn || params.has('license')) {
+          // A checkout return never grants Pro client-side: polar_webhook writes
+          // profiles.is_pro and we re-read it from the server (with a short retry).
           if (window.history) {
             window.history.replaceState({}, '', window.location.pathname);
+          }
+          if (hasCheckoutReturn) {
+            void refreshProFromServer();
           }
         }
       } else {
@@ -519,47 +490,36 @@ export const App: React.FC = () => {
   }, [userState.username]);
 
 
-  // Called by PaywallModal ONLY after validate_license confirmed is_pro server-side
-  // (the Edge Function has already written profiles.is_pro).
-  const handleRestoreLicense = (key: string) => {
-    setUserState(prev => ({
-      ...prev,
-      isPro: true,
-      streakShieldActive: true,
-      readinessScore: 92,
-      licenseKey: key
-    }));
-  };
-
-  // Download License Certificate File
-  const handleDownloadLicenseCertificate = (key: string) => {
-    sound.playTap();
-    const fileContent = `=====================================================
-PWNIFY // CYBER WARFARE ACADEMY
-PRO LICENSE CERTIFICATE
-=====================================================
-Username / Callsign: ${userState.username}
-License Key:         ${key}
-Status:              AUTHENTICATED & ACTIVE
-Features Unlocked:
-  - Full Official Exam Simulators (CompTIA Sec+, CCNA, CEH)
-  - Interactive PBQ Labs with Real-Time Validation
-  - Unlimited 1v1 Blitz Arena Tickets & Win Streak Shields
-  - Uncensored Root Cause Exploit Breakdowns & PoCs
-  - 2x XP Multiplier & Unlimited Arena Access
-Issued:              ${new Date().toISOString()}
-Verification:        Zero-Knowledge Algorithmic Checksum Passed
-=====================================================`;
-
-    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const safeUser = sanitizeAlphanumeric(userState.username, 24, 'user');
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `pwnify_pro_license_${safeUser}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+  // Re-reads profiles.is_pro from the server after a Polar checkout / portal visit.
+  // The webhook can land a few seconds after the redirect, so retry with a short
+  // backoff. This only mirrors the server value: it never grants PRO locally, and it
+  // also applies a revocation (e.g. subscription cancelled from the portal).
+  async function refreshProFromServer() {
+    const delaysMs = [0, 3000, 8000, 15000];
+    const wasPro = userState.isPro;
+    for (const delay of delaysMs) {
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      if (!getCurrentSession()) return;
+      try {
+        const synced = await syncUserProfile(userState);
+        if (!synced) continue;
+        const serverPro = Boolean(synced.isPro);
+        setUserState(prev => {
+          if (prev.isPro === serverPro) return prev;
+          const updated = { ...prev, isPro: serverPro, streakShieldActive: serverPro || prev.streakShieldActive };
+          persistActiveAccountState(updated);
+          return updated;
+        });
+        if (serverPro && !wasPro) {
+          sound.playVictoryFanfare();
+          confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        }
+        if (serverPro) return;
+      } catch (e) {
+        console.warn('[Billing] PRO status refresh failed:', e);
+      }
+    }
+  }
 
   // Accept incoming challenge -> jump straight to Arena battle against ghost
   const handleAcceptDuel = () => {
@@ -781,8 +741,7 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         dailyCommitment: data.commitment,
         readinessScore: data.readinessScore,
         onboardingCompleted: true,
-        isPro: prev.isPro,
-        licenseKey: prev.licenseKey
+        isPro: prev.isPro
       };
       persistActiveAccountState(updated);
       return updated;
@@ -1285,22 +1244,14 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             currentTitle={userState.customTitle}
           />
 
-          {/* Pwnify PRO Paywall Modal (Stripe Bridge & License Key Restore) */}
+          {/* Pwnify PRO Paywall Modal (Polar checkout & customer portal) */}
           <React.Suspense fallback={null}>
           <PaywallModal
             isOpen={isPaywallOpen && !userState.isPro}
             onClose={() => setIsPaywallOpen(false)}
             context={paywallContext}
             winStreak={userState.winStreak}
-            onRestoreLicense={handleRestoreLicense}
-            onUpgradeSuccess={() => {
-              // Only invoked after server confirmation; refresh from profiles.is_pro
-              void syncUserProfile(userState).then(synced => {
-                if (synced?.isPro) {
-                  setUserState(prev => ({ ...prev, isPro: true, streakShieldActive: true }));
-                }
-              }).catch(() => {});
-            }}
+            onBillingReturn={() => { void refreshProFromServer(); }}
           />
           </React.Suspense>
 
@@ -1389,72 +1340,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             </div>
           )}
 
-          {/* Celebratory Post-Checkout License Key Modal */}
-          {verifiedCheckoutLicense && !isPlayDistribution() && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 animate-fade-in font-sans">
-              <div className="relative w-full max-w-md bg-[#0D121D] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl text-zinc-100 text-center space-y-4">
-                <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto" />
-
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white">
-                    {isEn ? 'Pwnify PRO Access Authorized' : 'Accesso Pwnify PRO Autorizzato'}
-                  </h2>
-                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                    {isEn ? (
-                      <>Welcome, <strong className="text-white font-mono">{userState.username}</strong>. All exam simulators, PBQ labs, and features are unlocked.</>
-                    ) : (
-                      <>Benvenuto, <strong className="text-white font-mono">{userState.username}</strong>. Tutti i simulatori d'esame, i laboratori PBQ e le funzionalità sono sbloccati.</>
-                    )}
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-2">
-                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider block">
-                    {isEn ? 'Your License Key' : 'La tua Chiave di Licenza'}
-                  </span>
-                  <div className="p-2.5 rounded-lg bg-black border border-zinc-800 font-mono font-bold text-sm text-emerald-400 tracking-wider select-all">
-                    {verifiedCheckoutLicense}
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => {
-                        sound.playTap();
-                        navigator.clipboard.writeText(verifiedCheckoutLicense);
-                        setLicenseCopied(true);
-                        setTimeout(() => setLicenseCopied(false), 2500);
-                      }}
-                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      {licenseCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-zinc-400" />}
-                      <span>{licenseCopied ? (isEn ? 'COPIED!' : 'COPIATA!') : (isEn ? 'COPY' : 'COPIA')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleDownloadLicenseCertificate(verifiedCheckoutLicense)}
-                      className="flex-1 py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-mono font-bold text-zinc-200 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5 text-zinc-400" />
-                      <span>{isEn ? 'DOWNLOAD .TXT' : 'SCARICA .TXT'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-zinc-500 font-mono">
-                  {isEn ? 'Use this key to restore your subscription on any device.' : 'Usa questa chiave per ripristinare il tuo abbonamento su qualsiasi dispositivo.'}
-                </p>
-
-                <button
-                  onClick={() => {
-                    sound.playExploitSuccess();
-                    setVerifiedCheckoutLicense(null);
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl font-mono font-bold text-xs sm:text-sm text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>{isEn ? 'ENTER PRO LABS' : 'ENTRA NEI LABORATORI PRO'}</span>
-                  <Zap className="w-4 h-4 fill-current" />
-                </button>
-              </div>
-            </div>
-          )}
         </>
       )}
 

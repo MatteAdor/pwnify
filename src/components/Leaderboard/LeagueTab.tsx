@@ -217,7 +217,7 @@ export const LeagueTab: React.FC<LeagueTabProps> = ({
             </div>
             <div>
               <div className="text-xs font-mono font-bold text-amber-300 flex items-center gap-1">
-                <span>{isEn ? 'ZERO-DAY PRO LICENSE' : 'LICENZA ZERO-DAY PRO'}</span>
+                <span>PWNIFY PRO</span>
                 <Sparkles className="w-3 h-3 text-amber-400" />
               </div>
               <div className="text-[11px] font-mono text-zinc-400">

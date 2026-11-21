@@ -4,11 +4,9 @@
  * Input Overflows, Timing Attacks, and URL Verification Bypass.
  */
 
-// Whitelist of approved checkout and external redirection domains
+// Whitelist of approved checkout and external redirection domains (Polar hosted checkout/portal)
 const ALLOWED_REDIRECT_DOMAINS = [
-  'buy.stripe.com',
-  'checkout.stripe.com',
-  'lemonsqueezy.com'
+  'polar.sh'
 ];
 
 /**
@@ -108,4 +106,4 @@ export function safeJsonParse<T>(raw: string | null, fallback: T): T {
 }
 
 // Checkout returns no longer grant anything client-side: Pro is written by the
-// Lemon Squeezy webhook into profiles.is_pro and read back via cloudSync.
+// Polar webhook (polar_webhook) into profiles.is_pro and read back via cloudSync.

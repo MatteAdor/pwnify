@@ -108,7 +108,7 @@ export const TRANSLATIONS = {
     audioEffectsSub: 'Synthesized oscillators for tactile feedback',
     soundActive: 'ACTIVE',
     soundMuted: 'MUTED',
-    proLicenseTitle: 'Pwnify License Status',
+    proLicenseTitle: 'Pwnify PRO Status',
     proLicenseDesc: 'Full access to official CompTIA, CCNA, and CEH exam simulators, PBQ labs, and unlimited arena.',
 
     // Onboarding
@@ -384,7 +384,7 @@ export const TRANSLATIONS = {
     audioEffectsSub: 'Oscillatori sintetizzati per feedback tattile',
     soundActive: 'ATTIVO',
     soundMuted: 'MUTATO',
-    proLicenseTitle: 'Stato Licenza Pwnify',
+    proLicenseTitle: 'Stato Pwnify PRO',
     proLicenseDesc: 'Accesso completo ai simulatori d\'esame ufficiali CompTIA, CCNA e CEH, laboratori PBQ e arena illimitata.',
 
     // Onboarding

@@ -139,7 +139,6 @@ export interface UserState {
     'Code Analysis': number;
     'Defense & SOC': number;
   };
-  licenseKey?: string;
   survivalHighScore?: number;
   dailyBreachStreak?: number;
   activeTheme?: string;

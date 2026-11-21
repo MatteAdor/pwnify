@@ -1,5 +1,7 @@
 # Audit server PRO e profili (sola lettura)
 
+> **Nota (22/11/2026):** il punto 1 riguarda Lemon Squeezy (`validate_license`, `lemonsqueezy_webhook`), sostituito da Polar (`create_checkout`, `polar_webhook`) nel branch `feat/polar-billing`. I punti 2 e 3 restano validi.
+
 Data: 21/11/2026 · Ambito: `supabase/migrations`, `supabase/contract`, `supabase/functions`.
 Nessun comando Supabase eseguito. La migrazione proposta è in
 `supabase/contract/20261121000001_contract_profiles_privileged_columns.sql` (**NON applicata**).
