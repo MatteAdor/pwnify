@@ -15,7 +15,7 @@ import {
 
 import confetti from 'canvas-confetti';
 
-import { verifyLicenseKey } from '../../utils/licenseEngine';
+import { isPlausibleLicenseKey } from '../../utils/licenseEngine';
 
 import { isSafeRedirectUrl } from '../../utils/security';
 import { getCurrentSession } from '../../utils/userDatabase';
@@ -153,15 +153,15 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
 
 
-    // 1. Immediate local UX check (prevents typo requests and validates key syntax)
+    // 1. Syntactic pre-check only (grants nothing; the server decides)
 
-    const isValidFormat = verifyLicenseKey(cleanKey);
+    const isValidFormat = isPlausibleLicenseKey(cleanKey);
 
     if (!isValidFormat) {
 
       sound.playPayloadBlocked();
 
-      setRestoreError('Invalid license key format or checksum. Correct example: 0xPRO-8F9A-K2L1-77BC');
+      setRestoreError('Invalid license key format. Paste the license key from your Lemon Squeezy receipt.');
 
       return;
 
@@ -245,27 +245,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
 
 
-    // 3. Fallback for offline demo / local self-hosted mock
+    // 3. No server available: never unlock Pro client-side.
 
-    sound.playVictoryFanfare();
+    sound.playPayloadBlocked();
 
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-
-    setRestoreError(null);
-
-    if (onRestoreLicense) {
-
-      onRestoreLicense(cleanKey);
-
-    } else {
-
-      onUpgradeSuccess();
-
-    }
-
-    setIsRestoreView(false);
-
-    onClose();
+    setRestoreError('License activation requires a connection to the Pwnify server. Please try again later.');
 
   };
 
@@ -353,7 +337,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
     setRestoreError(
 
-      'Lemon Squeezy gateway not configured in this local environment. Enter a cryptographic license key to activate Pwnify PRO.'
+      'Lemon Squeezy gateway not configured in this environment. If you already purchased Pwnify PRO, enter your license key to activate it.'
 
     );
 

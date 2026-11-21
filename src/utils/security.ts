@@ -4,8 +4,6 @@
  * Input Overflows, Timing Attacks, and URL Verification Bypass.
  */
 
-import { verifyLicenseKey } from './licenseEngine';
-
 // Whitelist of approved checkout and external redirection domains
 const ALLOWED_REDIRECT_DOMAINS = [
   'buy.stripe.com',
@@ -109,49 +107,5 @@ export function safeJsonParse<T>(raw: string | null, fallback: T): T {
   }
 }
 
-/**
- * Generates a verification signature for authentic checkout returns.
- */
-export function generateCheckoutSignature(sessionId: string, username: string): string {
-  const secret = '0xDAY_STRIPE_RETURN_SECURE_SALT_v1';
-  let hash = 0x811c9dc5;
-  const combined = `${sessionId}:${username}:${secret}`;
-  for (let i = 0; i < combined.length; i++) {
-    hash ^= combined.charCodeAt(i);
-    hash = (hash * 0x01000193) & 0xffffffff;
-  }
-  return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
-}
-
-/**
- * Validates post-checkout verification tokens to prevent URL spoofing / free paywall bypass.
- * Requires either a valid cryptographic license key or a valid session signature.
- */
-export function verifyCheckoutToken(params: URLSearchParams, username: string): boolean {
-  const licenseKey = params.get('license');
-  const sessionId = params.get('session_id');
-  const signature = params.get('signature') || params.get('sig');
-  const checkoutParam = params.get('checkout');
-
-  // If a license key is directly provided in URL, it must pass strict cryptographic verification
-  if (licenseKey) {
-    return verifyLicenseKey(licenseKey);
-  }
-
-  // Allow simulated checkout tag or local signature verification ONLY on local developer environment (localhost/127.0.0.1)
-  // In production, entitlements are strictly server-authoritative via Supabase and Lemon Squeezy webhooks.
-  if (typeof window !== 'undefined') {
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isLocal) {
-      if (sessionId && signature) {
-        const expected = generateCheckoutSignature(sessionId, username);
-        return signature.toUpperCase() === expected;
-      }
-      if (checkoutParam === '0x_pro_verified' || checkoutParam === 'success') {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
+// Checkout returns no longer grant anything client-side: Pro is written by the
+// Lemon Squeezy webhook into profiles.is_pro and read back via cloudSync.

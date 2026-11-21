@@ -318,7 +318,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             .then(r => r.json())
             .then(data => {
               if (data && (data.email || data.sub)) {
-                const mail = data.email || 'user.google@gmail.com';
+                const mail = data.email || 'user.google@example.com';
                 const name = data.name || mail.split('@')[0];
                 const res = loginWithOAuth('google', { name, email: mail }, currentUserState);
                 sound.playVictoryFanfare();
@@ -1543,7 +1543,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   <input
                     type="email"
                     required
-                    placeholder="your.email@gmail.com"
+                    placeholder="your.email@example.com"
                     value={googleInputEmail}
                     onChange={(e) => setGoogleInputEmail(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-800 focus:border-emerald-500 text-xs text-white font-mono"
