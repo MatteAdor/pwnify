@@ -14,6 +14,33 @@ describe('Legal Texts & Placeholders Verification Suite', () => {
   const privacyHtmlPath = path.join(rootDir, 'public', 'privacy.html');
   const legalModalPath = path.join(rootDir, 'src', 'components', 'Legal', 'LegalModal.tsx');
   const privacyReviewPath = path.join(rootDir, 'docs', 'PRIVACY_REVIEW.md');
+  const termsHtmlPath = path.join(rootDir, 'public', 'terms.html');
+
+  // Invented company details that must never reappear in legal texts.
+  const FORBIDDEN_LEGAL_STRINGS = [
+    'S.r.l.',
+    'P.IVA',
+    'IT01234567890',
+    'Spadolini',
+    'sede legale',
+    'registered office',
+    'zeroday.academy',
+    'Pwnify Cyber Academy',
+    'zerolag_os@',
+  ];
+
+  const assertNoInventedDetails = (name: string, content: string) => {
+    for (const forbidden of FORBIDDEN_LEGAL_STRINGS) {
+      assert.strictEqual(content.includes(forbidden), false, `${name} must not contain "${forbidden}"`);
+    }
+  };
+
+  const assertRealControllerAndContacts = (name: string, content: string) => {
+    assertNoInventedDetails(name, content);
+    assert.ok(content.includes('Matteo Adorni, persona fisica'), `${name} must name "Matteo Adorni, persona fisica" as controller`);
+    assert.ok(content.includes('privacy@pwnify.xyz'), `${name} must reference privacy@pwnify.xyz`);
+    assert.ok(content.includes('support@pwnify.xyz'), `${name} must reference support@pwnify.xyz`);
+  };
 
   test('public/privacy.html contains no uppercase bracketed placeholders or << delimiters', () => {
     const content = fs.readFileSync(privacyHtmlPath, 'utf-8');
@@ -26,9 +53,16 @@ describe('Legal Texts & Placeholders Verification Suite', () => {
     assert.strictEqual(content.includes('<<'), false, 'Found << delimiter in privacy.html');
     assert.strictEqual(content.includes('>>'), false, 'Found >> delimiter in privacy.html');
 
-    // Verify presence of required privacy notice text and absence of mailto link
-    assert.strictEqual(content.includes('github.com/MatteAdor/pwnify/issues'), true, 'privacy.html must direct users to GitHub issues');
     assert.strictEqual(content.includes('mailto:[INDIRIZZO]'), false, 'privacy.html must not contain mailto:[INDIRIZZO]');
+    assertRealControllerAndContacts('privacy.html', content);
+  });
+
+  test('public/terms.html names the real provider and support contact', () => {
+    const content = fs.readFileSync(termsHtmlPath, 'utf-8');
+    assertNoInventedDetails('terms.html', content);
+    assert.ok(content.includes('Matteo Adorni, persona fisica'), 'terms.html must name Matteo Adorni, persona fisica');
+    assert.ok(content.includes('mailto:support@pwnify.xyz'), 'terms.html must link support@pwnify.xyz for refunds');
+    assert.ok(content.includes('non &egrave; affiliato'), 'terms.html must contain the trademark disclaimer');
   });
 
   test('src/components/Legal/LegalModal.tsx contains no uppercase bracketed placeholders or << delimiters', () => {
@@ -41,9 +75,9 @@ describe('Legal Texts & Placeholders Verification Suite', () => {
     // Check for << delimiters
     assert.strictEqual(content.includes('<<'), false, 'Found << delimiter in LegalModal.tsx');
 
-    // Verify presence of required privacy notice text and absence of mailto link
-    assert.strictEqual(content.includes('github.com/MatteAdor/pwnify/issues'), true, 'LegalModal.tsx must direct users to GitHub issues');
     assert.strictEqual(content.includes('mailto:[INDIRIZZO]'), false, 'LegalModal.tsx must not contain mailto:[INDIRIZZO]');
+    assertRealControllerAndContacts('LegalModal.tsx', content);
+    assert.ok(content.includes('mailto:support@pwnify.xyz'), 'LegalModal.tsx must link support@pwnify.xyz');
   });
 
   test('docs/PRIVACY_REVIEW.md contains no uppercase bracketed placeholders or << delimiters', () => {
@@ -54,7 +88,8 @@ describe('Legal Texts & Placeholders Verification Suite', () => {
     assert.deepEqual(bracketPlaceholders, [], `Found bracketed placeholders in PRIVACY_REVIEW.md: ${bracketPlaceholders.join(', ')}`);
 
     assert.strictEqual(content.includes('<<'), false, 'Found << delimiter in PRIVACY_REVIEW.md');
-    assert.strictEqual(content.includes('github.com/MatteAdor/pwnify/issues'), true, 'PRIVACY_REVIEW.md must reference GitHub issues');
+    assert.ok(content.includes('Matteo Adorni, persona fisica'), 'PRIVACY_REVIEW.md must name the real controller');
+    assert.ok(content.includes('privacy@pwnify.xyz'), 'PRIVACY_REVIEW.md must reference privacy@pwnify.xyz');
   });
 });
 
@@ -115,12 +150,28 @@ describe('APK Gating & Direct Download Suite', () => {
         `${name} must not contain "Android: Coming soon"`
       );
 
-      // Must reference APK_CONFIG for download URL and sha256
+      // Must reference APK_CONFIG for the download URL
       assert.strictEqual(
         content.includes('APK_CONFIG'),
         true,
         `${name} must import and use APK_CONFIG`
       );
+    }
+  });
+
+  test('Landing has no fake stats, version badge or APK hash card, and shows the trademark disclaimer', () => {
+    const landing = fs.readFileSync(path.join(rootDir, 'src', 'components', 'Landing', 'LandingPortal.tsx'), 'utf-8');
+    const settings = fs.readFileSync(path.join(rootDir, 'src', 'components', 'Settings', 'SettingsPage.tsx'), 'utf-8');
+
+    for (const forbidden of ['OPERATORS ONLINE', 'INTRODUCING PWNIFY', 'SHA-256:', 'APK_CONFIG.sha256', 'Latency: 14ms', 'ops@pwnify.xyz']) {
+      assert.strictEqual(landing.includes(forbidden), false, `LandingPortal.tsx must not contain "${forbidden}"`);
+    }
+
+    const disclaimerIt = 'Pwnify non è affiliato né approvato da CompTIA, Cisco, EC-Council o altri enti di certificazione. I marchi appartengono ai rispettivi proprietari.';
+    const disclaimerEn = 'Pwnify is not affiliated with or endorsed by CompTIA, Cisco, EC-Council or any other certification body.';
+    for (const [name, content] of Object.entries({ landing, settings })) {
+      assert.ok(content.includes(disclaimerIt), `${name} must contain the Italian trademark disclaimer`);
+      assert.ok(content.includes(disclaimerEn), `${name} must contain the English trademark disclaimer`);
     }
   });
 

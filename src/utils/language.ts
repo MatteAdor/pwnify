@@ -248,7 +248,7 @@ export const TRANSLATIONS = {
 
     // OAuth & OTP Modals
     googleOAuthTitle: 'Sign in with Google',
-    googleOAuthSubtitle: 'Pwnify Cyber Academy OAuth',
+    googleOAuthSubtitle: 'Pwnify OAuth',
     googleOAuthDesc: 'Sign in with your Google account to synchronize your progress.',
     googleInstantAccess: 'Instant 1-Click Access',
     googleInstantBtn: 'Sign in with Google',
@@ -524,7 +524,7 @@ export const TRANSLATIONS = {
 
     // OAuth & OTP Modals
     googleOAuthTitle: 'Accedi con Google',
-    googleOAuthSubtitle: 'Pwnify Cyber Academy OAuth',
+    googleOAuthSubtitle: 'Pwnify OAuth',
     googleOAuthDesc: 'Accedi con il tuo account Google per sincronizzare i progressi.',
     googleInstantAccess: 'Accesso Rapido Istantaneo',
     googleInstantBtn: 'Accedi con Google',

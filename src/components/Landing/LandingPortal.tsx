@@ -26,10 +26,8 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
   useEffect(() => {
     return updateManager.subscribe(setUpdateState);
   }, []);
-  const activeSha256 = APK_CONFIG.sha256;
   const apkDownloadUrl = APK_CONFIG.downloadUrl;
 
-  const [copiedHash, setCopiedHash] = useState(false);
   const [remediationDeployed, setRemediationDeployed] = useState(false);
   const [activeTrack, setActiveTrack] = useState<'secplus' | 'ccna' | 'ceh'>('secplus');
   const [activeTier, setActiveTier] = useState<'Cadet' | 'Operator' | 'Zero-Day'>('Operator');
@@ -144,15 +142,6 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
   const barCls = `w-[var(--w)] max-sm:transition-[width] max-sm:duration-[1100ms] ${isFront(2) ? '' : 'max-sm:!w-0'}`;
   const logStyle = (i: number): React.CSSProperties => ({ transitionDelay: isFront(1) ? `${0.35 + i * 0.5}s` : '0s' });
   const logCls = `max-sm:transition-[opacity,transform] max-sm:duration-500 ${isFront(1) ? '' : 'max-sm:opacity-0 max-sm:-translate-x-2.5'}`;
-
-  const handleCopyHash = () => {
-    sound.playTap();
-    if (activeSha256) {
-      navigator.clipboard.writeText(activeSha256);
-      setCopiedHash(true);
-      setTimeout(() => setCopiedHash(false), 2500);
-    }
-  };
 
   const handleDeployRemediation = () => {
     sound.playTap();
@@ -440,15 +429,6 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
         {/* ================================================================= */}
         <section className="text-center pt-6 sm:pt-14 pb-10 sm:pb-28">
           
-          {/* Eyebrow Label with Fading Rules */}
-          <div className="inline-flex items-center justify-center gap-4 mb-5">
-            <div className="w-12 sm:w-16 h-[1px] bg-gradient-to-r from-transparent to-[rgba(186,215,247,0.2)]" />
-            <span className="font-mono text-xs sm:text-sm tracking-[0.10em] text-[#c7d3ea] uppercase font-normal">
-              {isEn ? 'INTRODUCING PWNIFY v2.0' : 'PWNIFY · PIATTAFORMA DI COMBATTIMENTO'}
-            </span>
-            <div className="w-12 sm:w-16 h-[1px] bg-gradient-to-l from-transparent to-[rgba(186,215,247,0.2)]" />
-          </div>
-
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-medium tracking-tight leading-[1.12] mb-5 skywash-title max-w-4xl mx-auto">
             {isEn ? (
               <>Spot the breach.<br />Defend in 60 seconds.</>
@@ -484,11 +464,6 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                 <span className="text-[11px] opacity-60 font-mono">v{APK_CONFIG.versionName}</span>
               </a>
             )}
-
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono bg-[rgba(199,211,234,0.06)] border border-[rgba(186,215,247,0.12)] text-[#d1e4fa]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
-              <span>1,420 OPERATORS ONLINE</span>
-            </div>
           </div>
 
           {/* =============================================================== */}
@@ -872,18 +847,6 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     ? 'Full offline SQLite database, hardware-accelerated terminal emulator, and local notification streaks. Zero third-party ad trackers.'
                     : 'Database SQLite 100% offline, emulatore terminale con accelerazione hardware e streak locali. Nessun tracker pubblicitario.'}
                 </p>
-
-                {/* SHA-256 Box with Ellipsis and Copy */}
-                <div className="bg-black/50 rounded-md border border-[rgba(186,215,247,0.1)] p-3 font-mono text-[11px] text-[#9da7ba] mb-6 flex items-center justify-between gap-2 min-w-0 max-w-full">
-                  <span className="shrink-0 text-[#c7d3ea]">SHA-256:</span>
-                  <span className="truncate text-[#d1e4fa] flex-1">{activeSha256}</span>
-                  <button
-                    onClick={handleCopyHash}
-                    className="shrink-0 px-2 py-0.5 rounded bg-[rgba(186,215,247,0.08)] border border-[rgba(186,215,247,0.15)] text-white text-[10px] font-mono hover:bg-[rgba(186,215,247,0.18)] cursor-pointer"
-                  >
-                    {copiedHash ? 'COPIED!' : 'COPY'}
-                  </button>
-                </div>
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
@@ -915,11 +878,6 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
                     ? 'Train directly in your browser. Includes 1v1 Blitz WebRTC matchmaking, interactive drag-and-drop network topology PBQs, and cloud progress sync.'
                     : 'Allenati direttamente dal browser senza installare nulla. Include duelli WebRTC 1v1, PBQ interattivi su rete e sync account.'}
                 </p>
-
-                <div className="bg-black/50 rounded-md border border-[rgba(186,215,247,0.1)] p-3 font-mono text-xs text-[#d1e4fa] mb-6">
-                  <div className="text-emerald-400 mb-1">● WebRTC Mesh: Connected</div>
-                  <div className="text-[#9da7ba]">Latency: 14ms · TLS 1.3 Strict</div>
-                </div>
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
@@ -1060,7 +1018,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </div>
 
               <a
-                href="mailto:ops@pwnify.xyz"
+                href="mailto:support@pwnify.xyz"
                 className="btn-ghost-pill-cathedral w-full py-2.5 text-xs sm:text-sm font-medium text-center"
               >
                 {isEn ? 'Contact Operations' : 'Contatta il Team'}
@@ -1117,6 +1075,12 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
               </>
             )}
           </div>
+
+          <p className="max-w-xl mx-auto text-[11px] text-[#9da7ba] leading-relaxed mb-4">
+            {isEn
+              ? 'Pwnify is not affiliated with or endorsed by CompTIA, Cisco, EC-Council or any other certification body. All trademarks belong to their respective owners.'
+              : 'Pwnify non è affiliato né approvato da CompTIA, Cisco, EC-Council o altri enti di certificazione. I marchi appartengono ai rispettivi proprietari.'}
+          </p>
 
           <div className="text-[11px] text-[#9da7ba]/60 font-mono">
             © {new Date().getFullYear()} Pwnify. All rights reserved.
