@@ -6,9 +6,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import { verifyLicenseKey, generateLicenseKey } from '../src/utils/licenseEngine';
-import { hashUserPassword, verifyUserPassword } from '../src/utils/userDatabase';
-import { verifyCheckoutToken } from '../src/utils/security';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as licenseEngine from '../src/utils/licenseEngine';
+import * as security from '../src/utils/security';
+import { hashUserPassword, verifyUserPassword, mergeUserStates, createCleanAccountState } from '../src/utils/userDatabase';
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const { isPlausibleLicenseKey } = licenseEngine;
 
 /**
  * Timing-safe string comparison mirror for testing.
@@ -82,18 +88,51 @@ test('HMAC-SHA256 Webhook signature calculation and verification', () => {
   );
 });
 
-test('Local License Engine: Algorithmic Checksum is strictly UX and does not substitute Server Authorization', () => {
-  const validKey = generateLicenseKey();
-  assert.ok(validKey.startsWith('0xPRO-'), 'Key starts with 0xPRO- prefix');
-  assert.equal(verifyLicenseKey(validKey), true, 'Valid generated key passes algorithmic checksum');
+test('License Engine: client exposes only a syntactic pre-check, never a Pro grant', () => {
+  // Pre-check accepts Lemon Squeezy-style keys and rejects garbage
+  assert.equal(isPlausibleLicenseKey('38b1460a-5104-4067-a91d-77b872934d51'), true);
+  assert.equal(isPlausibleLicenseKey(''), false);
+  assert.equal(isPlausibleLicenseKey('short'), false);
+  assert.equal(isPlausibleLicenseKey('<script>alert(1)</script>'), false);
+  assert.equal(isPlausibleLicenseKey(undefined), false);
 
-  // Corrupted / forged key
-  const invalidKey = '0xPRO-AAAA-BBBB-CCCC';
-  assert.equal(verifyLicenseKey(invalidKey), false, 'Forged key fails checksum');
+  // No client-side key generation, checksum or contributor/dev bypass may exist
+  const exported = Object.keys(licenseEngine);
+  for (const forbidden of ['generateLicenseKey', 'verifyLicenseKey', 'isContributor', 'CONTRIBUTOR_HASHES', 'CONTRIBUTOR_DEV_KEY_HASHES']) {
+    assert.equal(exported.includes(forbidden), false, `licenseEngine must not export ${forbidden}`);
+  }
+  assert.equal('verifyCheckoutToken' in security, false, 'security must not export verifyCheckoutToken');
+  assert.equal('generateCheckoutSignature' in security, false, 'security must not export generateCheckoutSignature');
+});
 
-  // Verify that frontend license check is purely syntax verification
-  const fakeKey = '0xPRO-1234-5678-9999';
-  assert.equal(verifyLicenseKey(fakeKey), false, 'Malformed checksum fails');
+test('Account state: new and merged accounts never auto-grant Pro or fake license keys', () => {
+  const fresh = createCleanAccountState('matteador', 'someone@example.com');
+  assert.equal(fresh.isPro, false, 'Callsign/email must not grant Pro');
+  assert.equal(fresh.licenseKey, undefined);
+
+  const merged = mergeUserStates(
+    createCleanAccountState('darkmatteo', 'a@example.com'),
+    createCleanAccountState('darkmatteo', 'a@example.com', false)
+  );
+  assert.equal(merged.isPro, false, 'Merging two free states stays free');
+  assert.equal(merged.licenseKey, undefined, 'No synthetic lifetime key is invented');
+});
+
+test('Source tree: no hardcoded contributor bypass, dev keys or personal mailboxes', () => {
+  const files = [
+    'src/utils/licenseEngine.ts',
+    'src/utils/security.ts',
+    'src/utils/userDatabase.ts',
+    'src/App.tsx',
+    'src/components/Paywall/PaywallModal.tsx',
+  ];
+  for (const rel of files) {
+    const content = fs.readFileSync(path.join(rootDir, rel), 'utf-8');
+    for (const forbidden of ['CONTRIBUTOR-LIFETIME', '0XPRO-DEV', '0xPRO-LIFETIME', 'isContributor', 'generateLicenseKey', '0xDAY_SECRET', 'STRIPE_RETURN_SECURE_SALT']) {
+      assert.equal(content.includes(forbidden), false, `${rel} must not contain "${forbidden}"`);
+    }
+    assert.equal(/@gmail\.com/i.test(content), false, `${rel} must not contain a gmail address`);
+  }
 });
 
 test('State Machine: Event classification for Lemon Squeezy Webhook', () => {
@@ -131,13 +170,9 @@ test('Password Security: Salted SHA-256 and Transparent Legacy Base64 Migration'
   assert.equal(verifyUserPassword('WrongPassword', legacyBtoa), false, 'Wrong password fails on legacy hash');
 });
 
-test('Checkout Security: Reject forged tokens and unauthorized bypasses', () => {
-  // Direct forged token in URL
-  const forgedParams = new URLSearchParams('checkout=0x_pro_verified');
-  // Outside of browser window / local environment, verifyCheckoutToken must strictly return false
-  assert.equal(verifyCheckoutToken(forgedParams, 'Attacker'), false, 'Forged checkout param is rejected');
-
-  const forgedSigParams = new URLSearchParams('session_id=fake_sess&signature=FAKE1234');
-  assert.equal(verifyCheckoutToken(forgedSigParams, 'Attacker'), false, 'Forged signature is rejected');
+test('Checkout Security: URL params cannot grant Pro client-side', () => {
+  const app = fs.readFileSync(path.join(rootDir, 'src', 'App.tsx'), 'utf-8');
+  assert.equal(app.includes('verifyCheckoutToken'), false, 'App must not trust checkout URL params');
+  assert.ok(app.includes("supabase.functions.invoke('validate_license'"), 'License activation goes through validate_license');
 });
 

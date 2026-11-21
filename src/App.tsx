@@ -42,7 +42,7 @@ import { UpdateProgressModal } from './components/Update/UpdateProgressModal';
 import { WhatsNewModal } from './components/Update/WhatsNewModal';
 import { LegalModal, LegalTabType } from './components/Legal/LegalModal';
 import { CookieConsentBanner } from './components/Legal/CookieConsentBanner';
-import { generateLicenseKey, verifyLicenseKey } from './utils/licenseEngine';
+import { isPlausibleLicenseKey } from './utils/licenseEngine';
 import { calculateDynamicTelemetry } from './utils/readinessEngine';
 import { recordLearningActivity, StreakState } from './utils/streakEngine';
 import { syncAuthoritativeActivity, applyLearningActivity } from './utils/streakSync';
@@ -63,14 +63,12 @@ import {
   recordCertPassed,
   UserAccount 
 } from './utils/userDatabase';
-import { isContributor } from './utils/licenseEngine';
 import { sound } from './utils/soundEngine';
 import { useLanguage } from './utils/language';
 import { 
   sanitizeCallsign, 
   sanitizeAlphanumeric, 
-  clampNumber, 
-  verifyCheckoutToken 
+  clampNumber 
 } from './utils/security';
 import { Swords, Zap, Check, Copy, Download, Sparkles, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -358,7 +356,8 @@ export const App: React.FC = () => {
         const synced = await syncUserProfile(userState);
         if (synced && !isCancelled) {
           setUserState(prev => {
-            const isAutoPro = isContributor(prev.username) || isContributor(prev.userEmail) || Boolean(synced.isPro);
+            // Pro comes only from the server (profiles.is_pro)
+            const isAutoPro = Boolean(synced.isPro);
             if (prev.elo !== synced.elo || prev.xp !== synced.xp || prev.isPro !== isAutoPro) {
               const updated = {
                 ...prev,
@@ -453,72 +452,42 @@ export const App: React.FC = () => {
       // Check 1: Post-checkout return verification (Defends against URL paywall bypass)
       // Play flavor policy: block external checkout return & external license bypass
       if (!isPlayDistribution()) {
-        const isCheckoutVerified = verifyCheckoutToken(params, userState.username);
         const incomingLicense = params.get('license');
+        const hasCheckoutReturn = params.has('checkout') || params.has('session_id') || params.has('signature') || params.has('sig');
 
-        if (incomingLicense && verifyLicenseKey(incomingLicense)) {
-          // Authoritative verification via Supabase Edge Function
+        if (incomingLicense && isPlausibleLicenseKey(incomingLicense)) {
+          // Server-authoritative activation only: Pro is granted solely when the
+          // validate_license Edge Function confirms it (and writes profiles.is_pro).
           import('./config/supabase').then(({ supabase, isSupabaseConfigured }) => {
-            if (isSupabaseConfigured) {
-              supabase.functions.invoke('validate_license', {
-                body: { license_key: incomingLicense }
-              }).then(({ data, error }) => {
-                if (!error && data?.valid && data?.is_pro) {
-                  setUserState(prev => {
-                    const updated = {
-                      ...prev,
-                      isPro: true,
-                      streakShieldActive: true,
-                      readinessScore: 92,
-                      licenseKey: incomingLicense
-                    };
-                    persistActiveAccountState(updated);
-                    return updated;
-                  });
-                  setVerifiedCheckoutLicense(incomingLicense);
-                  sound.playVictoryFanfare();
-                  confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-                }
-              }).catch(() => {});
-            } else {
-              // Offline demo fallback
-              setUserState(prev => {
-                const updated = {
-                  ...prev,
-                  isPro: true,
-                  streakShieldActive: true,
-                  readinessScore: 92,
-                  licenseKey: incomingLicense
-                };
-                persistActiveAccountState(updated);
-                return updated;
-              });
-              setVerifiedCheckoutLicense(incomingLicense);
-              sound.playVictoryFanfare();
-              confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-            }
+            if (!isSupabaseConfigured) return;
+            supabase.functions.invoke('validate_license', {
+              body: { license_key: incomingLicense }
+            }).then(({ data, error }) => {
+              if (!error && data?.valid && data?.is_pro) {
+                setUserState(prev => {
+                  const updated = {
+                    ...prev,
+                    isPro: true,
+                    streakShieldActive: true,
+                    licenseKey: incomingLicense
+                  };
+                  persistActiveAccountState(updated);
+                  return updated;
+                });
+                setVerifiedCheckoutLicense(incomingLicense);
+                sound.playVictoryFanfare();
+                confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+              }
+            }).catch(() => {});
           }).catch(() => {});
-        } else if (isCheckoutVerified) {
-          // Local developer environment verified checkout
-          const key = generateLicenseKey(userState.username);
-          setUserState(prev => {
-            const updated = {
-              ...prev,
-              isPro: true,
-              streakShieldActive: true,
-              readinessScore: 92,
-              licenseKey: key
-            };
-            persistActiveAccountState(updated);
-            return updated;
-          });
-          setVerifiedCheckoutLicense(key);
-          sound.playVictoryFanfare();
-          confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        }
+
+        if (incomingLicense || hasCheckoutReturn) {
+          // A checkout return never grants Pro client-side: the Lemon Squeezy webhook
+          // writes profiles.is_pro and the background profile sync reads it back.
           if (window.history) {
             window.history.replaceState({}, '', window.location.pathname);
           }
-          return;
         }
       } else {
         // In Play distribution, strip checkout/license parameters from URL without processing
@@ -550,12 +519,9 @@ export const App: React.FC = () => {
   }, [userState.username]);
 
 
-  // Restore License Key handler with cryptographic verification
+  // Called by PaywallModal ONLY after validate_license confirmed is_pro server-side
+  // (the Edge Function has already written profiles.is_pro).
   const handleRestoreLicense = (key: string) => {
-    if (!verifyLicenseKey(key)) {
-      sound.playPayloadBlocked();
-      return;
-    }
     setUserState(prev => ({
       ...prev,
       isPro: true,
@@ -757,6 +723,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
 
   // Toggle Dev PRO Mode
   const handleTogglePro = () => {
+    // Local test toggle: only in the DEV + localhost god-mode toolbar, never in production
+    if (!isGodMode) return;
     setUserState(prev => {
       const nextPro = !prev.isPro;
       const tele = calculateDynamicTelemetry(prev.completedNodeIds, prev.completedPbqIds, nextPro);
@@ -797,7 +765,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
       const nextUsername = data.chosenUsername && data.chosenUsername.trim().length >= 3 
         ? sanitizeCallsign(data.chosenUsername.trim(), prev.username) 
         : prev.username;
-      const isAutoPro = isContributor(nextUsername) || isContributor(prev.userEmail) || prev.isPro;
       const chosenProf = data.profession || (
         data.goal === 'soc_blue' ? 'SOC Analyst' :
         data.goal === 'web_hacking' ? 'Penetration Tester' :
@@ -814,8 +781,8 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
         dailyCommitment: data.commitment,
         readinessScore: data.readinessScore,
         onboardingCompleted: true,
-        isPro: isAutoPro,
-        licenseKey: isAutoPro ? (prev.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME') : prev.licenseKey
+        isPro: prev.isPro,
+        licenseKey: prev.licenseKey
       };
       persistActiveAccountState(updated);
       return updated;
@@ -1153,20 +1120,6 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
               <button
                 onClick={() => {
                   sound.playTap();
-                  const key = generateLicenseKey(userState.username);
-                  setVerifiedCheckoutLicense(key);
-                  setUserState(prev => ({ ...prev, isPro: true, streakShieldActive: true, readinessScore: 92, licenseKey: key }));
-                  sound.playVictoryFanfare();
-                  confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-                }}
-                className="text-cyan-400 hover:text-cyan-300 underline font-bold"
-              >
-                Simulate Stripe Return
-              </button>
-              <span className="text-slate-600">|</span>
-              <button
-                onClick={() => {
-                  sound.playTap();
                   triggerPaywall('manual_upgrade');
                 }}
                 className="text-amber-400 hover:text-amber-300 underline"
@@ -1341,14 +1294,12 @@ Verification:        Zero-Knowledge Algorithmic Checksum Passed
             winStreak={userState.winStreak}
             onRestoreLicense={handleRestoreLicense}
             onUpgradeSuccess={() => {
-              const key = generateLicenseKey(userState.username);
-              setUserState(prev => ({
-                ...prev,
-                isPro: true,
-                streakShieldActive: true,
-                readinessScore: 92,
-                licenseKey: key
-              }));
+              // Only invoked after server confirmation; refresh from profiles.is_pro
+              void syncUserProfile(userState).then(synced => {
+                if (synced?.isPro) {
+                  setUserState(prev => ({ ...prev, isPro: true, streakShieldActive: true }));
+                }
+              }).catch(() => {});
             }}
           />
           </React.Suspense>

@@ -2,7 +2,7 @@ import { UserState, EloRankTier } from '../types';
 import { INITIAL_DAILY_BOUNTIES } from '../data/bountiesAndPbq';
 import { calculateDynamicTelemetry } from './readinessEngine';
 import { sanitizeCallsign } from './security';
-import { isContributor, sha256Hex } from './licenseEngine';
+import { sha256Hex } from './licenseEngine';
 
 const ACCOUNTS_DB_KEY = 'zeroday_database_accounts_v1';
 const SESSION_DB_KEY = 'zeroday_database_session_v1';
@@ -151,14 +151,9 @@ export function saveCachedGuestState(state: UserState): void {
 export function mergeUserStates(base: UserState, incoming?: UserState | null): UserState {
   if (!incoming) return sanitizeUserState(base);
 
-  const cleanEmail = base.userEmail || incoming.userEmail;
-  const username = base.username || incoming.username;
-  const autoPro = isContributor(cleanEmail) || isContributor(username);
-
-  const isPro = Boolean(autoPro || base.isPro || incoming.isPro);
-  const licenseKey = autoPro 
-    ? (base.licenseKey || incoming.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME')
-    : (base.licenseKey || incoming.licenseKey || (isPro ? '0xPRO-LIFETIME' : undefined));
+  // Local cache only: the authoritative value is re-synced from profiles.is_pro.
+  const isPro = Boolean(base.isPro || incoming.isPro);
+  const licenseKey = base.licenseKey || incoming.licenseKey;
 
   const mergedNodes = Array.from(new Set([
     ...(base.completedNodeIds || []),
@@ -184,7 +179,7 @@ export function mergeUserStates(base: UserState, incoming?: UserState | null): U
 
   return sanitizeUserState({
     ...base,
-    userEmail: cleanEmail,
+    userEmail: base.userEmail || incoming.userEmail,
     isLoggedIn: true,
     isPro,
     licenseKey,
@@ -235,14 +230,13 @@ export function createCleanAccountState(
   const dynamic = calculateDynamicTelemetry([], [], false);
   const cleanEmail = email ? email.trim().toLowerCase() : undefined;
   const safeName = sanitizeCallsign(username, 'Operator');
-  const autoPro = isContributor(cleanEmail) || isContributor(safeName);
 
   return sanitizeUserState({
     username: safeName,
     userEmail: cleanEmail,
     isLoggedIn,
-    isPro: autoPro,
-    licenseKey: autoPro ? '0xPRO-CONTRIBUTOR-LIFETIME' : undefined,
+    isPro: false,
+    licenseKey: undefined,
     streakDays: 0,
     streakShieldActive: false,
     elo: 100,
@@ -552,12 +546,6 @@ export function loginEmailAccount(
     found.userState = mergeUserStates(found.userState, guestFallback);
   }
 
-  // Ensure contributors automatically have PRO
-  if (isContributor(found.email) || isContributor(found.username)) {
-    found.userState.isPro = true;
-    found.userState.licenseKey = found.userState.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME';
-  }
-
   found.lastLoginAt = new Date().toISOString();
   saveAccounts(accounts);
   setCurrentSession(found);
@@ -593,10 +581,6 @@ export function loginWithOAuth(
   if (existing) {
     if (guestFallback) {
       existing.userState = mergeUserStates(existing.userState, guestFallback);
-    }
-    if (isContributor(existing.email) || isContributor(existing.username) || isContributor(cleanEmail)) {
-      existing.userState.isPro = true;
-      existing.userState.licenseKey = existing.userState.licenseKey || '0xPRO-CONTRIBUTOR-LIFETIME';
     }
     existing.lastLoginAt = new Date().toISOString();
     existing.userState = sanitizeUserState(existing.userState);
