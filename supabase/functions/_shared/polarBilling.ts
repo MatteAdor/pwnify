@@ -194,3 +194,131 @@ export function decideLedgerOutcome(
   if (Number.isFinite(startedMs) && nowMs - startedMs < STALE_PROCESSING_MS) return "in_progress";
   return "process";
 }
+
+// ---------------------------------------------------------------------------
+// Out-of-order protection: decide on the LIVE subscription state, not on the
+// (possibly delayed or retried) event payload, and never apply a state older
+// than the last one already applied for the same subscription.
+// ---------------------------------------------------------------------------
+
+export type FetchSubscriptionResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; notFound: boolean; status?: number };
+
+export type SubscriptionFetcher = (subscriptionId: string) => Promise<FetchSubscriptionResult>;
+
+/** GET /v1/subscriptions/{id} with the organization token (scope subscriptions:read). */
+export function createSubscriptionFetcher(
+  apiBase: string,
+  accessToken: string,
+  fetchImpl: typeof fetch = fetch,
+): SubscriptionFetcher {
+  return async (subscriptionId: string) => {
+    try {
+      const res = await fetchImpl(`${apiBase}/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+      });
+      if (res.status === 404) return { ok: false, notFound: true, status: 404 };
+      if (!res.ok) return { ok: false, notFound: false, status: res.status };
+      const data = await res.json().catch(() => null);
+      if (!data || typeof data !== "object") return { ok: false, notFound: false, status: res.status };
+      return { ok: true, data: data as Record<string, unknown> };
+    } catch {
+      return { ok: false, notFound: false };
+    }
+  };
+}
+
+/** True when `candidate` is strictly older than the last applied timestamp (both ISO). */
+export function isOlderThanLastApplied(
+  lastAppliedIso: string | null | undefined,
+  candidateIso: string | null | undefined,
+): boolean {
+  const last = toMs(lastAppliedIso);
+  const cand = toMs(candidateIso);
+  if (last === null || cand === null) return false;
+  return cand < last;
+}
+
+/** Subscription id an event refers to (subscription events: data.id; orders: data.subscription_id). */
+export function subscriptionIdOf(event: unknown): string | null {
+  const ev = asObj(event);
+  const data = asObj(ev.data);
+  const type = str(ev.type);
+  if (type.startsWith("subscription.")) return str(data.id) || null;
+  if (type === "order.paid") return str(data.subscription_id) || null;
+  return null;
+}
+
+export type EntitlementResolution =
+  /** Apply this decision (set_profile_pro_status). */
+  | { kind: "apply"; decision: PolarDecision; subscriptionId: string | null; modifiedAt: string | null }
+  /** Acknowledge (2xx) without changing anything. */
+  | { kind: "ignore"; reason: string }
+  /** Could not confirm the live state: respond 5xx so Polar retries. */
+  | { kind: "retry"; reason: string };
+
+/**
+ * Resolves the entitlement for a verified event using the live subscription state.
+ *
+ * - Subscription events and order.paid for a subscription: the subscription is
+ *   re-read from Polar and the decision is made on THAT state (so a delayed
+ *   `subscription.active` arriving after `subscription.revoked` cannot re-grant).
+ * - If the live state is older than the last one applied for that subscription
+ *   (`lastAppliedModifiedAt`), it is ignored.
+ * - One-time order.paid (no subscription) is final and decided on the payload.
+ * - Re-read failure -> "retry" (5xx); 404 -> "ignore" (not ours / deleted).
+ */
+export async function resolvePolarEntitlement(params: {
+  event: unknown;
+  config: PolarBillingConfig;
+  fetchSubscription: SubscriptionFetcher;
+  lastAppliedModifiedAt?: string | null;
+  nowMs?: number;
+}): Promise<EntitlementResolution> {
+  const { event, config, fetchSubscription, lastAppliedModifiedAt = null, nowMs = Date.now() } = params;
+
+  // Filters (event type, product, organization, external customer) on the payload first.
+  const fromPayload = classifyPolarEvent(event, config, nowMs);
+  if (fromPayload.action === "ignore") return { kind: "ignore", reason: fromPayload.reason };
+
+  const subscriptionId = subscriptionIdOf(event);
+  if (!subscriptionId) {
+    // One-time purchase: order.paid is final.
+    return { kind: "apply", decision: fromPayload, subscriptionId: null, modifiedAt: null };
+  }
+
+  const live = await fetchSubscription(subscriptionId);
+  if (!live.ok) {
+    return live.notFound
+      ? { kind: "ignore", reason: "subscription_not_found" }
+      : { kind: "retry", reason: `subscription_reread_failed${live.status ? `_${live.status}` : ""}` };
+  }
+
+  const liveData = live.data;
+  if (str(liveData.id) && str(liveData.id) !== subscriptionId) {
+    return { kind: "retry", reason: "subscription_id_mismatch" };
+  }
+
+  // Decide on the live state, independent of which event type delivered it.
+  const decision = classifyPolarEvent({ type: "subscription.updated", data: liveData }, config, nowMs);
+  if (decision.action === "ignore") return { kind: "ignore", reason: `live_${decision.reason}` };
+
+  // The live customer must be the same user the event was about.
+  if (decision.userId !== fromPayload.userId) {
+    return { kind: "ignore", reason: "live_customer_mismatch" };
+  }
+
+  const modifiedAt = str(liveData.modified_at) || str(liveData.created_at) || null;
+  if (isOlderThanLastApplied(lastAppliedModifiedAt, modifiedAt)) {
+    return { kind: "ignore", reason: "stale_subscription_state" };
+  }
+
+  return {
+    kind: "apply",
+    decision: { ...decision, orderId: fromPayload.orderId ?? null },
+    subscriptionId,
+    modifiedAt,
+  };
+}

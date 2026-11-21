@@ -36,7 +36,7 @@ gh secret set SUPABASE_PROD_PROJECT_ID
 | `BACKUP_BUCKET_NAME` | Production | S3/R2 private bucket name for database backup archives (e.g. `zeroday-encrypted-backups`). | Immutable |
 | `BACKUP_S3_ACCESS_KEY_ID` | Production | S3/R2 Access Key ID for backup upload. | 180 days |
 | `BACKUP_S3_SECRET_ACCESS_KEY` | Production | S3/R2 Secret Access Key for backup upload. | 180 days |
-| `POLAR_ACCESS_TOKEN` | Production / Sandbox | Polar organization access token (scope `checkouts:write`) used by `create_checkout`. Separate token per environment. | 180 days or on leak |
+| `POLAR_ACCESS_TOKEN` | Production / Sandbox | Polar organization access token, scopes `checkouts:write` (`create_checkout`) and `subscriptions:read` (`polar_webhook` re-reads the live subscription). Separate token per environment. | 180 days or on leak |
 | `POLAR_WEBHOOK_SECRET` | Production / Sandbox | Standard Webhooks signing secret of the Polar webhook endpoint, used by `polar_webhook`. | Rotate on leak |
 | `POLAR_PRODUCT_ID` | Production / Sandbox | Pwnify PRO product id (comma-separated list accepted by `polar_webhook`). | On catalog change |
 | `POLAR_SERVER` | Production / Sandbox | `sandbox` or `production` (anything else falls back to sandbox). | Per environment |
@@ -66,9 +66,9 @@ supabase secrets set --project-ref <PROD_REF> METERED_API_KEY METERED_DOMAIN POL
 |---|---|---|
 | `METERED_API_KEY` | `get_turn_credentials` | Metered.ca API secret for generating ephemeral HMAC TURN tokens. |
 | `METERED_DOMAIN` | `get_turn_credentials` | Metered TURN domain endpoint. |
-| `POLAR_ACCESS_TOKEN` | `create_checkout` | Creates Polar checkout sessions server-side (never exposed to the client). |
+| `POLAR_ACCESS_TOKEN` | `create_checkout`, `polar_webhook` | Creates checkout sessions server-side and re-reads `GET /v1/subscriptions/{id}` before changing `is_pro` (out-of-order protection). Never exposed to the client. |
 | `POLAR_PRODUCT_ID` | `create_checkout`, `polar_webhook` | Product sold at checkout; webhook events for other products are ignored. |
-| `POLAR_SERVER` | `create_checkout` | `sandbox` → `sandbox-api.polar.sh`, `production` → `api.polar.sh`. |
+| `POLAR_SERVER` | `create_checkout`, `polar_webhook` | `sandbox` → `sandbox-api.polar.sh`, `production` → `api.polar.sh`. |
 | `POLAR_WEBHOOK_SECRET` | `polar_webhook` | Standard Webhooks signature secret (raw body, timing-safe, 5-minute timestamp tolerance). |
 | `POLAR_ORGANIZATION_ID` | `polar_webhook` | Optional: ignore events whose product/customer belongs to another organization. |
 | `POLAR_SUCCESS_URL` / `POLAR_RETURN_URL` | `create_checkout` | Optional overrides of the post-checkout and back URLs (default `https://pwnify.xyz/?checkout=success&checkout_id={CHECKOUT_ID}` and `https://pwnify.xyz/`). |

@@ -200,8 +200,9 @@ Pwnify uses **Polar** (polar.sh) as its Merchant of Record. There are no license
   3. Ranked PvP duels require verified auth, but do not require PRO.
   4. `polar_webhook` verifies the Standard Webhooks signature (`POLAR_WEBHOOK_SECRET`), deduplicates on
      `webhook-id` (`polar_webhook_events`, see `supabase/contract/20261122000001_contract_polar_webhook_events.sql`)
-     and calls `set_profile_pro_status` with `service_role` for `subscription.active/updated/canceled/revoked`
-     and `order.paid`.
+     re-reads the subscription from the Polar API and decides on its live state (ignoring states older than the
+     last applied `modified_at`), then calls `set_profile_pro_status` with `service_role` for
+     `subscription.active/updated/canceled/revoked` and `order.paid`. If the re-read fails it answers 503 so Polar retries.
 - Recovery: re-create the webhook endpoint in Polar, store the new secret with `supabase secrets set`,
   then redeploy `polar_webhook` with `--no-verify-jwt`.
 

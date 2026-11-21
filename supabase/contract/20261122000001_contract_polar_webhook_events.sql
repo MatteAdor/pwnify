@@ -10,7 +10,10 @@
 --   * INSERT succeeds          -> process the event, then mark it 'processed'
 --   * unique_violation (23505) -> duplicate delivery, acknowledge without acting
 --   * processing fails         -> the row is deleted so Polar's retry can run
--- No personal data is stored: only the delivery id, event type and timestamps.
+-- Ordering guard: for subscription events the webhook decides on the LIVE state re-read
+-- from the Polar API and records that state's `modified_at` here. A later delivery whose
+-- live state is older than the newest processed one for the same subscription is ignored.
+-- No personal data is stored: only Polar delivery/subscription ids, event type and timestamps.
 -- =====================================================================
 
 BEGIN;
@@ -20,11 +23,20 @@ CREATE TABLE IF NOT EXISTS public.polar_webhook_events (
     event_type   TEXT NOT NULL CHECK (pg_catalog.char_length(event_type) BETWEEN 1 AND 100),
     status       TEXT NOT NULL DEFAULT 'processing' CHECK (status IN ('processing', 'processed')),
     received_at  TIMESTAMPTZ NOT NULL DEFAULT pg_catalog.now(),
-    processed_at TIMESTAMPTZ
+    processed_at TIMESTAMPTZ,
+    -- Polar subscription the applied state belongs to (NULL for one-time orders / ignored events)
+    subscription_id          TEXT CHECK (subscription_id IS NULL OR pg_catalog.char_length(subscription_id) BETWEEN 1 AND 200),
+    -- `modified_at` of the live subscription state that was applied
+    subscription_modified_at TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS idx_polar_webhook_events_received_at
     ON public.polar_webhook_events (received_at);
+
+-- Newest applied state per subscription (ordering guard lookup)
+CREATE INDEX IF NOT EXISTS idx_polar_webhook_events_sub_modified
+    ON public.polar_webhook_events (subscription_id, subscription_modified_at DESC)
+    WHERE status = 'processed' AND subscription_modified_at IS NOT NULL;
 
 -- Server-only ledger: no client access at all (service_role bypasses RLS).
 ALTER TABLE public.polar_webhook_events ENABLE ROW LEVEL SECURITY;
